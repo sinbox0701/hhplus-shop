@@ -12,7 +12,7 @@ class AccountService(
         return accountRepository.save(account)
     }
 
-    fun getById(accountId: String): Account {
+    fun getById(accountId: Int): Account {
         return accountRepository.findById(accountId)
             ?: throw IllegalArgumentException("Account not found for accountId: $accountId")
     }

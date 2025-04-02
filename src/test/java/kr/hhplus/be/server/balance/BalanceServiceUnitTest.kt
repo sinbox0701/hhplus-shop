@@ -25,8 +25,8 @@ class BalanceServiceUnitTest {
     @Test
     fun `accountId로 잔액 조회 성공`() {
         // Arrange
-        val accountId = "user123"
-        val balance = Balance(balanceId = "bal1", accountId = accountId, amount = BigDecimal("100.00"))
+        val accountId = 1
+        val balance = Balance(balanceId = 1, accountId = accountId, amount = BigDecimal("100.00"))
         every { balanceRepository.findByAccountId(accountId) } returns balance
 
         // Act
@@ -40,7 +40,7 @@ class BalanceServiceUnitTest {
     @Test
     fun `accountId로 진액 조회 실패`() {
         // Arrange
-        val accountId = "user123"
+        val accountId = 1
         every { balanceRepository.findByAccountId(accountId) } returns null
 
         // Act & Assert
@@ -54,11 +54,11 @@ class BalanceServiceUnitTest {
     @Test
     fun `잔액 충전 시 업데이트된 잔액 반환`() {
         // Arrange
-        val accountId = "user123"
+        val accountId = 1
         val initialAmount = BigDecimal("100.00")
         val chargeAmount = BigDecimal("50.00")
         val expectedAmount = BigDecimal("150.00")
-        val balance = Balance(balanceId = "bal1", accountId = accountId, amount = initialAmount)
+        val balance = Balance(balanceId = 1, accountId = accountId, amount = initialAmount)
 
         every { balanceService.getByAccountId(accountId) } returns balance
         every { balanceRepository.save(any()) } answers { firstArg() }
@@ -75,11 +75,11 @@ class BalanceServiceUnitTest {
     @Test
     fun `출금 시 잔액이 충분하면 정상적으로 차감된다`() {
         // Arrange
-        val accountId = "user123"
+        val accountId = 1
         val initialAmount = BigDecimal("200.00")
         val withdrawAmount = BigDecimal("50.00")
         val expectedAmount = BigDecimal("150.00")
-        val balance = Balance(balanceId = "bal1", accountId = accountId, amount = initialAmount)
+        val balance = Balance(balanceId = 1, accountId = accountId, amount = initialAmount)
 
         every { balanceService.getByAccountId(accountId) } returns balance
         every { balanceRepository.save(any()) } answers { firstArg() }
@@ -96,10 +96,10 @@ class BalanceServiceUnitTest {
     @Test
     fun `출금 시 잔액 부족이면 예외 발생`() {
         // Arrange
-        val accountId = "user123"
+        val accountId = 1
         val initialAmount = BigDecimal("100.00")
         val withdrawAmount = BigDecimal("150.00")
-        val balance = Balance(balanceId = "bal1", accountId = accountId, amount = initialAmount)
+        val balance = Balance(balanceId = 1, accountId = accountId, amount = initialAmount)
 
         every {balanceService.getByAccountId(accountId) } returns balance
 

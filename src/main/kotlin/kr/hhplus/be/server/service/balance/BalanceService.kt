@@ -9,19 +9,19 @@ import java.math.BigDecimal
 class BalanceService(
     private val balanceRepository: BalanceRepository
 ) {
-    fun getByAccountId(accountId: String): Balance {
+    fun getByAccountId(accountId: Int): Balance {
         return balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
     }
 
-    fun charge(accountId: String, amount: BigDecimal): Balance {
+    fun charge(accountId: Int, amount: BigDecimal): Balance {
         val balance = balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
         balance.amount = balance.amount.add(amount)
         return balanceRepository.save(balance)
     }
 
-    fun withdraw(accountId: String, amount: BigDecimal): Balance {
+    fun withdraw(accountId: Int, amount: BigDecimal): Balance {
         val balance = balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
         if (balance.amount < amount) {

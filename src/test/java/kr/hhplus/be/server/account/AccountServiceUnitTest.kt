@@ -24,7 +24,7 @@ class AccountServiceUnitTest {
     @Test
     fun `계정이 존재하면 정상 반환한다`() {
         // Arrange
-        val accountId = "user123"
+        val accountId = 1
         val account = Account(accountId = accountId, name = "Test User", email = "test@example.com", loginId = "test", password = "123456")
 
         every { accountRepository.findById(accountId) } returns account
@@ -40,7 +40,7 @@ class AccountServiceUnitTest {
     @Test
     fun `계정을 찾지 못하면 예외를 발생시킨다`() {
         // Arrange
-        val accountId = "user123"
+        val accountId = 1
         every { accountRepository.findById(accountId) } returns null
 
         // Act & Assert
@@ -56,7 +56,7 @@ class AccountServiceUnitTest {
         // Arrange
         val loginId = "test"
         val password = "123456"
-        val account = Account(accountId = "user123", name = "Test User", email = "test@example.com", loginId = loginId, password = password)
+        val account = Account(accountId = 1, name = "Test User", email = "test@example.com", loginId = loginId, password = password)
 
         every { accountRepository.login(loginId, password) } returns account
 
