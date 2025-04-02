@@ -9,7 +9,8 @@ class AccountService(
     private val accountRepository: AccountRepository
 ) {
     fun save(account: Account): Account {
-        return accountRepository.save(account)
+        val newUser = Account.create(account.accountId, account.name, account.email, account.loginId, account.password)
+        return accountRepository.save(newUser)
     }
 
     fun getById(accountId: Int): Account {

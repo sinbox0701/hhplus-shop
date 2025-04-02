@@ -9,6 +9,11 @@ import java.math.BigDecimal
 class BalanceService(
     private val balanceRepository: BalanceRepository
 ) {
+    fun create(balanceId: Int, accountId: Int): Balance {
+        val balance = Balance.create(balanceId, accountId)
+        return balanceRepository.save(balance.balanceId, balance.accountId)
+    }
+
     fun getByAccountId(accountId: Int): Balance {
         return balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
@@ -18,7 +23,7 @@ class BalanceService(
         val balance = balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
         balance.amount = balance.amount.add(amount)
-        return balanceRepository.save(balance)
+        return balanceRepository.saveAmount(balance)
     }
 
     fun withdraw(accountId: Int, amount: BigDecimal): Balance {
@@ -28,6 +33,6 @@ class BalanceService(
             throw IllegalArgumentException("Insufficient funds")
         }
         balance.amount = balance.amount.subtract(amount)
-        return balanceRepository.save(balance)
+        return balanceRepository.saveAmount(balance)
     }
 }

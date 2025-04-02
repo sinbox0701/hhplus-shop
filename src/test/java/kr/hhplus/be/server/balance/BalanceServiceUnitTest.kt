@@ -26,7 +26,7 @@ class BalanceServiceUnitTest {
     fun `accountId로 잔액 조회 성공`() {
         // Arrange
         val accountId = 1
-        val balance = Balance(balanceId = 1, accountId = accountId, amount = BigDecimal("100.00"))
+        val balance = Balance.create(balanceId = 1, accountId = accountId, initialAmount = BigDecimal("100.00"))
         every { balanceRepository.findByAccountId(accountId) } returns balance
 
         // Act
@@ -38,7 +38,7 @@ class BalanceServiceUnitTest {
     }
 
     @Test
-    fun `accountId로 진액 조회 실패`() {
+    fun `accountId로 잔액 조회 실패`() {
         // Arrange
         val accountId = 1
         every { balanceRepository.findByAccountId(accountId) } returns null
@@ -58,18 +58,18 @@ class BalanceServiceUnitTest {
         val initialAmount = BigDecimal("100.00")
         val chargeAmount = BigDecimal("50.00")
         val expectedAmount = BigDecimal("150.00")
-        val balance = Balance(balanceId = 1, accountId = accountId, amount = initialAmount)
+        val balance = Balance.create(balanceId = 1, accountId = accountId, initialAmount = initialAmount)
 
-        every { balanceService.getByAccountId(accountId) } returns balance
-        every { balanceRepository.save(any()) } answers { firstArg() }
+        every { balanceRepository.findByAccountId(accountId) } returns balance
+        every { balanceRepository.saveAmount(any()) } answers { firstArg() }
 
         // Act
         val updatedBalance = balanceService.charge(accountId, chargeAmount)
 
         // Assert
         assertEquals(expectedAmount, updatedBalance.amount)
-        verify(exactly = 1) { balanceService.getByAccountId(accountId) }
-        verify(exactly = 1) { balanceRepository.save(match { it.amount == expectedAmount }) }
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+        verify(exactly = 1) { balanceRepository.saveAmount(match { it.amount == expectedAmount }) }
     }
 
     @Test
@@ -79,18 +79,18 @@ class BalanceServiceUnitTest {
         val initialAmount = BigDecimal("200.00")
         val withdrawAmount = BigDecimal("50.00")
         val expectedAmount = BigDecimal("150.00")
-        val balance = Balance(balanceId = 1, accountId = accountId, amount = initialAmount)
+        val balance = Balance.create(balanceId = 1, accountId = accountId, initialAmount = initialAmount)
 
-        every { balanceService.getByAccountId(accountId) } returns balance
-        every { balanceRepository.save(any()) } answers { firstArg() }
+        every { balanceRepository.findByAccountId(accountId) } returns balance
+        every { balanceRepository.saveAmount(any()) } answers { firstArg() }
 
         // Act
         val updatedBalance = balanceService.withdraw(accountId, withdrawAmount)
 
         // Assert
         assertEquals(expectedAmount, updatedBalance.amount)
-        verify(exactly = 1) { balanceService.getByAccountId(accountId) }
-        verify(exactly = 1) { balanceRepository.save(match { it.amount == expectedAmount }) }
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+        verify(exactly = 1) { balanceRepository.saveAmount(match { it.amount == expectedAmount }) }
     }
 
     @Test
@@ -99,15 +99,15 @@ class BalanceServiceUnitTest {
         val accountId = 1
         val initialAmount = BigDecimal("100.00")
         val withdrawAmount = BigDecimal("150.00")
-        val balance = Balance(balanceId = 1, accountId = accountId, amount = initialAmount)
+        val balance = Balance.create(balanceId = 1, accountId = accountId, initialAmount = initialAmount)
 
-        every {balanceService.getByAccountId(accountId) } returns balance
+        every { balanceRepository.findByAccountId(accountId) } returns balance
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
             balanceService.withdraw(accountId, withdrawAmount)
         }
         assertEquals("Insufficient funds", exception.message)
-        verify(exactly = 1) { balanceService.getByAccountId(accountId) }
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
     }
 }
