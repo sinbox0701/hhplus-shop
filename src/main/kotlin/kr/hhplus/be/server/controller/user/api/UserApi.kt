@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import kr.hhplus.be.server.controller.coupon.dto.response.AccountCouponResponse
 import kr.hhplus.be.server.controller.user.dto.request.BalanceDepositRequest
 import kr.hhplus.be.server.controller.user.dto.request.UserCreateRequest
 import kr.hhplus.be.server.controller.user.dto.request.UserUpdateRequest
@@ -141,4 +142,23 @@ interface UserApi {
         @Parameter(description = "입금 정보", required = true)
         @Valid @RequestBody request: BalanceDepositRequest
     ): ResponseEntity<BalanceResponse>
+    
+    @Operation(summary = "사용자별 쿠폰 목록 조회", description = "특정 사용자에게 발급된 모든 쿠폰 목록을 조회합니다.")
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = [Content(schema = Schema(implementation = AccountCouponResponse::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "사용자를 찾을 수 없음",
+            content = [Content()]
+        )
+    )
+    @GetMapping("/{id}/coupons")
+    fun getUserCoupons(
+        @Parameter(description = "계정 ID", required = true)
+        @PathVariable id: Long
+    ): ResponseEntity<List<AccountCouponResponse>>
 } 

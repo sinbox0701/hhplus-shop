@@ -1,5 +1,13 @@
 package kr.hhplus.be.server.controller.user
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import kr.hhplus.be.server.controller.coupon.dto.response.AccountCouponResponse
+import kr.hhplus.be.server.controller.coupon.dto.response.CouponResponse
 import kr.hhplus.be.server.controller.user.dto.request.BalanceDepositRequest
 import kr.hhplus.be.server.controller.user.dto.request.UserCreateRequest
 import kr.hhplus.be.server.controller.user.dto.request.UserUpdateRequest
@@ -142,5 +150,74 @@ class UserController() {
         )
         
         return ResponseEntity.ok(balanceResponse)
+    }
+
+    @Operation(summary = "사용자별 쿠폰 목록 조회", description = "특정 사용자에게 발급된 모든 쿠폰 목록을 조회합니다.")
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = [Content(schema = Schema(implementation = AccountCouponResponse::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "사용자를 찾을 수 없음",
+            content = [Content()]
+        )
+    )
+    @GetMapping("/{accountId}/coupons")
+    fun getUserCoupons(
+        @Parameter(description = "계정 ID", required = true)
+        @PathVariable accountId: Int
+    ): ResponseEntity<List<AccountCouponResponse>> {
+        // Mock API response
+        val now = LocalDateTime.now()
+        
+        // Mock coupons
+        val coupon1 = CouponResponse(
+            couponId = 1,
+            discountRate = 10.0,
+            description = "신규 가입 축하 쿠폰",
+            startDate = now.minusDays(10),
+            endDate = now.plusDays(20),
+            quantity = 100,
+            remainingQuantity = 80,
+            createdAt = now.minusDays(10),
+            updatedAt = now.minusDays(10)
+        )
+        
+        val coupon2 = CouponResponse(
+            couponId = 2,
+            discountRate = 15.0,
+            description = "첫 구매 감사 쿠폰",
+            startDate = now.minusDays(5),
+            endDate = now.plusDays(25),
+            quantity = 50,
+            remainingQuantity = 45,
+            createdAt = now.minusDays(5),
+            updatedAt = now.minusDays(5)
+        )
+        
+        val accountCoupons = listOf(
+            AccountCouponResponse(
+                accountCouponId = 1,
+                accountId = accountId,
+                couponId = 1,
+                issueDate = now.minusDays(2),
+                issued = true,
+                used = false,
+                coupon = coupon1
+            ),
+            AccountCouponResponse(
+                accountCouponId = 2,
+                accountId = accountId,
+                couponId = 2,
+                issueDate = now.minusDays(1),
+                issued = true,
+                used = true,
+                coupon = coupon2
+            )
+        )
+        return ResponseEntity.ok(accountCoupons)
     }
 } 

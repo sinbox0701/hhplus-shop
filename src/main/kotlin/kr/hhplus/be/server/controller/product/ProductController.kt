@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.controller.product
 
+import kr.hhplus.be.server.controller.product.api.ProductApi
 import kr.hhplus.be.server.controller.product.dto.request.ProductCreateRequest
 import kr.hhplus.be.server.controller.product.dto.request.ProductUpdateRequest
 import kr.hhplus.be.server.controller.product.dto.response.ProductDetailResponse
@@ -16,10 +17,9 @@ import jakarta.validation.Valid
 @RestController
 @RequestMapping("/api/products")
 @Validated
-class ProductController() {
+class ProductController : ProductApi {
 
-    @GetMapping
-    fun getAllProducts(): ResponseEntity<List<ProductResponse>> {
+    override fun getAllProducts(): ResponseEntity<List<ProductResponse>> {
         // Mock API response
         val now = LocalDateTime.now()
         val products = listOf(
@@ -54,10 +54,10 @@ class ProductController() {
         return ResponseEntity.ok(products)
     }
 
-    @GetMapping("/{productId}")
-    fun getProductById(@PathVariable productId: Int): ResponseEntity<ProductDetailResponse> {
+    override fun getProductById(@PathVariable id: Long): ResponseEntity<ProductDetailResponse> {
         // Mock API response
         val now = LocalDateTime.now()
+        val productId = id.toInt()
         val product = ProductDetailResponse(
             productId = productId,
             name = "상품 $productId",
@@ -73,8 +73,7 @@ class ProductController() {
         return ResponseEntity.ok(product)
     }
 
-    @PostMapping
-    fun createProduct(@Valid @RequestBody request: ProductCreateRequest): ResponseEntity<ProductResponse> {
+    override fun createProduct(@Valid @RequestBody request: ProductCreateRequest): ResponseEntity<ProductResponse> {
         // Mock API response
         val now = LocalDateTime.now()
         val createdProduct = ProductResponse(
@@ -96,13 +95,13 @@ class ProductController() {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct)
     }
 
-    @PutMapping("/{productId}")
-    fun updateProduct(
-        @PathVariable productId: Int,
+    override fun updateProduct(
+        @PathVariable id: Long,
         @Valid @RequestBody request: ProductUpdateRequest
     ): ResponseEntity<ProductResponse> {
         // Mock API response
         val now = LocalDateTime.now()
+        val productId = id.toInt()
         
         // 기본 값 설정
         val name = request.name ?: "상품 $productId"
@@ -134,8 +133,7 @@ class ProductController() {
         return ResponseEntity.ok(updatedProduct)
     }
 
-    @DeleteMapping("/{productId}")
-    fun deleteProduct(@PathVariable productId: Int): ResponseEntity<Void> {
+    override fun deleteProduct(@PathVariable id: Long): ResponseEntity<Void> {
         // Mock deletion
         return ResponseEntity.noContent().build()
     }
