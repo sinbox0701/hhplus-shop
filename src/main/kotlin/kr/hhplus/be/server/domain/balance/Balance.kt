@@ -9,8 +9,8 @@ data class Balance private constructor(
 ) {
     companion object {
         private val MIN_BALANCE: BigDecimal = BigDecimal.ZERO
-        private val MAX_BALANCE: BigDecimal = BigDecimal("10000000") // 10,000,000 원
-        private val MAX_TRANSACTION_AMOUNT: BigDecimal = BigDecimal("1000000") // 1,000,000 원
+        private val MAX_BALANCE: BigDecimal = BigDecimal("100000000") // 100,000,000 원
+        private val MAX_TRANSACTION_AMOUNT: BigDecimal = BigDecimal("10000000") // 10,000,000 원
 
         fun create(balanceId: Int, accountId: Int, initialAmount: BigDecimal = MIN_BALANCE): Balance {
             require(initialAmount >= MIN_BALANCE && initialAmount <= MAX_BALANCE) {
