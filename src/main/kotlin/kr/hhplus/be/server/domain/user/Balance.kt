@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.domain.balance
+package kr.hhplus.be.server.domain.user
 
 import java.math.BigDecimal
 

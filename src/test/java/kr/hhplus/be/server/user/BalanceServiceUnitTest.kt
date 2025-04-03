@@ -1,12 +1,12 @@
-package kr.hhplus.be.server.balance
+package kr.hhplus.be.server.user
 
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kr.hhplus.be.server.repository.balance.BalanceRepository
-import kr.hhplus.be.server.service.balance.BalanceService
+import kr.hhplus.be.server.repository.user.BalanceRepository
+import kr.hhplus.be.server.service.user.BalanceService
 import org.junit.jupiter.api.BeforeEach
-import kr.hhplus.be.server.domain.balance.Balance
+import kr.hhplus.be.server.domain.user.Balance
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -61,7 +61,7 @@ class BalanceServiceUnitTest {
         val balance = Balance.create(balanceId = 1, accountId = accountId, initialAmount = initialAmount)
 
         every { balanceRepository.findByAccountId(accountId) } returns balance
-        every { balanceRepository.saveAmount(any()) } answers { firstArg() }
+        every { balanceRepository.update(any()) } answers { firstArg() }
 
         // Act
         val updatedBalance = balanceService.charge(accountId, chargeAmount)
@@ -69,7 +69,7 @@ class BalanceServiceUnitTest {
         // Assert
         assertEquals(expectedAmount, updatedBalance.amount)
         verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
-        verify(exactly = 1) { balanceRepository.saveAmount(match { it.amount == expectedAmount }) }
+        verify(exactly = 1) { balanceRepository.update(match { it.amount == expectedAmount }) }
     }
 
     @Test
@@ -82,7 +82,7 @@ class BalanceServiceUnitTest {
         val balance = Balance.create(balanceId = 1, accountId = accountId, initialAmount = initialAmount)
 
         every { balanceRepository.findByAccountId(accountId) } returns balance
-        every { balanceRepository.saveAmount(any()) } answers { firstArg() }
+        every { balanceRepository.update(any()) } answers { firstArg() }
 
         // Act
         val updatedBalance = balanceService.withdraw(accountId, withdrawAmount)
@@ -90,7 +90,7 @@ class BalanceServiceUnitTest {
         // Assert
         assertEquals(expectedAmount, updatedBalance.amount)
         verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
-        verify(exactly = 1) { balanceRepository.saveAmount(match { it.amount == expectedAmount }) }
+        verify(exactly = 1) { balanceRepository.update(match { it.amount == expectedAmount }) }
     }
 
     @Test

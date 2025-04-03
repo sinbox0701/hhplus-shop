@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.domain.account
+package kr.hhplus.be.server.domain.user
 
 data class Account private constructor(
     val accountId: Int,
@@ -35,4 +35,28 @@ data class Account private constructor(
             return Account(accountId, name, email, loginId, password)
         }
     }
+
+    fun update(
+        newName: String? = null,
+        newEmail: String? = null,
+        newLoginId: String? = null,
+        newPassword: String? = null
+    ): Account {
+        newName?.let { this.name = it }
+        newEmail?.let { this.email = it }
+        newLoginId?.let {
+            require(it.length in MIN_LOGIN_ID_LENGTH..MAX_LOGIN_ID_LENGTH) {
+                "Login ID must be between $MIN_LOGIN_ID_LENGTH and $MAX_LOGIN_ID_LENGTH characters"
+            }
+            this.loginId = it
+        }
+        newPassword?.let {
+            require(PASSWORD_REGEX.matches(it)) {
+                "Password must be a combination of letters and numbers and between $MIN_PASSWORD_LENGTH and $MAX_PASSWORD_LENGTH characters"
+            }
+            this.password = it
+        }
+        return this
+    }
+
 }

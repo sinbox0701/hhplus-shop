@@ -1,9 +1,11 @@
-package kr.hhplus.be.server.repository.account
+package kr.hhplus.be.server.repository.user
 
-import kr.hhplus.be.server.domain.account.Account
+import kr.hhplus.be.server.domain.user.Account
 
 interface AccountRepository {
     fun findById(accountId: Int): Account?
     fun login(loginId: String, password: String): Account?
     fun save(account: Account): Account
+    fun update(account: Account): Account
+    fun delete(account: Account)
 }

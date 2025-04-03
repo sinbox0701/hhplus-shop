@@ -1,7 +1,7 @@
-package kr.hhplus.be.server.service.balance
+package kr.hhplus.be.server.service.user
 
-import kr.hhplus.be.server.domain.balance.Balance
-import kr.hhplus.be.server.repository.balance.BalanceRepository
+import kr.hhplus.be.server.domain.user.Balance
+import kr.hhplus.be.server.repository.user.BalanceRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
@@ -23,7 +23,7 @@ class BalanceService(
         val balance = balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
         balance.amount = balance.amount.add(amount)
-        return balanceRepository.saveAmount(balance)
+        return balanceRepository.update(balance)
     }
 
     fun withdraw(accountId: Int, amount: BigDecimal): Balance {
@@ -33,6 +33,11 @@ class BalanceService(
             throw IllegalArgumentException("Insufficient funds")
         }
         balance.amount = balance.amount.subtract(amount)
-        return balanceRepository.saveAmount(balance)
+        return balanceRepository.update(balance)
+    }
+
+    fun deleteByAccountId(accountId: Int){
+        val  balance = getByAccountId(accountId)
+        balanceRepository.delete(balance)
     }
 }

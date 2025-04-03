@@ -1,6 +1,6 @@
-package kr.hhplus.be.server.account
+package kr.hhplus.be.server.user
 
-import kr.hhplus.be.server.domain.account.Account
+import kr.hhplus.be.server.domain.user.Account
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows

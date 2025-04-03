@@ -1,11 +1,11 @@
-package kr.hhplus.be.server.account
+package kr.hhplus.be.server.user
 
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kr.hhplus.be.server.domain.account.Account
-import kr.hhplus.be.server.repository.account.AccountRepository
-import kr.hhplus.be.server.service.account.AccountService
+import kr.hhplus.be.server.domain.user.Account
+import kr.hhplus.be.server.repository.user.AccountRepository
+import kr.hhplus.be.server.service.user.AccountService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
