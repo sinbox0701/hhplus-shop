@@ -5,7 +5,6 @@ import kr.hhplus.be.server.controller.product.dto.request.ProductUpdateRequest
 import kr.hhplus.be.server.controller.product.dto.response.ProductDetailResponse
 import kr.hhplus.be.server.controller.product.dto.response.ProductOptionResponse
 import kr.hhplus.be.server.controller.product.dto.response.ProductResponse
-import kr.hhplus.be.server.service.product.ProductService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -17,9 +16,7 @@ import jakarta.validation.Valid
 @RestController
 @RequestMapping("/api/products")
 @Validated
-class ProductController(
-    private val productService: ProductService
-) {
+class ProductController() {
 
     @GetMapping
     fun getAllProducts(): ResponseEntity<List<ProductResponse>> {
