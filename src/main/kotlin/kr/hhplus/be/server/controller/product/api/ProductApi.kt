@@ -11,6 +11,7 @@ import kr.hhplus.be.server.controller.product.dto.request.ProductCreateRequest
 import kr.hhplus.be.server.controller.product.dto.request.ProductUpdateRequest
 import kr.hhplus.be.server.controller.product.dto.response.ProductDetailResponse
 import kr.hhplus.be.server.controller.product.dto.response.ProductResponse
+import kr.hhplus.be.server.controller.product.dto.response.TopSellingProductsResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import jakarta.validation.Valid
@@ -47,6 +48,17 @@ interface ProductApi {
         @Parameter(description = "상품 ID", required = true)
         @PathVariable id: Long
     ): ResponseEntity<ProductDetailResponse>
+    
+    @Operation(summary = "인기 상품 조회", description = "최근 3일 동안 가장 많이 팔린 상품 5개를 조회합니다.")
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = [Content(schema = Schema(implementation = TopSellingProductsResponse::class))]
+        )
+    )
+    @GetMapping("/top-selling")
+    fun getTopSellingProducts(): ResponseEntity<TopSellingProductsResponse>
     
     @Operation(summary = "상품 등록", description = "새로운 상품을 등록합니다.")
     @ApiResponses(

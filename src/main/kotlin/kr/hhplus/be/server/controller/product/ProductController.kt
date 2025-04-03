@@ -6,6 +6,8 @@ import kr.hhplus.be.server.controller.product.dto.request.ProductUpdateRequest
 import kr.hhplus.be.server.controller.product.dto.response.ProductDetailResponse
 import kr.hhplus.be.server.controller.product.dto.response.ProductOptionResponse
 import kr.hhplus.be.server.controller.product.dto.response.ProductResponse
+import kr.hhplus.be.server.controller.product.dto.response.TopSellingProductResponse
+import kr.hhplus.be.server.controller.product.dto.response.TopSellingProductsResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -70,6 +72,69 @@ class ProductController : ProductApi {
             updatedAt = now
         )
         return ResponseEntity.ok(product)
+    }
+
+    override fun getTopSellingProducts(): ResponseEntity<TopSellingProductsResponse> {
+        // 현재 시간 기준 최근 3일을 계산
+        val now = LocalDateTime.now()
+        val threeDaysAgo = now.minusDays(3)
+        
+        // Mock API response - 실제로는 OrderRepository를 통해 데이터를 가져와야 함
+        val topSellingProducts = listOf(
+            TopSellingProductResponse(
+                productId = 1L,
+                name = "청바지",
+                description = "편안한 청바지입니다.",
+                price = 29000.0,
+                totalSoldQuantity = 120,
+                createdAt = now.minusDays(10),
+                updatedAt = now.minusDays(1)
+            ),
+            TopSellingProductResponse(
+                productId = 5L,
+                name = "가죽자켓",
+                description = "고급 가죽 재질의 자켓입니다.",
+                price = 89000.0,
+                totalSoldQuantity = 87,
+                createdAt = now.minusDays(15),
+                updatedAt = now.minusDays(2)
+            ),
+            TopSellingProductResponse(
+                productId = 2L,
+                name = "티셔츠",
+                description = "시원한 여름용 티셔츠입니다.",
+                price = 15000.0,
+                totalSoldQuantity = 75,
+                createdAt = now.minusDays(20),
+                updatedAt = now.minusDays(3)
+            ),
+            TopSellingProductResponse(
+                productId = 8L,
+                name = "운동화",
+                description = "편안한 운동화입니다.",
+                price = 55000.0,
+                totalSoldQuantity = 63,
+                createdAt = now.minusDays(12),
+                updatedAt = now.minusDays(1)
+            ),
+            TopSellingProductResponse(
+                productId = 3L,
+                name = "모자",
+                description = "스타일리시한 모자입니다.",
+                price = 12000.0,
+                totalSoldQuantity = 58,
+                createdAt = now.minusDays(30),
+                updatedAt = now.minusDays(5)
+            )
+        )
+        
+        return ResponseEntity.ok(
+            TopSellingProductsResponse(
+                products = topSellingProducts,
+                startDate = threeDaysAgo,
+                endDate = now
+            )
+        )
     }
 
     override fun createProduct(@Valid @RequestBody request: ProductCreateRequest): ResponseEntity<ProductResponse> {

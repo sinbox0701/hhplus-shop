@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.repository.product
 
 import kr.hhplus.be.server.domain.product.ProductOption
-import java.math.BigDecimal
 
 interface ProductOptionRepository {
     fun save(productOption: ProductOption): ProductOption
