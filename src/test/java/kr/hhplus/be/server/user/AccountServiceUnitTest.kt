@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.slot
+import io.mockk.throws
 import kr.hhplus.be.server.domain.user.Account
 import kr.hhplus.be.server.repository.user.AccountRepository
 import kr.hhplus.be.server.service.user.AccountService
@@ -53,6 +54,21 @@ class AccountServiceUnitTest {
     }
 
     @Test
+    fun `계정 조회 시 레포지토리 예외가 발생하면 예외를 전파한다`() {
+        // Arrange
+        val accountId = 1
+        val errorMessage = "데이터베이스 연결 오류"
+        every { accountRepository.findById(accountId) } throws RuntimeException(errorMessage)
+
+        // Act & Assert
+        val exception = assertThrows<RuntimeException> {
+            accountService.getById(accountId)
+        }
+        assertEquals(errorMessage, exception.message)
+        verify(exactly = 1) { accountRepository.findById(accountId) }
+    }
+
+    @Test
     fun `계정이 존재하면 로그인 성공`() {
         // Arrange
         val loginId = "test"
@@ -85,6 +101,22 @@ class AccountServiceUnitTest {
     }
 
     @Test
+    fun `로그인 시 레포지토리 예외가 발생하면 예외를 전파한다`() {
+        // Arrange
+        val loginId = "test"
+        val password = "123456"
+        val errorMessage = "데이터베이스 연결 오류"
+        every { accountRepository.login(loginId, password) } throws RuntimeException(errorMessage)
+
+        // Act & Assert
+        val exception = assertThrows<RuntimeException> {
+            accountService.verify(loginId, password)
+        }
+        assertEquals(errorMessage, exception.message)
+        verify(exactly = 1) { accountRepository.login(loginId, password) }
+    }
+
+    @Test
     fun `계정 생성 성공`() {
         // Arrange
         val account = Account.create(
@@ -101,6 +133,27 @@ class AccountServiceUnitTest {
 
         // Assert
         assertEquals(account, result)
+        verify(exactly = 1) { accountRepository.save(any()) }
+    }
+
+    @Test
+    fun `계정 생성 시 레포지토리 예외가 발생하면 예외를 전파한다`() {
+        // Arrange
+        val account = Account.create(
+            accountId = 1, 
+            name = "Test User", 
+            email = "test@example.com", 
+            loginId = "test", 
+            password = "pass1234"
+        )
+        val errorMessage = "중복된 계정 정보"
+        every { accountRepository.save(any()) } throws RuntimeException(errorMessage)
+
+        // Act & Assert
+        val exception = assertThrows<RuntimeException> {
+            accountService.save(account)
+        }
+        assertEquals(errorMessage, exception.message)
         verify(exactly = 1) { accountRepository.save(any()) }
     }
 
@@ -140,6 +193,46 @@ class AccountServiceUnitTest {
     }
 
     @Test
+    fun `모든 필드 동시에 업데이트 성공`() {
+        // Arrange
+        val accountId = 1
+        val initialAccount = Account.create(
+            accountId = accountId, 
+            name = "Old Name", 
+            email = "old@example.com", 
+            loginId = "oldid", 
+            password = "oldpass1"
+        )
+        
+        val newName = "Complete Update"
+        val newEmail = "complete@example.com"
+        val newLoginId = "newid"
+        val newPassword = "newpass2"
+        
+        val capturedAccount = slot<Account>()
+
+        every { accountRepository.findById(accountId) } returns initialAccount
+        every { accountRepository.update(capture(capturedAccount)) } answers { capturedAccount.captured }
+
+        // Act
+        val result = accountService.update(
+            accountId = accountId,
+            name = newName,
+            email = newEmail,
+            loginId = newLoginId,
+            password = newPassword
+        )
+
+        // Assert
+        assertEquals(newName, result.name)
+        assertEquals(newEmail, result.email)
+        assertEquals(newLoginId, result.loginId)
+        assertEquals(newPassword, result.password)
+        verify(exactly = 1) { accountRepository.findById(accountId) }
+        verify(exactly = 1) { accountRepository.update(any()) }
+    }
+
+    @Test
     fun `계정 업데이트 시 계정을 찾을 수 없으면 예외를 발생시킨다`() {
         // Arrange
         val accountId = 1
@@ -158,6 +251,37 @@ class AccountServiceUnitTest {
         assertEquals("Account not found for accountId: $accountId", exception.message)
         verify(exactly = 1) { accountRepository.findById(accountId) }
         verify(exactly = 0) { accountRepository.update(any()) }
+    }
+
+    @Test
+    fun `계정 업데이트 시 레포지토리 예외가 발생하면 예외를 전파한다`() {
+        // Arrange
+        val accountId = 1
+        val initialAccount = Account.create(
+            accountId = accountId, 
+            name = "Old Name", 
+            email = "old@example.com", 
+            loginId = "oldid", 
+            password = "oldpass1"
+        )
+        val errorMessage = "데이터베이스 업데이트 오류"
+        
+        every { accountRepository.findById(accountId) } returns initialAccount
+        every { accountRepository.update(any()) } throws RuntimeException(errorMessage)
+
+        // Act & Assert
+        val exception = assertThrows<RuntimeException> {
+            accountService.update(
+                accountId = accountId,
+                name = "New Name",
+                email = null,
+                loginId = null,
+                password = null
+            )
+        }
+        assertEquals(errorMessage, exception.message)
+        verify(exactly = 1) { accountRepository.findById(accountId) }
+        verify(exactly = 1) { accountRepository.update(any()) }
     }
 
     @Test
@@ -196,5 +320,30 @@ class AccountServiceUnitTest {
         assertEquals("Account not found for accountId: $accountId", exception.message)
         verify(exactly = 1) { accountRepository.findById(accountId) }
         verify(exactly = 0) { accountRepository.delete(any()) }
+    }
+
+    @Test
+    fun `계정 삭제 시 레포지토리 예외가 발생하면 예외를 전파한다`() {
+        // Arrange
+        val accountId = 1
+        val account = Account.create(
+            accountId = accountId, 
+            name = "Test User", 
+            email = "test@example.com", 
+            loginId = "test", 
+            password = "pass1234"
+        )
+        val errorMessage = "데이터베이스 삭제 오류"
+        
+        every { accountRepository.findById(accountId) } returns account
+        every { accountRepository.delete(account) } throws RuntimeException(errorMessage)
+
+        // Act & Assert
+        val exception = assertThrows<RuntimeException> {
+            accountService.delete(accountId)
+        }
+        assertEquals(errorMessage, exception.message)
+        verify(exactly = 1) { accountRepository.findById(accountId) }
+        verify(exactly = 1) { accountRepository.delete(account) }
     }
 }

@@ -51,6 +51,23 @@ class BalanceUnitTest {
         }
         assertEquals("Initial amount must be between 0 and 10000000", exception.message)
     }
+    
+    @Test
+    fun `create Balance with boundary values succeeds`() {
+        // Arrange
+        val balanceId = 1
+        val accountId = 100
+        val minAmount = BigDecimal.ZERO
+        val maxAmount = BigDecimal("10000000")
+        
+        // Act & Assert - 최소값
+        val minBalance = Balance.create(balanceId, accountId, minAmount)
+        assertEquals(minAmount, minBalance.amount)
+        
+        // Act & Assert - 최대값
+        val maxBalance = Balance.create(balanceId, accountId, maxAmount)
+        assertEquals(maxAmount, maxBalance.amount)
+    }
 
     @Test
     fun `charge valid amount updates balance`() {
@@ -91,6 +108,38 @@ class BalanceUnitTest {
         }
         assertEquals("Resulting balance cannot exceed 10000000", exception.message)
     }
+    
+    @Test
+    fun `charge with maximum allowed transaction amount succeeds`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("5000000"))
+        val maxChargeAmount = BigDecimal("1000000") // 1,000,000원 (최대 충전 가능 금액)
+        val expectedAmount = BigDecimal("6000000") // 6,000,000원
+
+        // Act
+        balance.charge(maxChargeAmount)
+
+        // Assert
+        assertEquals(expectedAmount, balance.amount)
+    }
+    
+    @Test
+    fun `multiple consecutive charge operations succeed`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("1000000"))
+        val chargeAmount1 = BigDecimal("500000") // 첫 번째 충전: 500,000원
+        val chargeAmount2 = BigDecimal("300000") // 두 번째 충전: 300,000원 
+        val chargeAmount3 = BigDecimal("200000") // 세 번째 충전: 200,000원
+        val expectedFinalAmount = BigDecimal("2000000") // 1,000,000 + 500,000 + 300,000 + 200,000 = 2,000,000원
+
+        // Act
+        balance.charge(chargeAmount1)
+            .charge(chargeAmount2)
+            .charge(chargeAmount3)
+
+        // Assert
+        assertEquals(expectedFinalAmount, balance.amount)
+    }
 
     @Test
     fun `withdraw valid amount updates balance`() {
@@ -130,6 +179,60 @@ class BalanceUnitTest {
             balance.withdraw(withdrawAmount)
         }
         assertEquals("Insufficient funds", exception.message)
+    }
+    
+    @Test
+    fun `withdraw with maximum allowed transaction amount succeeds`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("5000000"))
+        val maxWithdrawAmount = BigDecimal("1000000") // 1,000,000원 (최대 출금 가능 금액)
+        val expectedAmount = BigDecimal("4000000") // 5,000,000 - 1,000,000 = 4,000,000원
+
+        // Act
+        balance.withdraw(maxWithdrawAmount)
+
+        // Assert
+        assertEquals(expectedAmount, balance.amount)
+    }
+    
+    @Test
+    fun `multiple consecutive withdraw operations succeed`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("2000000"))
+        val withdrawAmount1 = BigDecimal("500000") // 첫 번째 출금: 500,000원
+        val withdrawAmount2 = BigDecimal("300000") // 두 번째 출금: 300,000원 
+        val withdrawAmount3 = BigDecimal("200000") // 세 번째 출금: 200,000원
+        val expectedFinalAmount = BigDecimal("1000000") // 2,000,000 - 500,000 - 300,000 - 200,000 = 1,000,000원
+
+        // Act
+        balance.withdraw(withdrawAmount1)
+            .withdraw(withdrawAmount2)
+            .withdraw(withdrawAmount3)
+
+        // Assert
+        assertEquals(expectedFinalAmount, balance.amount)
+    }
+    
+    @Test
+    fun `mixed charge and withdraw operations succeed`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("1000000"))
+        val chargeAmount1 = BigDecimal("500000") // 첫 번째 충전: 500,000원
+        val withdrawAmount1 = BigDecimal("200000") // 첫 번째 출금: 200,000원
+        val chargeAmount2 = BigDecimal("300000") // 두 번째 충전: 300,000원
+        val withdrawAmount2 = BigDecimal("100000") // 두 번째 출금: 100,000원
+        
+        // 1,000,000 + 500,000 - 200,000 + 300,000 - 100,000 = 1,500,000원
+        val expectedFinalAmount = BigDecimal("1500000")
+
+        // Act
+        balance.charge(chargeAmount1)
+            .withdraw(withdrawAmount1)
+            .charge(chargeAmount2)
+            .withdraw(withdrawAmount2)
+
+        // Assert
+        assertEquals(expectedFinalAmount, balance.amount)
     }
 
     @Test
@@ -182,5 +285,18 @@ class BalanceUnitTest {
             balance.withdraw(zeroAmount)
         }
         assertEquals("Withdrawal amount must be positive", exception.message)
+    }
+    
+    @Test
+    fun `withdraw entire balance succeeds`() {
+        // Arrange
+        val initialAmount = BigDecimal("1000000")
+        val balance = Balance.create(1, 100, initialAmount)
+        
+        // Act
+        balance.withdraw(initialAmount)
+        
+        // Assert
+        assertEquals(BigDecimal.ZERO, balance.amount)
     }
 }
