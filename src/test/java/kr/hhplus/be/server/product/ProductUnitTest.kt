@@ -4,23 +4,22 @@ import kr.hhplus.be.server.domain.product.Product
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
-import java.math.BigDecimal
 
 class ProductUnitTest {
 
     @Test
     fun `create returns Product when valid parameters provided`() {
         // Arrange
-        val productId = 1
+        val productId = 1L
         val name = "Test Product"
         val description = "A test product"
-        val price = BigDecimal("100.00")
+        val price = 100.0
 
         // Act
         val product = Product.create(productId, name, description, price)
 
         // Assert
-        assertEquals(productId, product.productId)
+        assertEquals(productId, product.id)
         assertEquals(name, product.name)
         assertEquals(description, product.description)
         assertEquals(price, product.price)
@@ -29,10 +28,10 @@ class ProductUnitTest {
     @Test
     fun `create throws exception when price below minimum`() {
         // Arrange
-        val productId = 1
+        val productId = 1L
         val name = "Test Product"
         val description = "A test product"
-        val invalidPrice = BigDecimal("0.5") // Below minimum price of 1
+        val invalidPrice = 0.5 // Below minimum price of 1
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
@@ -44,10 +43,10 @@ class ProductUnitTest {
     @Test
     fun `create throws exception when price above maximum`() {
         // Arrange
-        val productId = 1
+        val productId = 1L
         val name = "Test Product"
         val description = "A test product"
-        val invalidPrice = BigDecimal("1000001") // Above maximum price of 1000000
+        val invalidPrice = 1000001.0 // Above maximum price of 1000000
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
@@ -59,14 +58,14 @@ class ProductUnitTest {
     @Test
     fun `create with boundary values succeeds`() {
         // Arrange
-        val productId = 1
+        val productId = 1L
         val name = "Test Product"
         val description = "A test product"
         
         // Minimum price boundary
-        val minPrice = BigDecimal("1")
+        val minPrice = 1.0
         // Maximum price boundary
-        val maxPrice = BigDecimal("1000000")
+        val maxPrice = 1000000.0
         
         // Act & Assert - Min price
         val minPriceProduct = Product.create(productId, name, description, minPrice)
@@ -80,10 +79,10 @@ class ProductUnitTest {
     @Test
     fun `create with empty description succeeds`() {
         // Arrange
-        val productId = 1
+        val productId = 1L
         val name = "Test Product"
         val emptyDescription = ""
-        val price = BigDecimal("100.00")
+        val price = 100.0
 
         // Act
         val product = Product.create(productId, name, emptyDescription, price)
@@ -96,10 +95,10 @@ class ProductUnitTest {
     fun `update name with boundary length values`() {
         // Arrange
         val product = Product.create(
-            productId = 1,
+            id = 1L,
             name = "Original",
             description = "Original description",
-            price = BigDecimal("100.00")
+            price = 100.0
         )
         
         // Minimum name length (3 characters)
@@ -120,10 +119,10 @@ class ProductUnitTest {
     fun `update with name exceeding maximum length throws exception`() {
         // Arrange
         val product = Product.create(
-            productId = 1,
+            id = 1L,
             name = "Original Product",
             description = "Original description",
-            price = BigDecimal("100.00")
+            price = 100.0
         )
         val invalidName = "ThisNameIsTooLongAndExceedsTwentyCharacters" // 더 긴 이름 (> 20자)
 
@@ -138,14 +137,14 @@ class ProductUnitTest {
     fun `update with valid values successfully updates the product`() {
         // Arrange
         val product = Product.create(
-            productId = 1,
+            id = 1L,
             name = "Original Product",
             description = "Original description",
-            price = BigDecimal("100.00")
+            price = 100.0
         )
         val newName = "Updated Product"
         val newDescription = "Updated description"
-        val newPrice = BigDecimal("200.00")
+        val newPrice = 200.0
 
         // Act
         val updatedProduct = product.update(
@@ -164,10 +163,10 @@ class ProductUnitTest {
     fun `update with invalid name throws exception`() {
         // Arrange
         val product = Product.create(
-            productId = 1,
+            id = 1L,
             name = "Original Product",
             description = "Original description",
-            price = BigDecimal("100.00")
+            price = 100.0
         )
         val invalidName = "AB" // Too short (< 3 characters)
 
@@ -182,12 +181,12 @@ class ProductUnitTest {
     fun `update with invalid price throws exception`() {
         // Arrange
         val product = Product.create(
-            productId = 1,
+            id = 1L,
             name = "Original Product",
             description = "Original description",
-            price = BigDecimal("100.00")
+            price = 100.0
         )
-        val invalidPrice = BigDecimal("1000001") // Above maximum
+        val invalidPrice = 1000001.0 // Above maximum
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
@@ -201,10 +200,10 @@ class ProductUnitTest {
         // Arrange
         val originalName = "Original Product"
         val originalDescription = "Original description"
-        val originalPrice = BigDecimal("100.00")
+        val originalPrice = 100.0
 
         val product = Product.create(
-            productId = 1,
+            id = 1L,
             name = originalName,
             description = originalDescription,
             price = originalPrice

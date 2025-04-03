@@ -1,10 +1,9 @@
 package kr.hhplus.be.server.controller.user.dto.response
 
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class UserDetailResponse(
-    val accountId: Int,
+    val id: Long,
     val name: String,
     val email: String,
     val loginId: String,
@@ -14,9 +13,9 @@ data class UserDetailResponse(
 )
 
 data class BalanceResponse(
-    val balanceId: Int,
-    val accountId: Int,
-    val amount: BigDecimal,
+    val id: Long,
+    val accountId: Long,
+    val amount: Double,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ) 

@@ -1,30 +1,29 @@
 package kr.hhplus.be.server.domain.user
 
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class Balance private constructor(
-    val balanceId: Int,
-    val accountId: Int,
-    var amount: BigDecimal,
+    val id: Long,
+    val accountId: Long,
+    var amount: Double,
     var createdAt: LocalDateTime,
     var updatedAt: LocalDateTime
 ) {
     companion object {
-        private val MIN_BALANCE: BigDecimal = BigDecimal.ZERO
-        private val MAX_BALANCE: BigDecimal = BigDecimal("100000000") // 100,000,000 원
-        private val MAX_TRANSACTION_AMOUNT: BigDecimal = BigDecimal("10000000") // 10,000,000 원
+        private val MIN_BALANCE: Double = 0.0
+        private val MAX_BALANCE: Double = 100000000.0 // 100,000,000 원
+        private val MAX_TRANSACTION_AMOUNT: Double = 10000000.0 // 10,000,000 원
 
-        fun create(balanceId: Int, accountId: Int, initialAmount: BigDecimal = MIN_BALANCE): Balance {
+        fun create(id: Long, accountId: Long, initialAmount: Double = MIN_BALANCE): Balance {
             require(initialAmount >= MIN_BALANCE && initialAmount <= MAX_BALANCE) {
                 "Initial amount must be between $MIN_BALANCE and $MAX_BALANCE"
             }
-            return Balance(balanceId, accountId, initialAmount, LocalDateTime.now(), LocalDateTime.now())
+            return Balance(id, accountId, initialAmount, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 
-    fun charge(amount: BigDecimal): Balance {
-        require(amount > BigDecimal.ZERO) { "Charge amount must be positive" }
+    fun charge(amount: Double): Balance {
+        require(amount > 0) { "Charge amount must be positive" }
         require(amount <= MAX_TRANSACTION_AMOUNT) {
             "Charge amount cannot exceed $MAX_TRANSACTION_AMOUNT"
         }
@@ -37,8 +36,8 @@ data class Balance private constructor(
         return this
     }
 
-    fun withdraw(amount: BigDecimal): Balance {
-        require(amount > BigDecimal.ZERO) { "Withdrawal amount must be positive" }
+    fun withdraw(amount: Double): Balance {
+        require(amount > 0) { "Withdrawal amount must be positive" }
         require(amount <= MAX_TRANSACTION_AMOUNT) {
             "Withdrawal amount cannot exceed $MAX_TRANSACTION_AMOUNT"
         }

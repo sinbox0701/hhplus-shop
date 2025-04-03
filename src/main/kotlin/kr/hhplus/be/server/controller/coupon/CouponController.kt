@@ -31,7 +31,7 @@ class CouponController : CouponApi {
         val now = LocalDateTime.now()
         val coupons = listOf(
             CouponResponse(
-                couponId = 1,
+                id = 1L,
                 discountRate = 10.0,
                 description = "신규 가입 축하 쿠폰",
                 startDate = now.minusDays(10),
@@ -42,7 +42,7 @@ class CouponController : CouponApi {
                 updatedAt = now.minusDays(10)
             ),
             CouponResponse(
-                couponId = 2,
+                id = 2L,
                 discountRate = 15.0,
                 description = "첫 구매 감사 쿠폰",
                 startDate = now.minusDays(5),
@@ -58,13 +58,12 @@ class CouponController : CouponApi {
 
     @GetMapping("/{couponId}")
     override fun getCouponById(
-        @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int
+        @PathVariable couponId: Long
     ): ResponseEntity<CouponResponse> {
         // Mock API response
         val now = LocalDateTime.now()
         val coupon = CouponResponse(
-            couponId = couponId,
+            id = couponId,
             discountRate = 10.0,
             description = "쿠폰 $couponId",
             startDate = now.minusDays(10),
@@ -79,13 +78,12 @@ class CouponController : CouponApi {
 
     @PostMapping
     override fun createCoupon(
-        @Parameter(description = "쿠폰 생성 정보", required = true)
         @Valid @RequestBody request: CouponCreateRequest
     ): ResponseEntity<CouponResponse> {
         // Mock API response
         val now = LocalDateTime.now()
         val createdCoupon = CouponResponse(
-            couponId = 3,
+            id = 3L,
             discountRate = request.discountRate,
             description = request.description,
             startDate = request.startDate,
@@ -100,10 +98,7 @@ class CouponController : CouponApi {
 
     @PutMapping("/{couponId}")
     override fun updateCoupon(
-        @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int,
-        
-        @Parameter(description = "쿠폰 수정 정보", required = true)
+        @PathVariable couponId: Long,
         @Valid @RequestBody request: CouponUpdateRequest
     ): ResponseEntity<CouponResponse> {
         // Mock API response
@@ -117,7 +112,7 @@ class CouponController : CouponApi {
         val quantity = request.quantity ?: 100
         
         val updatedCoupon = CouponResponse(
-            couponId = couponId,
+            id = couponId,
             discountRate = discountRate,
             description = description,
             startDate = startDate,
@@ -132,11 +127,10 @@ class CouponController : CouponApi {
 
     @DeleteMapping("/{couponId}")
     override fun deleteCoupon(
-        @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int
+        @PathVariable couponId: Long
     ): ResponseEntity<Void> {
         // Mock deletion - assume coupon with ID 999 is already issued and cannot be deleted
-        if (couponId == 999) {
+        if (couponId == 999L) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
         return ResponseEntity.noContent().build()
@@ -144,10 +138,7 @@ class CouponController : CouponApi {
 
     @PostMapping("/{couponId}/issue")
     override fun issueCoupon(
-        @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int,
-        
-        @Parameter(description = "쿠폰 발급 정보", required = true)
+        @PathVariable couponId: Long,
         @Valid @RequestBody request: CouponIssueRequest
     ): ResponseEntity<AccountCouponResponse> {
         // Mock API response
@@ -155,7 +146,7 @@ class CouponController : CouponApi {
         
         // Mock coupon
         val coupon = CouponResponse(
-            couponId = couponId,
+            id = couponId,
             discountRate = 10.0,
             description = "쿠폰 $couponId",
             startDate = now.minusDays(10),
@@ -167,12 +158,12 @@ class CouponController : CouponApi {
         )
         
         // Mock coupon issue - assume coupon with ID 888 is out of stock
-        if (couponId == 888) {
+        if (couponId == 888L) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
         
         val issuedCoupon = AccountCouponResponse(
-            accountCouponId = 1,
+            id = 1L,
             accountId = request.accountId,
             couponId = couponId,
             issueDate = now,
@@ -183,25 +174,22 @@ class CouponController : CouponApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(issuedCoupon)
     }
 
-    @PostMapping("/{accountId}/use/{accountCouponId}")
+    @PostMapping("/account/{accountId}/coupons/{accountCouponId}/use")
     override fun useCoupon(
-        @Parameter(description = "계정 ID", required = true)
-        @PathVariable accountId: Int,
-        
-        @Parameter(description = "계정 쿠폰 ID", required = true)
-        @PathVariable accountCouponId: Int
+        @PathVariable accountId: Long,
+        @PathVariable accountCouponId: Long
     ): ResponseEntity<AccountCouponResponse> {
         // Mock API response
         val now = LocalDateTime.now()
         
         // Mock error case - assume accountCouponId 777 is already used
-        if (accountCouponId == 777) {
+        if (accountCouponId == 777L) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
         
         // Mock coupon
         val coupon = CouponResponse(
-            couponId = 1,
+            id = 1L,
             discountRate = 10.0,
             description = "신규 가입 축하 쿠폰",
             startDate = now.minusDays(10),
@@ -213,9 +201,9 @@ class CouponController : CouponApi {
         )
         
         val usedCoupon = AccountCouponResponse(
-            accountCouponId = accountCouponId,
+            id = 1L,
             accountId = accountId,
-            couponId = 1,
+            couponId = accountCouponId,
             issueDate = now.minusDays(2),
             issued = true,
             used = true,

@@ -3,7 +3,7 @@ package kr.hhplus.be.server.domain.coupon
 import java.time.LocalDateTime
 
 data class Coupon private constructor(
-    val couponId: Int,
+    val id: Long,
     var discountRate: Double,
     var description: String,
     var startDate: LocalDateTime,
@@ -24,7 +24,7 @@ data class Coupon private constructor(
         const val MAX_DESCRIPTION_LENGTH = 30
         
         fun create(
-            couponId: Int,
+            id: Long,
             discountRate: Double,
             description: String,
             startDate: LocalDateTime,
@@ -38,7 +38,7 @@ data class Coupon private constructor(
             
             val now = LocalDateTime.now()
             return Coupon(
-                couponId = couponId,
+                id = id,
                 discountRate = discountRate,
                 description = description,
                 startDate = startDate,

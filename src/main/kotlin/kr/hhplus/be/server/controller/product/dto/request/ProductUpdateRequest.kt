@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.controller.product.dto.request
 
-import java.math.BigDecimal
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Size
@@ -16,7 +15,7 @@ data class ProductUpdateRequest(
     
     @field:DecimalMin(value = "1", message = "가격은 1원 이상이어야 합니다")
     @field:DecimalMax(value = "1000000", message = "가격은 100만원 이하여야 합니다")
-    val price: BigDecimal? = null,
+    val price: Double? = null,
     
     @field:Size(max = 20, message = "상품 옵션은 최대 20개까지 등록 가능합니다")
     @field:Valid
@@ -24,13 +23,13 @@ data class ProductUpdateRequest(
 )
 
 data class ProductOptionUpdateRequest(
-    val optionId: Int,
+    val optionId: Long,
     
     @field:Size(min = 1, max = 10, message = "옵션명은 1자 이상 10자 이하여야 합니다")
     val name: String? = null,
     
     @field:DecimalMin(value = "0", message = "추가 가격은 0원 이상이어야 합니다")
-    val additionalPrice: BigDecimal? = null,
+    val additionalPrice: Double? = null,
     
     @field:Min(value = 0, message = "재고 수량은 0개 이상이어야 합니다")
     @field:jakarta.validation.constraints.Max(value = 1000, message = "재고 수량은 1000개 이하여야 합니다")

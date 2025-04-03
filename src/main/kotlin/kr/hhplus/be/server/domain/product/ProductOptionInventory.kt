@@ -1,11 +1,10 @@
 package kr.hhplus.be.server.domain.product
 
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class ProductOptionInventory private constructor(
-    val inventoryId: Int,
-    val optionId: Int,
+    val id: Long,
+    val optionId: Long,
     var availableQuantity: Int,
     var createdAt: LocalDateTime,
     var updatedAt: LocalDateTime
@@ -14,11 +13,11 @@ data class ProductOptionInventory private constructor(
         private const val MIN_AVAILABLE_QUANTITY = 0
         private const val MAX_AVAILABLE_QUANTITY = 1000
 
-        fun create(inventoryId: Int, optionId: Int, availableQuantity: Int): ProductOptionInventory {
+        fun create(id: Long, optionId: Long, availableQuantity: Int): ProductOptionInventory {
             require(availableQuantity in MIN_AVAILABLE_QUANTITY..MAX_AVAILABLE_QUANTITY) {
                 "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
             }
-            return ProductOptionInventory(inventoryId, optionId, availableQuantity, LocalDateTime.now(), LocalDateTime.now())
+            return ProductOptionInventory(id, optionId, availableQuantity, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 

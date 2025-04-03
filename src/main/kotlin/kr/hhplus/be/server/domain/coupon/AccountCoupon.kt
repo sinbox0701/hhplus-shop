@@ -3,21 +3,21 @@ package kr.hhplus.be.server.domain.coupon
 import java.time.LocalDateTime
 
 data class AccountCoupon private constructor(
-    val accountCouponId: Int,
-    val accountId: Int,
-    val couponId: Int,
+    val id: Long,
+    val accountId: Long,
+    val couponId: Long,
     var issueDate: LocalDateTime,
     var issued: Boolean,
     var used: Boolean
 ) {
     companion object {
         fun create(
-            accountCouponId: Int,
-            accountId: Int,
-            couponId: Int
+            id: Long,
+            accountId: Long,
+            couponId: Long
         ): AccountCoupon {
             return AccountCoupon(
-                accountCouponId = accountCouponId,
+                id = id,
                 accountId = accountId,
                 couponId = couponId,
                 issueDate = LocalDateTime.MIN,

@@ -3,7 +3,7 @@ package kr.hhplus.be.server.domain.user
 import java.time.LocalDateTime
 
 data class Account private constructor(
-    val accountId: Int,
+    val id: Long,
     var name: String,
     var email: String,
     var loginId: String,
@@ -24,7 +24,7 @@ data class Account private constructor(
 
 
         fun create(
-            accountId: Int,
+            id: Long,
             name: String,
             email: String,
             loginId: String,
@@ -36,7 +36,7 @@ data class Account private constructor(
             require(PASSWORD_REGEX.matches(password)) {
                 "Password must be a combination of letters and numbers and between $MIN_PASSWORD_LENGTH and $MAX_PASSWORD_LENGTH characters"
             }
-            return Account(accountId, name, email, loginId, password, LocalDateTime.now(), LocalDateTime.now())
+            return Account(id, name, email, loginId, password, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 

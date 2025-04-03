@@ -5,8 +5,8 @@ import java.math.BigDecimal
 
 interface ProductOptionRepository {
     fun save(productOption: ProductOption): ProductOption
-    fun findById(optionId: Int): ProductOption?
-    fun findByProductId(productId: Int): List<ProductOption>
+    fun findById(optionId: Long): ProductOption?
+    fun findByProductId(productId: Long): List<ProductOption>
     fun update(productOption: ProductOption): ProductOption
-    fun delete(optionId: Int)
+    fun delete(optionId: Long)
 } 

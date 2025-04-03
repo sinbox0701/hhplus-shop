@@ -46,7 +46,7 @@ interface CouponApi {
     @GetMapping("/{couponId}")
     fun getCouponById(
         @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int
+        @PathVariable couponId: Long
     ): ResponseEntity<CouponResponse>
     
     @Operation(summary = "쿠폰 생성", description = "새로운 쿠폰을 생성합니다.")
@@ -89,7 +89,7 @@ interface CouponApi {
     @PutMapping("/{couponId}")
     fun updateCoupon(
         @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int,
+        @PathVariable couponId: Long,
         
         @Parameter(description = "쿠폰 수정 정보", required = true)
         @Valid @RequestBody request: CouponUpdateRequest
@@ -116,7 +116,7 @@ interface CouponApi {
     @DeleteMapping("/{couponId}")
     fun deleteCoupon(
         @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int
+        @PathVariable couponId: Long
     ): ResponseEntity<Void>
     
     @Operation(summary = "쿠폰 발급", description = "사용자에게 쿠폰을 발급합니다. 쿠폰은 선착순으로 제한된 수량만큼만 발급됩니다.")
@@ -140,32 +140,36 @@ interface CouponApi {
     @PostMapping("/{couponId}/issue")
     fun issueCoupon(
         @Parameter(description = "쿠폰 ID", required = true)
-        @PathVariable couponId: Int,
+        @PathVariable couponId: Long,
         
         @Parameter(description = "쿠폰 발급 정보", required = true)
         @Valid @RequestBody request: CouponIssueRequest
     ): ResponseEntity<AccountCouponResponse>
     
-    @Operation(summary = "사용자별 쿠폰 목록 조회", description = "특정 사용자에게 발급된 모든 쿠폰 목록을 조회합니다.")
+    @Operation(summary = "쿠폰 사용", description = "사용자의 쿠폰을 사용 처리합니다.")
     @ApiResponses(
         ApiResponse(
             responseCode = "200",
-            description = "조회 성공",
+            description = "쿠폰 사용 성공",
             content = [Content(schema = Schema(implementation = AccountCouponResponse::class))]
         ),
         ApiResponse(
+            responseCode = "400",
+            description = "잘못된 요청 또는 이미 사용된 쿠폰",
+            content = [Content()]
+        ),
+        ApiResponse(
             responseCode = "404",
-            description = "사용자를 찾을 수 없음",
+            description = "쿠폰 또는 사용자를 찾을 수 없음",
             content = [Content()]
         )
     )
-    
     @PostMapping("/account/{accountId}/coupons/{accountCouponId}/use")
     fun useCoupon(
         @Parameter(description = "계정 ID", required = true)
-        @PathVariable accountId: Int,
+        @PathVariable accountId: Long,
         
         @Parameter(description = "계정 쿠폰 ID", required = true)
-        @PathVariable accountCouponId: Int
+        @PathVariable accountCouponId: Long
     ): ResponseEntity<AccountCouponResponse>
 } 

@@ -1,13 +1,12 @@
 package kr.hhplus.be.server.domain.product
 
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class ProductOption private constructor(
-    val optionId: Int,
-    val productId: Int,
+    val id: Long,
+    val productId: Long,
     var name: String,
-    var additionalPrice: BigDecimal,
+    var additionalPrice: Double,
     var createdAt: LocalDateTime,
     var updatedAt: LocalDateTime
 ) {
@@ -15,18 +14,18 @@ data class ProductOption private constructor(
         private const val MIN_NAME_LENGTH = 1
         private const val MAX_NAME_LENGTH = 10
 
-        fun create(optionId: Int, productId: Int, name: String, additionalPrice: BigDecimal, productPrice: BigDecimal): ProductOption {
+        fun create(id: Long, productId: Long, name: String, additionalPrice: Double, productPrice: Double): ProductOption {
             require(name.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
                 "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
             }
             require(additionalPrice <= productPrice) {
                 "Additional price must not exceed product price"
             }
-            return ProductOption(optionId, productId, name, additionalPrice, LocalDateTime.now(), LocalDateTime.now())
+            return ProductOption(id, productId, name, additionalPrice, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 
-    fun update(name: String? = null, additionalPrice: BigDecimal? = null, productPrice: BigDecimal): ProductOption {
+    fun update(name: String? = null, additionalPrice: Double? = null, productPrice: Double): ProductOption {
         name?.let {
             require(it.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
                 "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
