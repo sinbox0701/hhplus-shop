@@ -84,4 +84,106 @@ class AccountUnitTest {
             exception.message
         )
     }
+
+    @Test
+    fun `update with valid values successfully updates the account`() {
+        // Arrange
+        val account = Account.create(
+            accountId = 1, 
+            name = "Old Name", 
+            email = "old@example.com", 
+            loginId = "oldid", 
+            password = "oldpass1"
+        )
+        val newName = "New Name"
+        val newEmail = "new@example.com"
+        val newLoginId = "newid"
+        val newPassword = "newpass2"
+        
+        // Act
+        val updatedAccount = account.update(
+            newName = newName,
+            newEmail = newEmail,
+            newLoginId = newLoginId,
+            newPassword = newPassword
+        )
+        
+        // Assert
+        assertEquals(newName, updatedAccount.name)
+        assertEquals(newEmail, updatedAccount.email)
+        assertEquals(newLoginId, updatedAccount.loginId)
+        assertEquals(newPassword, updatedAccount.password)
+    }
+    
+    @Test
+    fun `update with invalid loginId throws exception`() {
+        // Arrange
+        val account = Account.create(
+            accountId = 1, 
+            name = "User", 
+            email = "user@example.com", 
+            loginId = "valid1", 
+            password = "valid123"
+        )
+        val invalidLoginId = "verylongloginid" // Too long
+        
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            account.update(newLoginId = invalidLoginId)
+        }
+        assertEquals(
+            "Login ID must be between ${Account.MIN_LOGIN_ID_LENGTH} and ${Account.MAX_LOGIN_ID_LENGTH} characters",
+            exception.message
+        )
+    }
+    
+    @Test
+    fun `update with invalid password throws exception`() {
+        // Arrange
+        val account = Account.create(
+            accountId = 1, 
+            name = "User", 
+            email = "user@example.com", 
+            loginId = "valid1", 
+            password = "valid123"
+        )
+        val invalidPassword = "onlyletters" // No numbers
+        
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            account.update(newPassword = invalidPassword)
+        }
+        assertEquals(
+            "Password must be a combination of letters and numbers and between ${Account.MIN_PASSWORD_LENGTH} and ${Account.MAX_PASSWORD_LENGTH} characters",
+            exception.message
+        )
+    }
+    
+    @Test
+    fun `partial update only updates provided fields`() {
+        // Arrange
+        val originalName = "Original Name"
+        val originalEmail = "original@example.com"
+        val originalLoginId = "origId"
+        val originalPassword = "origPass1"
+        
+        val account = Account.create(
+            accountId = 1, 
+            name = originalName, 
+            email = originalEmail, 
+            loginId = originalLoginId, 
+            password = originalPassword
+        )
+        
+        val newName = "New Name"
+        
+        // Act - only update name
+        val updatedAccount = account.update(newName = newName)
+        
+        // Assert
+        assertEquals(newName, updatedAccount.name)
+        assertEquals(originalEmail, updatedAccount.email)
+        assertEquals(originalLoginId, updatedAccount.loginId)
+        assertEquals(originalPassword, updatedAccount.password)
+    }
 }

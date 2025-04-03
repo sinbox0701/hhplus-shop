@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.service
+package kr.hhplus.be.server.service.product
 
 import kr.hhplus.be.server.domain.product.Product
 import kr.hhplus.be.server.repository.product.ProductRepository
@@ -15,7 +15,7 @@ class ProductService (
     }
 
     fun getById(productId: Int): Product {
-        return productRepository.findById(productId) ?: throw IllegalArgumentException("Account not found for accountId: $productId")
+        return productRepository.findById(productId) ?: throw IllegalArgumentException("Product not found for productId: $productId")
     }
 
     fun update(productId: Int, name: String?, description: String?, price: BigDecimal?): Product {
@@ -23,8 +23,8 @@ class ProductService (
         val product = getById(productId)
         // 도메인 객체의 update 함수로 필드 업데이트 (옵션 값이 null이 아니면 해당 필드 업데이트)
         product.update(name, description, price)
-        // 변경된 상품을 저장(Repository 인터페이스에 정의된 update 메서드를 통해 저장)
-        return productRepository.update(productId, name, description, price)
+        // 변경된 상품을 저장
+        return productRepository.update(product)
     }
 
     fun delete(productId: Int) {

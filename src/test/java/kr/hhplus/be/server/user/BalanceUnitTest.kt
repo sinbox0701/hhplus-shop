@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
 
-class BalanceTest {
+class BalanceUnitTest {
 
     @Test
     fun `create Balance with valid initial amount`() {
@@ -130,5 +130,57 @@ class BalanceTest {
             balance.withdraw(withdrawAmount)
         }
         assertEquals("Insufficient funds", exception.message)
+    }
+
+    @Test
+    fun `charge negative amount throws exception`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("5000000"))
+        val negativeAmount = BigDecimal("-100")
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balance.charge(negativeAmount)
+        }
+        assertEquals("Charge amount must be positive", exception.message)
+    }
+
+    @Test
+    fun `withdraw negative amount throws exception`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("5000000"))
+        val negativeAmount = BigDecimal("-100")
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balance.withdraw(negativeAmount)
+        }
+        assertEquals("Withdrawal amount must be positive", exception.message)
+    }
+
+    @Test
+    fun `charge zero amount throws exception`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("5000000"))
+        val zeroAmount = BigDecimal.ZERO
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balance.charge(zeroAmount)
+        }
+        assertEquals("Charge amount must be positive", exception.message)
+    }
+
+    @Test
+    fun `withdraw zero amount throws exception`() {
+        // Arrange
+        val balance = Balance.create(1, 100, BigDecimal("5000000"))
+        val zeroAmount = BigDecimal.ZERO
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balance.withdraw(zeroAmount)
+        }
+        assertEquals("Withdrawal amount must be positive", exception.message)
     }
 }

@@ -22,22 +22,23 @@ class BalanceService(
     fun charge(accountId: Int, amount: BigDecimal): Balance {
         val balance = balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
-        balance.amount = balance.amount.add(amount)
+        
+        // Use domain method for validation and update
+        balance.charge(amount)
         return balanceRepository.update(balance)
     }
 
     fun withdraw(accountId: Int, amount: BigDecimal): Balance {
         val balance = balanceRepository.findByAccountId(accountId)
             ?: throw IllegalArgumentException("Balance not found for account: $accountId")
-        if (balance.amount < amount) {
-            throw IllegalArgumentException("Insufficient funds")
-        }
-        balance.amount = balance.amount.subtract(amount)
+        
+        // Use domain method for validation and update
+        balance.withdraw(amount)
         return balanceRepository.update(balance)
     }
 
     fun deleteByAccountId(accountId: Int){
-        val  balance = getByAccountId(accountId)
+        val balance = getByAccountId(accountId)
         balanceRepository.delete(balance)
     }
 }

@@ -3,6 +3,7 @@ package kr.hhplus.be.server.user
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.slot
 import kr.hhplus.be.server.repository.user.BalanceRepository
 import kr.hhplus.be.server.service.user.BalanceService
 import org.junit.jupiter.api.BeforeEach
@@ -109,5 +110,91 @@ class BalanceServiceUnitTest {
         }
         assertEquals("Insufficient funds", exception.message)
         verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+    }
+
+    @Test
+    fun `신규 계좌 생성 성공`() {
+        // Arrange
+        val balanceId = 1
+        val accountId = 100
+        val expectedBalance = Balance.create(balanceId, accountId)
+        
+        // Capture the balance that is passed to save
+        val capturedBalance = slot<Balance>()
+        every { balanceRepository.save(capture(capturedBalance)) } returns expectedBalance
+        
+        // Act
+        val result = balanceService.create(balanceId, accountId)
+        
+        // Assert
+        assertEquals(expectedBalance, result)
+        assertEquals(balanceId, result.balanceId)
+        assertEquals(accountId, result.accountId)
+        assertEquals(BigDecimal.ZERO, result.amount) // Default initial amount
+        verify(exactly = 1) { balanceRepository.save(any()) }
+    }
+    
+    @Test
+    fun `계좌 삭제 성공`() {
+        // Arrange
+        val accountId = 100
+        val balance = Balance.create(1, accountId)
+        
+        every { balanceRepository.findByAccountId(accountId) } returns balance
+        every { balanceRepository.delete(balance) } returns Unit
+        
+        // Act
+        balanceService.deleteByAccountId(accountId)
+        
+        // Assert
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+        verify(exactly = 1) { balanceRepository.delete(balance) }
+    }
+    
+    @Test
+    fun `계좌 삭제 시 계좌를 찾을 수 없으면 예외를 발생시킨다`() {
+        // Arrange
+        val accountId = 100
+        every { balanceRepository.findByAccountId(accountId) } returns null
+        
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balanceService.deleteByAccountId(accountId)
+        }
+        assertEquals("Balance not found for account: $accountId", exception.message)
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+        verify(exactly = 0) { balanceRepository.delete(any()) }
+    }
+    
+    @Test
+    fun `충전 시 계좌를 찾을 수 없으면 예외를 발생시킨다`() {
+        // Arrange
+        val accountId = 100
+        val chargeAmount = BigDecimal("100.00")
+        every { balanceRepository.findByAccountId(accountId) } returns null
+        
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balanceService.charge(accountId, chargeAmount)
+        }
+        assertEquals("Balance not found for account: $accountId", exception.message)
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+        verify(exactly = 0) { balanceRepository.update(any()) }
+    }
+    
+    @Test
+    fun `출금 시 계좌를 찾을 수 없으면 예외를 발생시킨다`() {
+        // Arrange
+        val accountId = 100
+        val withdrawAmount = BigDecimal("100.00")
+        every { balanceRepository.findByAccountId(accountId) } returns null
+        
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            balanceService.withdraw(accountId, withdrawAmount)
+        }
+        assertEquals("Balance not found for account: $accountId", exception.message)
+        verify(exactly = 1) { balanceRepository.findByAccountId(accountId) }
+        verify(exactly = 0) { balanceRepository.update(any()) }
     }
 }
