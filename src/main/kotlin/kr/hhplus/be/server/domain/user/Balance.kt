@@ -1,11 +1,14 @@
 package kr.hhplus.be.server.domain.user
 
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 data class Balance private constructor(
     val balanceId: Int,
     val accountId: Int,
-    var amount: BigDecimal
+    var amount: BigDecimal,
+    var createdAt: LocalDateTime,
+    var updatedAt: LocalDateTime
 ) {
     companion object {
         private val MIN_BALANCE: BigDecimal = BigDecimal.ZERO
@@ -16,7 +19,7 @@ data class Balance private constructor(
             require(initialAmount >= MIN_BALANCE && initialAmount <= MAX_BALANCE) {
                 "Initial amount must be between $MIN_BALANCE and $MAX_BALANCE"
             }
-            return Balance(balanceId, accountId, initialAmount)
+            return Balance(balanceId, accountId, initialAmount, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 
@@ -30,6 +33,7 @@ data class Balance private constructor(
             "Resulting balance cannot exceed $MAX_BALANCE"
         }
         this.amount = newAmount
+        this.updatedAt = LocalDateTime.now()
         return this
     }
 
@@ -42,6 +46,7 @@ data class Balance private constructor(
         val newAmount = this.amount - amount
         require(newAmount >= MIN_BALANCE) { "Resulting balance cannot be negative" }
         this.amount = newAmount
+        this.updatedAt = LocalDateTime.now()
         return this
     }
 }

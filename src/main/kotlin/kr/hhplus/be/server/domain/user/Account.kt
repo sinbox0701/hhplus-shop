@@ -1,11 +1,15 @@
 package kr.hhplus.be.server.domain.user
 
+import java.time.LocalDateTime
+
 data class Account private constructor(
     val accountId: Int,
     var name: String,
     var email: String,
     var loginId: String,
-    var password: String
+    var password: String,
+    var createdAt: LocalDateTime,
+    var updatedAt: LocalDateTime
 ) {
     companion object {
         const val MIN_LOGIN_ID_LENGTH = 4
@@ -32,7 +36,7 @@ data class Account private constructor(
             require(PASSWORD_REGEX.matches(password)) {
                 "Password must be a combination of letters and numbers and between $MIN_PASSWORD_LENGTH and $MAX_PASSWORD_LENGTH characters"
             }
-            return Account(accountId, name, email, loginId, password)
+            return Account(accountId, name, email, loginId, password, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 
@@ -49,12 +53,14 @@ data class Account private constructor(
                 "Login ID must be between $MIN_LOGIN_ID_LENGTH and $MAX_LOGIN_ID_LENGTH characters"
             }
             this.loginId = it
+            this.updatedAt = LocalDateTime.now()
         }
         newPassword?.let {
             require(PASSWORD_REGEX.matches(it)) {
                 "Password must be a combination of letters and numbers and between $MIN_PASSWORD_LENGTH and $MAX_PASSWORD_LENGTH characters"
             }
             this.password = it
+            this.updatedAt = LocalDateTime.now()
         }
         return this
     }
