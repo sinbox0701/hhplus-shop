@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.domain.product
+package kr.hhplus.be.server.domain.product.model
 
 import java.time.LocalDateTime
 
