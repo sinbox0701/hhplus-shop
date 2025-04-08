@@ -1,41 +1,40 @@
-package kr.hhplus.be.server.controller.user
+package kr.hhplus.be.server.interfaces.user
 
-import kr.hhplus.be.server.controller.user.api.UserApi
+import kr.hhplus.be.server.interfaces.user.api.UserApi
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import kr.hhplus.be.server.application.user.UserAccountFacade
 import kr.hhplus.be.server.controller.coupon.dto.response.AccountCouponResponse
 import kr.hhplus.be.server.controller.coupon.dto.response.CouponResponse
-import kr.hhplus.be.server.controller.user.dto.request.BalanceDepositRequest
-import kr.hhplus.be.server.controller.user.dto.request.UserCreateRequest
-import kr.hhplus.be.server.controller.user.dto.request.UserUpdateRequest
-import kr.hhplus.be.server.controller.user.dto.response.BalanceResponse
-import kr.hhplus.be.server.controller.user.dto.response.BalanceTransactionResponse
-import kr.hhplus.be.server.controller.user.dto.response.UserDetailResponse
-import kr.hhplus.be.server.controller.user.dto.response.UserResponse
+import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.interfaces.user.dto.request.UserRequest
+import kr.hhplus.be.server.interfaces.user.dto.response.UserResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 import java.time.LocalDateTime
-import java.util.UUID
 import jakarta.validation.Valid
 
 @RestController
 @RequestMapping("/api/users")
 @Validated
-class UserController(): UserApi {
+class UserController(
+    private val userAccountFacade: UserAccountFacade,
+    private val userService: UserService
+): UserApi {
 
     @GetMapping
-    override fun getAllUsers(): ResponseEntity<List<UserResponse>> {
-        // Mock API response
+    override fun getAllUsers(): ResponseEntity<List<UserResponse.Response>> {
+        // 목업 데이터 (추후 userService.findAll()로 대체 필요)
         val now = LocalDateTime.now()
         val users = listOf(
-            UserResponse(
+            UserResponse.Response(
                 id = 1L,
                 name = "홍길동",
                 email = "hong@example.com",
@@ -43,7 +42,7 @@ class UserController(): UserApi {
                 createdAt = now.minusDays(5),
                 updatedAt = now.minusDays(2)
             ),
-            UserResponse(
+            UserResponse.Response(
                 id = 2L,
                 name = "김철수",
                 email = "kim@example.com",
@@ -56,101 +55,113 @@ class UserController(): UserApi {
     }
 
     @GetMapping("/{id}")
-    override fun getUserById(@PathVariable id: Long): ResponseEntity<UserDetailResponse> {
-        // Mock API response
-        val now = LocalDateTime.now()
-        val user = UserDetailResponse(
-            id = id,
-            name = "사용자$id",
-            email = "user$id@example.com",
-            loginId = "user$id",
-            balance = BalanceResponse(
-                id = id,
-                accountId = id,
-                amount = 10000.00,
-                createdAt = now.minusDays(5),
-                updatedAt = now.minusDays(1)
-            ),
-            createdAt = now.minusDays(5),
-            updatedAt = now.minusDays(1)
+    override fun getUserById(@PathVariable id: Long): ResponseEntity<UserResponse.DetailResponse> {
+        // 유저와 계좌 정보 함께 조회
+        val (user, account) = userAccountFacade.findUserWithAccount(id)
+        
+        val accountResponse = UserResponse.AccountResponse(
+            id = account.id,
+            userId = account.userId,
+            amount = account.amount,
+            createdAt = account.createdAt,
+            updatedAt = account.updatedAt
         )
-        return ResponseEntity.ok(user)
+        
+        val userDetailResponse = UserResponse.DetailResponse(
+            id = user.id,
+            name = user.name,
+            email = user.email,
+            loginId = user.loginId,
+            account = accountResponse,
+            createdAt = user.createdAt,
+            updatedAt = user.updatedAt
+        )
+        
+        return ResponseEntity.ok(userDetailResponse)
     }
 
     @PostMapping
-    override fun createUser(@Valid @RequestBody request: UserCreateRequest): ResponseEntity<UserDetailResponse> {
-        // Mock API response
-        val now = LocalDateTime.now()
-        
-        val createdUser = UserDetailResponse(
-            id = 1L,
+    override fun createUser(@Valid @RequestBody request: UserRequest.CreateRequest): ResponseEntity<UserResponse.DetailResponse> {
+        // 유저 생성과 동시에 계좌 생성
+        val user = userAccountFacade.createUserWithAccount(
             name = request.name,
             email = request.email,
             loginId = request.loginId,
-            balance = BalanceResponse(
-                id = 1L,
-                accountId = 1L,
-                amount = 0.0,
-                createdAt = now,
-                updatedAt = now
-            ),
-            createdAt = now,
-            updatedAt = now
+            password = request.password
         )
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser)
+        
+        // 생성된 계좌 정보 조회
+        val account = userAccountFacade.findUserWithAccount(user.id).second
+        
+        val accountResponse = UserResponse.AccountResponse(
+            id = account.id,
+            userId = account.userId,
+            amount = account.amount,
+            createdAt = account.createdAt,
+            updatedAt = account.updatedAt
+        )
+        
+        val userDetailResponse = UserResponse.DetailResponse(
+            id = user.id,
+            name = user.name,
+            email = user.email,
+            loginId = user.loginId,
+            account = accountResponse,
+            createdAt = user.createdAt,
+            updatedAt = user.updatedAt
+        )
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(userDetailResponse)
     }
 
     @PutMapping("/{id}")
     override fun updateUser(
         @PathVariable id: Long,
-        @Valid @RequestBody request: UserUpdateRequest
-    ): ResponseEntity<UserResponse> {
-        // Mock API response
-        val now = LocalDateTime.now()
-        
-        // 기본값 설정
-        val name = request.name ?: "사용자$id"
-        val email = request.email ?: "user$id@example.com"
-        val loginId = request.loginId ?: "user$id"
-        
-        val updatedUser = UserResponse(
+        @Valid @RequestBody request: UserRequest.UpdateRequest
+    ): ResponseEntity<UserResponse.Response> {
+        // 유저 정보 업데이트
+        val updatedUser = userService.update(
             id = id,
-            name = name,
-            email = email,
-            loginId = loginId,
-            createdAt = now.minusDays(5),
-            updatedAt = now
+            loginId = request.loginId, 
+            password = request.password
         )
-        return ResponseEntity.ok(updatedUser)
+        
+        val userResponse = UserResponse.Response(
+            id = updatedUser.id,
+            name = updatedUser.name,
+            email = updatedUser.email,
+            loginId = updatedUser.loginId,
+            createdAt = updatedUser.createdAt,
+            updatedAt = updatedUser.updatedAt
+        )
+        
+        return ResponseEntity.ok(userResponse)
     }
 
     @DeleteMapping("/{id}")
     override fun deleteUser(@PathVariable id: Long): ResponseEntity<Void> {
-        // Mock deletion
+        // 유저와 계좌 함께 삭제
+        userAccountFacade.deleteUserWithAccount(id)
         return ResponseEntity.noContent().build()
     }
     
     @PostMapping("/{id}/deposit")
     override fun depositBalance(
         @PathVariable id: Long,
-        @Valid @RequestBody request: BalanceDepositRequest
-    ): ResponseEntity<BalanceResponse> {
-        // Mock API response
-        val now = LocalDateTime.now()
+        @Valid @RequestBody request: UserRequest.AccountDepositRequest
+    ): ResponseEntity<UserResponse.AccountResponse> {
+        // 계좌 충전
+        val updatedAccount = userAccountFacade.chargeAccount(id, request.amount)
         
-        // 기존 계좌 잔액 + 입금액
-        val currentBalance = 10000.00
-        val newBalance = currentBalance + request.amount
-        
-        val balanceResponse = BalanceResponse(
-            id = id,
-            accountId = id,
-            amount = newBalance,
-            createdAt = now,
-            updatedAt = now
+        val accountResponse = UserResponse.AccountResponse(
+            id = updatedAccount.id,
+            userId = updatedAccount.userId,
+            amount = updatedAccount.amount,
+            createdAt = updatedAccount.createdAt,
+            updatedAt = updatedAccount.updatedAt
         )
         
-        return ResponseEntity.ok(balanceResponse)
+        return ResponseEntity.ok(accountResponse)
     }
 
     @Operation(summary = "사용자별 쿠폰 목록 조회", description = "특정 사용자에게 발급된 모든 쿠폰 목록을 조회합니다.")
@@ -171,10 +182,13 @@ class UserController(): UserApi {
         @Parameter(description = "계정 ID", required = true)
         @PathVariable id: Long
     ): ResponseEntity<List<AccountCouponResponse>> {
-        // Mock API response
+        // 유저 존재 확인
+        userService.findById(id)
+        
+        // 쿠폰 서비스를 통해 쿠폰 목록 조회 (실제 구현 필요)
         val now = LocalDateTime.now()
         
-        // Mock coupons
+        // Mock coupons (실제 구현 시 삭제 필요)
         val coupon1 = CouponResponse(
             id = 1L,
             discountRate = 10.0,
