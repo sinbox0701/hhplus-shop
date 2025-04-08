@@ -11,3 +11,23 @@
 ```bash
 docker-compose up -d
 ```
+
+## DOCS
+
+### sequence diagram
+- [point](./docs/sequence-diagram/point-scenario.md)
+- [product](./docs/sequence-diagram/product-scenario.md)
+- [coupon](./docs/sequence-diagram/coupon-scenario.md)
+- [order-pay](./docs/sequence-diagram/order-pay-scenario.md)
+- [popular-product](./docs/sequence-diagram/popular-product-scenario.md)
+
+### erd
+- [erd](./docs/erd/erd.md)
+
+### class diagram
+- [class-diagram](./docs/class-diagram/class-diagram.md)
+
+### state diagram
+- [state-diagram](./docs/state-diagram/state-diagram.md)
+
+
