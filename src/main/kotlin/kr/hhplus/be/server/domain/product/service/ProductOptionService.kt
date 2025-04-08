@@ -25,6 +25,27 @@ class ProductOptionService(
         return productOptionRepository.save(productOption)
     }
 
+    fun createAll(
+        productId: Long,
+        options: List<ProductOptionRequest>
+    ): List<ProductOption> {
+        // 상품이 존재하는지 확인
+        productRepository.findById(productId)
+            ?: throw IllegalArgumentException("Product not found with id: $productId")
+        
+        return options.map { option ->
+            val id = System.currentTimeMillis() + options.indexOf(option) // 임시 ID 생성 방식 (중복 방지)
+            val productOption = ProductOption.create(
+                id, 
+                productId, 
+                option.name, 
+                option.availableQuantity, 
+                option.additionalPrice
+            )
+            productOptionRepository.save(productOption)
+        }
+    }
+
     fun getProductOption(id: Long): ProductOption {
         return productOptionRepository.findById(id) 
             ?: throw IllegalArgumentException("Product option not found with id: $id")
@@ -69,4 +90,21 @@ class ProductOptionService(
         getProductOption(id) // 옵션이 존재하는지 확인
         productOptionRepository.delete(id)
     }
-} 
+    
+    fun deleteAll(productId: Long) {
+        // 상품이 존재하는지 확인
+        productRepository.findById(productId)
+            ?: throw IllegalArgumentException("Product not found with id: $productId")
+            
+        val options = productOptionRepository.findByProductId(productId)
+        options.forEach { option ->
+            productOptionRepository.delete(option.id)
+        }
+    }
+}
+
+data class ProductOptionRequest(
+    val name: String,
+    val availableQuantity: Int,
+    val additionalPrice: Double
+) 
