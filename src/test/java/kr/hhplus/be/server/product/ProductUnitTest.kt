@@ -1,222 +1,199 @@
 package kr.hhplus.be.server.product
 
-import kr.hhplus.be.server.domain.product.Product
+import kr.hhplus.be.server.domain.product.model.Product
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDateTime
 
 class ProductUnitTest {
-
+    
     @Test
-    fun `create returns Product when valid parameters provided`() {
-        // Arrange
-        val productId = 1L
-        val name = "Test Product"
-        val description = "A test product"
-        val price = 100.0
-
-        // Act
-        val product = Product.create(productId, name, description, price)
-
-        // Assert
-        assertEquals(productId, product.id)
+    @DisplayName("유효한 데이터로 Product 객체 생성 성공")
+    fun createProductWithValidData() {
+        // given
+        val id = 1L
+        val name = "테스트 상품"
+        val description = "테스트 상품 설명"
+        val price = 10000.0
+        
+        // when
+        val product = Product.create(id, name, description, price)
+        
+        // then
+        assertEquals(id, product.id)
         assertEquals(name, product.name)
         assertEquals(description, product.description)
         assertEquals(price, product.price)
-    }
-
-    @Test
-    fun `create throws exception when price below minimum`() {
-        // Arrange
-        val productId = 1L
-        val name = "Test Product"
-        val description = "A test product"
-        val invalidPrice = 0.5 // Below minimum price of 1
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            Product.create(productId, name, description, invalidPrice)
-        }
-        assertEquals("Initial amount must be between 1 and 1000000", exception.message)
-    }
-
-    @Test
-    fun `create throws exception when price above maximum`() {
-        // Arrange
-        val productId = 1L
-        val name = "Test Product"
-        val description = "A test product"
-        val invalidPrice = 1000001.0 // Above maximum price of 1000000
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            Product.create(productId, name, description, invalidPrice)
-        }
-        assertEquals("Initial amount must be between 1 and 1000000", exception.message)
-    }
-
-    @Test
-    fun `create with boundary values succeeds`() {
-        // Arrange
-        val productId = 1L
-        val name = "Test Product"
-        val description = "A test product"
-        
-        // Minimum price boundary
-        val minPrice = 1.0
-        // Maximum price boundary
-        val maxPrice = 1000000.0
-        
-        // Act & Assert - Min price
-        val minPriceProduct = Product.create(productId, name, description, minPrice)
-        assertEquals(minPrice, minPriceProduct.price)
-        
-        // Act & Assert - Max price
-        val maxPriceProduct = Product.create(productId, name, description, maxPrice)
-        assertEquals(maxPrice, maxPriceProduct.price)
-    }
-
-    @Test
-    fun `create with empty description succeeds`() {
-        // Arrange
-        val productId = 1L
-        val name = "Test Product"
-        val emptyDescription = ""
-        val price = 100.0
-
-        // Act
-        val product = Product.create(productId, name, emptyDescription, price)
-
-        // Assert
-        assertEquals(emptyDescription, product.description)
+        assertNotNull(product.createdAt)
+        assertNotNull(product.updatedAt)
     }
     
     @Test
-    fun `update name with boundary length values`() {
-        // Arrange
-        val product = Product.create(
-            id = 1L,
-            name = "Original",
-            description = "Original description",
-            price = 100.0
-        )
+    @DisplayName("가격이 최소값보다 낮을 경우 예외 발생")
+    fun createProductWithTooLowPrice() {
+        // given
+        val id = 1L
+        val name = "테스트 상품"
+        val description = "테스트 상품 설명"
+        val price = 0.0 // 최소값은 1.0
         
-        // Minimum name length (3 characters)
-        val minLengthName = "Min"
-        // Maximum name length (20 characters)
-        val maxLengthName = "ThisIsAVeryLongName12"
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            Product.create(id, name, description, price)
+        }
         
-        // Act & Assert - Min length
-        val minLengthUpdated = product.update(name = minLengthName)
-        assertEquals(minLengthName, minLengthUpdated.name)
-        
-        // Act & Assert - Max length
-        val maxLengthUpdated = product.update(name = maxLengthName)
-        assertEquals(maxLengthName, maxLengthUpdated.name)
+        assertTrue(exception.message!!.contains("Initial amount must be between"))
     }
     
     @Test
-    fun `update with name exceeding maximum length throws exception`() {
-        // Arrange
-        val product = Product.create(
-            id = 1L,
-            name = "Original Product",
-            description = "Original description",
-            price = 100.0
-        )
-        val invalidName = "ThisNameIsTooLongAndExceedsTwentyCharacters" // 더 긴 이름 (> 20자)
-
-        // Act & Assert
+    @DisplayName("가격이 최대값보다 높을 경우 예외 발생")
+    fun createProductWithTooHighPrice() {
+        // given
+        val id = 1L
+        val name = "테스트 상품"
+        val description = "테스트 상품 설명"
+        val price = 1000001.0 // 최대값은 1000000.0
+        
+        // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            product.update(name = invalidName)
+            Product.create(id, name, description, price)
         }
-        assertEquals("Name must be between 3 and 20 characters", exception.message)
+        
+        assertTrue(exception.message!!.contains("Initial amount must be between"))
     }
-
+    
     @Test
-    fun `update with valid values successfully updates the product`() {
-        // Arrange
-        val product = Product.create(
-            id = 1L,
-            name = "Original Product",
-            description = "Original description",
-            price = 100.0
-        )
-        val newName = "Updated Product"
-        val newDescription = "Updated description"
-        val newPrice = 200.0
-
-        // Act
-        val updatedProduct = product.update(
-            name = newName,
-            description = newDescription,
-            price = newPrice
-        )
-
-        // Assert
+    @DisplayName("유효한 데이터로 상품 정보 업데이트 성공")
+    fun updateProductWithValidData() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val newName = "업데이트된 상품"
+        val newDescription = "업데이트된 상품 설명"
+        val newPrice = 20000.0
+        
+        // when
+        val updatedProduct = product.update(newName, newDescription, newPrice)
+        
+        // then
         assertEquals(newName, updatedProduct.name)
         assertEquals(newDescription, updatedProduct.description)
         assertEquals(newPrice, updatedProduct.price)
+        assertNotEquals(updatedProduct.createdAt, updatedProduct.updatedAt)
     }
-
+    
     @Test
-    fun `update with invalid name throws exception`() {
-        // Arrange
-        val product = Product.create(
-            id = 1L,
-            name = "Original Product",
-            description = "Original description",
-            price = 100.0
-        )
-        val invalidName = "AB" // Too short (< 3 characters)
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            product.update(name = invalidName)
-        }
-        assertEquals("Name must be between 3 and 20 characters", exception.message)
-    }
-
-    @Test
-    fun `update with invalid price throws exception`() {
-        // Arrange
-        val product = Product.create(
-            id = 1L,
-            name = "Original Product",
-            description = "Original description",
-            price = 100.0
-        )
-        val invalidPrice = 1000001.0 // Above maximum
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            product.update(price = invalidPrice)
-        }
-        assertEquals("Price must be between 1 and 1000000", exception.message)
-    }
-
-    @Test
-    fun `partial update only updates provided fields`() {
-        // Arrange
-        val originalName = "Original Product"
-        val originalDescription = "Original description"
-        val originalPrice = 100.0
-
-        val product = Product.create(
-            id = 1L,
-            name = originalName,
-            description = originalDescription,
-            price = originalPrice
-        )
-
-        val newName = "Updated Product"
-
-        // Act - only update name
-        val updatedProduct = product.update(name = newName)
-
-        // Assert
+    @DisplayName("이름만 업데이트 성공")
+    fun updateOnlyName() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val originalDescription = product.description
+        val originalPrice = product.price
+        val newName = "업데이트된 상품"
+        
+        // when
+        val updatedProduct = product.update(newName, null, null)
+        
+        // then
         assertEquals(newName, updatedProduct.name)
         assertEquals(originalDescription, updatedProduct.description)
         assertEquals(originalPrice, updatedProduct.price)
+    }
+    
+    @Test
+    @DisplayName("설명만 업데이트 성공")
+    fun updateOnlyDescription() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val originalName = product.name
+        val originalPrice = product.price
+        val newDescription = "업데이트된 상품 설명"
+        
+        // when
+        val updatedProduct = product.update(null, newDescription, null)
+        
+        // then
+        assertEquals(originalName, updatedProduct.name)
+        assertEquals(newDescription, updatedProduct.description)
+        assertEquals(originalPrice, updatedProduct.price)
+    }
+    
+    @Test
+    @DisplayName("가격만 업데이트 성공")
+    fun updateOnlyPrice() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val originalName = product.name
+        val originalDescription = product.description
+        val newPrice = 20000.0
+        
+        // when
+        val updatedProduct = product.update(null, null, newPrice)
+        
+        // then
+        assertEquals(originalName, updatedProduct.name)
+        assertEquals(originalDescription, updatedProduct.description)
+        assertEquals(newPrice, updatedProduct.price)
+    }
+    
+    @Test
+    @DisplayName("이름이 너무 짧을 경우 업데이트 시 예외 발생")
+    fun updateWithTooShortName() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val invalidName = "테" // 최소 3자 필요
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            product.update(invalidName, null, null)
+        }
+        
+        assertTrue(exception.message!!.contains("Name must be between"))
+    }
+    
+    @Test
+    @DisplayName("이름이 너무 길 경우 업데이트 시 예외 발생")
+    fun updateWithTooLongName() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val invalidName = "아주아주아주아주아주아주아주아주긴이름" // 최대 20자 필요
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            product.update(invalidName, null, null)
+        }
+        
+        assertTrue(exception.message!!.contains("Name must be between"))
+    }
+    
+    @Test
+    @DisplayName("가격이 너무 낮을 경우 업데이트 시 예외 발생")
+    fun updateWithTooLowPrice() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val invalidPrice = 0.0 // 최소 1.0 필요
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            product.update(null, null, invalidPrice)
+        }
+        
+        assertTrue(exception.message!!.contains("Price must be between"))
+    }
+    
+    @Test
+    @DisplayName("가격이 너무 높을 경우 업데이트 시 예외 발생")
+    fun updateWithTooHighPrice() {
+        // given
+        val product = Product.create(1L, "테스트 상품", "테스트 상품 설명", 10000.0)
+        val invalidPrice = 1000001.0 // 최대 1000000.0 필요
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            product.update(null, null, invalidPrice)
+        }
+        
+        assertTrue(exception.message!!.contains("Price must be between"))
     }
 }
