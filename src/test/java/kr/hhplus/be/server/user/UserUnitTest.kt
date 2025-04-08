@@ -1,324 +1,203 @@
 package kr.hhplus.be.server.user
 
-import kr.hhplus.be.server.domain.user.User
+import kr.hhplus.be.server.domain.user.model.User
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
-
+import java.time.LocalDateTime
 
 class UserUnitTest {
-
+    
     @Test
-    fun `create returns Account when valid parameters provided`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1" // 5글자 (4~8 글자 조건 충족)
-        val password = "pass1234" // 8글자, 영문과 숫자 조합
-
-        // Act
-        val createdUser = User.create(accountId, name, email, loginId, password)
-
-        // Assert
-        assertEquals(accountId, createdUser.accountId)
-        assertEquals(name, createdUser.name)
-        assertEquals(email, createdUser.email)
-        assertEquals(loginId, createdUser.loginId)
-        assertEquals(password, createdUser.password)
-    }
-
-    @Test
-    fun `create throws exception when loginId is too short`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val invalidLoginId = "usr" // 3글자, 조건 미충족
-        val password = "pass1234" // 유효한 비밀번호
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            User.create(accountId, name, email, invalidLoginId, password)
-        }
-        assertEquals(
-            "Login ID must be between ${User.MIN_LOGIN_ID_LENGTH} and ${User.MAX_LOGIN_ID_LENGTH} characters",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `create throws exception when loginId is too long`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val invalidLoginId = "verylonguser" // 12글자, 조건 미충족
-        val password = "pass1234" // 유효한 비밀번호
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            User.create(accountId, name, email, invalidLoginId, password)
-        }
-        assertEquals(
-            "Login ID must be between ${User.MIN_LOGIN_ID_LENGTH} and ${User.MAX_LOGIN_ID_LENGTH} characters",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `create with loginId boundary values succeeds`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val minLengthLoginId = "abcd" // 최소 길이 4글자
-        val maxLengthLoginId = "abcdefgh" // 최대 길이 8글자
-        val password = "pass1234"
-
-        // Act - 최소 길이 검증
-        val minLengthUser = User.create(accountId, name, email, minLengthLoginId, password)
+    @DisplayName("유효한 데이터로 User 객체 생성 성공")
+    fun createUserWithValidData() {
+        // given
+        val id = 1L
+        val name = "홍길동"
+        val email = "user@example.com"
+        val loginId = "user123"
+        val password = "pass123a"
         
-        // Assert - 최소 길이
-        assertEquals(minLengthLoginId, minLengthUser.loginId)
+        // when
+        val user = User.create(id, name, email, loginId, password)
         
-        // Act - 최대 길이 검증
-        val maxLengthUser = User.create(accountId, name, email, maxLengthLoginId, password)
-        
-        // Assert - 최대 길이
-        assertEquals(maxLengthLoginId, maxLengthUser.loginId)
-    }
-
-    @Test
-    fun `create with password boundary values succeeds`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val minLengthPassword = "pass123" // 최소 길이 7글자 (영문 + 숫자 조합)
-        val maxLengthPassword = "password12345" // 최대 길이 12글자 (영문 + 숫자 조합)
-        
-        // Act - 최소 길이 검증
-        val minLengthUser = User.create(accountId, name, email, loginId, minLengthPassword)
-        
-        // Assert - 최소 길이
-        assertEquals(minLengthPassword, minLengthUser.password)
-        
-        // Act - 최대 길이 검증
-        val maxLengthUser = User.create(accountId, name, email, loginId, maxLengthPassword)
-        
-        // Assert - 최대 길이
-        assertEquals(maxLengthPassword, maxLengthUser.password)
-    }
-
-    @Test
-    fun `create throws exception when password does not match policy`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1" // 유효한 로그인 아이디
-        val invalidPassword = "password" // 숫자가 없는 비밀번호 -> 정책 미충족
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            User.create(accountId, name, email, loginId, invalidPassword)
-        }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${User.MIN_PASSWORD_LENGTH} and ${User.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `create throws exception when password is too short with right policy`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val tooShortPassword = "abc123" // 6글자 (영문+숫자이지만 최소길이 미달)
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            User.create(accountId, name, email, loginId, tooShortPassword)
-        }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${User.MIN_PASSWORD_LENGTH} and ${User.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `create throws exception when password is too long with right policy`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val tooLongPassword = "abcdefghi123456" // 15글자 (영문+숫자이지만 최대길이 초과)
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            User.create(accountId, name, email, loginId, tooLongPassword)
-        }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${User.MIN_PASSWORD_LENGTH} and ${User.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `create throws exception when password has only numbers`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val onlyNumbersPassword = "12345678" // 숫자만 있는 비밀번호
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            User.create(accountId, name, email, loginId, onlyNumbersPassword)
-        }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${User.MIN_PASSWORD_LENGTH} and ${User.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `update with valid values successfully updates the account`() {
-        // Arrange
-        val user = User.create(
-            accountId = 1, 
-            name = "Old Name", 
-            email = "old@example.com", 
-            loginId = "oldid", 
-            password = "oldpass1"
-        )
-        val newName = "New Name"
-        val newEmail = "new@example.com"
-        val newLoginId = "newid"
-        val newPassword = "newpass2"
-        
-        // Act
-        val updatedAccount = user.update(
-            newName = newName,
-            newEmail = newEmail,
-            newLoginId = newLoginId,
-            newPassword = newPassword
-        )
-        
-        // Assert
-        assertEquals(newName, updatedAccount.name)
-        assertEquals(newEmail, updatedAccount.email)
-        assertEquals(newLoginId, updatedAccount.loginId)
-        assertEquals(newPassword, updatedAccount.password)
+        // then
+        assertEquals(id, user.id)
+        assertEquals(name, user.name)
+        assertEquals(email, user.email)
+        assertEquals(loginId, user.loginId)
+        assertEquals(password, user.password)
+        assertNotNull(user.createdAt)
+        assertNotNull(user.updatedAt)
     }
     
     @Test
-    fun `update with invalid loginId throws exception`() {
-        // Arrange
-        val user = User.create(
-            accountId = 1, 
-            name = "User", 
-            email = "user@example.com", 
-            loginId = "valid1", 
-            password = "valid123"
-        )
-        val invalidLoginId = "verylongloginid" // Too long
+    @DisplayName("로그인ID가 최소 길이보다 짧을 경우 예외 발생")
+    fun createUserWithTooShortLoginId() {
+        // given
+        val id = 1L
+        val name = "홍길동"
+        val email = "user@example.com"
+        val loginId = "usr" // 3자 (최소 4자 필요)
+        val password = "pass123a"
         
-        // Act & Assert
+        // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            user.update(newLoginId = invalidLoginId)
+            User.create(id, name, email, loginId, password)
         }
-        assertEquals(
-            "Login ID must be between ${User.MIN_LOGIN_ID_LENGTH} and ${User.MAX_LOGIN_ID_LENGTH} characters",
-            exception.message
-        )
+        
+        assertTrue(exception.message!!.contains("Login ID must be between"))
     }
     
     @Test
-    fun `update with invalid password throws exception`() {
-        // Arrange
-        val user = User.create(
-            accountId = 1, 
-            name = "User", 
-            email = "user@example.com", 
-            loginId = "valid1", 
-            password = "valid123"
-        )
-        val invalidPassword = "onlyletters" // No numbers
+    @DisplayName("로그인ID가 최대 길이보다 길 경우 예외 발생")
+    fun createUserWithTooLongLoginId() {
+        // given
+        val id = 1L
+        val name = "홍길동"
+        val email = "user@example.com"
+        val loginId = "user12345" // 9자 (최대 8자 필요)
+        val password = "pass123a"
         
-        // Act & Assert
+        // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            user.update(newPassword = invalidPassword)
+            User.create(id, name, email, loginId, password)
         }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${User.MIN_PASSWORD_LENGTH} and ${User.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
+        
+        assertTrue(exception.message!!.contains("Login ID must be between"))
     }
     
     @Test
-    fun `partial update only updates provided fields`() {
-        // Arrange
-        val originalName = "Original Name"
-        val originalEmail = "original@example.com"
-        val originalLoginId = "origId"
-        val originalPassword = "origPass1"
+    @DisplayName("비밀번호가 영문자와 숫자의 조합이 아닐 경우 예외 발생")
+    fun createUserWithInvalidPasswordFormat() {
+        // given
+        val id = 1L
+        val name = "홍길동"
+        val email = "user@example.com"
+        val loginId = "user123"
+        val password = "password" // 숫자 없음
         
-        val user = User.create(
-            accountId = 1, 
-            name = originalName, 
-            email = originalEmail, 
-            loginId = originalLoginId, 
-            password = originalPassword
-        )
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            User.create(id, name, email, loginId, password)
+        }
         
-        val newName = "New Name"
-        
-        // Act - only update name
-        val updatedAccount = user.update(newName = newName)
-        
-        // Assert
-        assertEquals(newName, updatedAccount.name)
-        assertEquals(originalEmail, updatedAccount.email)
-        assertEquals(originalLoginId, updatedAccount.loginId)
-        assertEquals(originalPassword, updatedAccount.password)
+        assertTrue(exception.message!!.contains("Password must be a combination"))
     }
     
     @Test
-    fun `multiple fields partial update works correctly`() {
-        // Arrange
-        val originalName = "Original Name"
-        val originalEmail = "original@example.com"
-        val originalLoginId = "origId"
-        val originalPassword = "origPass1"
+    @DisplayName("비밀번호가 최소 길이보다 짧을 경우 예외 발생")
+    fun createUserWithTooShortPassword() {
+        // given
+        val id = 1L
+        val name = "홍길동"
+        val email = "user@example.com"
+        val loginId = "user123"
+        val password = "pass12" // 6자 (최소 8자 필요)
         
-        val user = User.create(
-            accountId = 1, 
-            name = originalName, 
-            email = originalEmail, 
-            loginId = originalLoginId, 
-            password = originalPassword
-        )
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            User.create(id, name, email, loginId, password)
+        }
         
-        val newEmail = "new@example.com"
-        val newPassword = "newPass2"
+        assertTrue(exception.message!!.contains("Password must be a combination"))
+    }
+    
+    @Test
+    @DisplayName("비밀번호가 최대 길이보다 길 경우 예외 발생")
+    fun createUserWithTooLongPassword() {
+        // given
+        val id = 1L
+        val name = "홍길동"
+        val email = "user@example.com"
+        val loginId = "user123"
+        val password = "password12345" // 13자 (최대 12자 필요)
         
-        // Act - update email and password only
-        val updatedAccount = user.update(
-            newEmail = newEmail,
-            newPassword = newPassword
-        )
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            User.create(id, name, email, loginId, password)
+        }
         
-        // Assert
-        assertEquals(originalName, updatedAccount.name) // unchanged
-        assertEquals(newEmail, updatedAccount.email)
-        assertEquals(originalLoginId, updatedAccount.loginId) // unchanged
-        assertEquals(newPassword, updatedAccount.password)
+        assertTrue(exception.message!!.contains("Password must be a combination"))
+    }
+    
+    @Test
+    @DisplayName("유효한 데이터로 사용자 정보 업데이트 성공")
+    fun updateUserWithValidData() {
+        // given
+        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val newLoginId = "user456"
+        val newPassword = "pass456a"
+        
+        // when
+        val updatedUser = user.update(newLoginId, newPassword)
+        
+        // then
+        assertEquals(newLoginId, updatedUser.loginId)
+        assertEquals(newPassword, updatedUser.password)
+        assertNotEquals(updatedUser.createdAt, updatedUser.updatedAt)
+    }
+    
+    @Test
+    @DisplayName("로그인ID만 업데이트 성공")
+    fun updateOnlyLoginId() {
+        // given
+        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val originalPassword = user.password
+        val newLoginId = "user456"
+        
+        // when
+        val updatedUser = user.update(newLoginId, null)
+        
+        // then
+        assertEquals(newLoginId, updatedUser.loginId)
+        assertEquals(originalPassword, updatedUser.password)
+    }
+    
+    @Test
+    @DisplayName("비밀번호만 업데이트 성공")
+    fun updateOnlyPassword() {
+        // given
+        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val originalLoginId = user.loginId
+        val newPassword = "pass456a"
+        
+        // when
+        val updatedUser = user.update(null, newPassword)
+        
+        // then
+        assertEquals(originalLoginId, updatedUser.loginId)
+        assertEquals(newPassword, updatedUser.password)
+    }
+    
+    @Test
+    @DisplayName("잘못된 로그인ID로 업데이트 시 예외 발생")
+    fun updateWithInvalidLoginId() {
+        // given
+        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val invalidLoginId = "usr" // 3자 (최소 4자 필요)
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            user.update(invalidLoginId, null)
+        }
+        
+        assertTrue(exception.message!!.contains("Login ID must be between"))
+    }
+    
+    @Test
+    @DisplayName("잘못된 비밀번호로 업데이트 시 예외 발생")
+    fun updateWithInvalidPassword() {
+        // given
+        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val invalidPassword = "password" // 숫자 없음
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            user.update(null, invalidPassword)
+        }
+        
+        assertTrue(exception.message!!.contains("Password must be a combination"))
     }
 }

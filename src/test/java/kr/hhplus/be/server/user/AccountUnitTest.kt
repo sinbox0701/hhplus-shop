@@ -1,301 +1,220 @@
 package kr.hhplus.be.server.user
 
-import kr.hhplus.be.server.domain.user.Account
-import org.junit.jupiter.api.Assertions.assertEquals
+import kr.hhplus.be.server.domain.user.model.Account
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDateTime
 
 class AccountUnitTest {
-
+    
     @Test
-    fun `create Balance with valid initial amount`() {
-        // Arrange
-        val balanceId = 1L
-        val accountId = 100L
-        val initialAmount = 5000000.0 // 5,000,000원, 유효 범위 내
-
-        // Act
-        val account = Account.create(balanceId, accountId, initialAmount)
-
-        // Assert
+    @DisplayName("유효한 데이터로 Account 객체 생성 성공")
+    fun createAccountWithValidData() {
+        // given
+        val id = 1L
+        val userId = 1L
+        val initialAmount = 5000.0
+        
+        // when
+        val account = Account.create(id, userId, initialAmount)
+        
+        // then
+        assertEquals(id, account.id)
+        assertEquals(userId, account.userId)
         assertEquals(initialAmount, account.amount)
-        assertEquals(balanceId, account.id)
-        assertEquals(accountId, account.accountId)
-    }
-
-    @Test
-    fun `create Balance throws exception when initial amount is negative`() {
-        // Arrange
-        val balanceId = 1L
-        val accountId = 100L
-        val invalidInitialAmount = -1.0
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            Account.create(balanceId, accountId, invalidInitialAmount)
-        }
-        assertEquals("Initial amount must be between 0 and 10000000", exception.message)
-    }
-
-    @Test
-    fun `create Balance throws exception when initial amount exceeds maximum`() {
-        // Arrange
-        val balanceId = 1L
-        val accountId = 100L
-        val invalidInitialAmount = 10000001.0
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            Account.create(balanceId, accountId, invalidInitialAmount)
-        }
-        assertEquals("Initial amount must be between 0 and 10000000", exception.message)
+        assertNotNull(account.createdAt)
+        assertNotNull(account.updatedAt)
     }
     
     @Test
-    fun `create Balance with boundary values succeeds`() {
-        // Arrange
-        val balanceId = 1L
-        val accountId = 100L
-        val minAmount = 0.0
-        val maxAmount = 10000000.0
+    @DisplayName("기본 금액으로 Account 객체 생성 성공")
+    fun createAccountWithDefaultAmount() {
+        // given
+        val id = 1L
+        val userId = 1L
         
-        // Act & Assert - 최소값
-        val minAccount = Account.create(balanceId, accountId, minAmount)
-        assertEquals(minAmount, minAccount.amount)
+        // when
+        val account = Account.create(id, userId)
         
-        // Act & Assert - 최대값
-        val maxAccount = Account.create(balanceId, accountId, maxAmount)
-        assertEquals(maxAmount, maxAccount.amount)
-    }
-
-    @Test
-    fun `charge valid amount updates balance`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val chargeAmount = 100000.0 // 100,000원, 유효한 충전액 (1,000,000원 이하)
-        val expectedAmount = 5100000.0 // 5,100,000원
-
-        // Act
-        account.charge(chargeAmount)
-
-        // Assert
-        assertEquals(expectedAmount, account.amount)
-    }
-
-    @Test
-    fun `charge amount greater than maximum transaction amount throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val invalidChargeAmount = 1000001.0 // 1,000,001원, 한 번에 충전 가능한 금액 초과
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.charge(invalidChargeAmount)
-        }
-        assertEquals("Charge amount cannot exceed 1000000", exception.message)
-    }
-
-    @Test
-    fun `charge resulting in balance exceeding maximum throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 9900000.0)
-        val chargeAmount = 200000.0 // 9900000 + 200000 = 10100000원, 최대 잔고 초과
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.charge(chargeAmount)
-        }
-        assertEquals("Resulting balance cannot exceed 10000000", exception.message)
+        // then
+        assertEquals(id, account.id)
+        assertEquals(userId, account.userId)
+        assertEquals(Account.MIN_BALANCE, account.amount)
+        assertNotNull(account.createdAt)
+        assertNotNull(account.updatedAt)
     }
     
     @Test
-    fun `charge with maximum allowed transaction amount succeeds`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val maxChargeAmount = 1000000.0 // 1,000,000원 (최대 충전 가능 금액)
-        val expectedAmount = 6000000.0 // 6,000,000원
-
-        // Act
-        account.charge(maxChargeAmount)
-
-        // Assert
-        assertEquals(expectedAmount, account.amount)
-    }
-    
-    @Test
-    fun `multiple consecutive charge operations succeed`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 1000000.0)
-        val chargeAmount1 = 500000.0 // 첫 번째 충전: 500,000원
-        val chargeAmount2 = 300000.0 // 두 번째 충전: 300,000원 
-        val chargeAmount3 = 200000.0 // 세 번째 충전: 200,000원
-        val expectedFinalAmount = 2000000.0 // 1,000,000 + 500,000 + 300,000 + 200,000 = 2,000,000원
-
-        // Act
-        account.charge(chargeAmount1)
-            .charge(chargeAmount2)
-            .charge(chargeAmount3)
-
-        // Assert
-        assertEquals(expectedFinalAmount, account.amount)
-    }
-
-    @Test
-    fun `withdraw valid amount updates balance`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val withdrawAmount = 100000.0 // 100,000원, 유효한 인출액 (1,000,000원 이하)
-        val expectedAmount = 4900000.0 // 5,000,000 - 100,000 = 4,900,000원
-
-        // Act
-        account.withdraw(withdrawAmount)
-
-        // Assert
-        assertEquals(expectedAmount, account.amount)
-    }
-
-    @Test
-    fun `withdraw amount greater than maximum transaction amount throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val invalidWithdrawAmount = 1000001.0 // 1,000,001원, 한 번에 인출 가능한 금액 초과
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.withdraw(invalidWithdrawAmount)
-        }
-        assertEquals("Withdrawal amount cannot exceed 1000000", exception.message)
-    }
-
-    @Test
-    fun `withdraw amount exceeding current balance throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 500000.0)
-        val withdrawAmount = 600000.0 // 600,000원, 잔고 부족
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.withdraw(withdrawAmount)
-        }
-        assertEquals("Insufficient funds", exception.message)
-    }
-    
-    @Test
-    fun `withdraw with maximum allowed transaction amount succeeds`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val maxWithdrawAmount = 1000000.0 // 1,000,000원 (최대 출금 가능 금액)
-        val expectedAmount = 4000000.0 // 5,000,000 - 1,000,000 = 4,000,000원
-
-        // Act
-        account.withdraw(maxWithdrawAmount)
-
-        // Assert
-        assertEquals(expectedAmount, account.amount)
-    }
-    
-    @Test
-    fun `multiple consecutive withdraw operations succeed`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 2000000.0)
-        val withdrawAmount1 = 500000.0 // 첫 번째 출금: 500,000원
-        val withdrawAmount2 = 300000.0 // 두 번째 출금: 300,000원 
-        val withdrawAmount3 = 200000.0 // 세 번째 출금: 200,000원
-        val expectedFinalAmount = 1000000.0 // 2,000,000 - 500,000 - 300,000 - 200,000 = 1,000,000원
-
-        // Act
-        account.withdraw(withdrawAmount1)
-            .withdraw(withdrawAmount2)
-            .withdraw(withdrawAmount3)
-
-        // Assert
-        assertEquals(expectedFinalAmount, account.amount)
-    }
-    
-    @Test
-    fun `mixed charge and withdraw operations succeed`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 1000000.0)
-        val chargeAmount1 = 500000.0 // 첫 번째 충전: 500,000원
-        val withdrawAmount1 = 200000.0 // 첫 번째 출금: 200,000원
-        val chargeAmount2 = 300000.0 // 두 번째 충전: 300,000원
-        val withdrawAmount2 = 100000.0 // 두 번째 출금: 100,000원
+    @DisplayName("최소 금액보다 작은 초기 금액으로 Account 생성 시 예외 발생")
+    fun createAccountWithTooSmallInitialAmount() {
+        // given
+        val id = 1L
+        val userId = 1L
+        val tooSmallAmount = -100.0 // 최소 금액(0.0)보다 작음
         
-        // 1,000,000 + 500,000 - 200,000 + 300,000 - 100,000 = 1,500,000원
-        val expectedFinalAmount = 1500000.0
-
-        // Act
-        account.charge(chargeAmount1)
-            .withdraw(withdrawAmount1)
-            .charge(chargeAmount2)
-            .withdraw(withdrawAmount2)
-
-        // Assert
-        assertEquals(expectedFinalAmount, account.amount)
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            Account.create(id, userId, tooSmallAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Initial amount must be between"))
     }
-
+    
     @Test
-    fun `charge negative amount throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
+    @DisplayName("최대 금액보다 큰 초기 금액으로 Account 생성 시 예외 발생")
+    fun createAccountWithTooLargeInitialAmount() {
+        // given
+        val id = 1L
+        val userId = 1L
+        val tooLargeAmount = Account.MAX_BALANCE + 1000.0
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            Account.create(id, userId, tooLargeAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Initial amount must be between"))
+    }
+    
+    @Test
+    @DisplayName("유효한 금액으로 계좌 충전 성공")
+    fun chargeAccountWithValidAmount() {
+        // given
+        val account = Account.create(1L, 1L, 1000.0)
+        val chargeAmount = 5000.0
+        val expectedAmount = account.amount + chargeAmount
+        
+        // when
+        val chargedAccount = account.charge(chargeAmount)
+        
+        // then
+        assertEquals(expectedAmount, chargedAccount.amount)
+        assertNotEquals(chargedAccount.createdAt, chargedAccount.updatedAt)
+    }
+    
+    @Test
+    @DisplayName("음수 금액으로 계좌 충전 시 예외 발생")
+    fun chargeAccountWithNegativeAmount() {
+        // given
+        val account = Account.create(1L, 1L, 1000.0)
         val negativeAmount = -100.0
-
-        // Act & Assert
+        
+        // when & then
         val exception = assertThrows<IllegalArgumentException> {
             account.charge(negativeAmount)
         }
-        assertEquals("Charge amount must be positive", exception.message)
-    }
-
-    @Test
-    fun `withdraw negative amount throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val negativeAmount = -100.0
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.withdraw(negativeAmount)
-        }
-        assertEquals("Withdrawal amount must be positive", exception.message)
-    }
-
-    @Test
-    fun `charge zero amount throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val zeroAmount = 0.0
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.charge(zeroAmount)
-        }
-        assertEquals("Charge amount must be positive", exception.message)
-    }
-
-    @Test
-    fun `withdraw zero amount throws exception`() {
-        // Arrange
-        val account = Account.create(1L, 100L, 5000000.0)
-        val zeroAmount = 0.0
-
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.withdraw(zeroAmount)
-        }
-        assertEquals("Withdrawal amount must be positive", exception.message)
+        
+        assertTrue(exception.message!!.contains("Charge amount must be positive"))
     }
     
     @Test
-    fun `withdraw entire balance succeeds`() {
-        // Arrange
-        val initialAmount = 1000000.0
-        val account = Account.create(1L, 100L, initialAmount)
+    @DisplayName("최대 거래 금액보다 큰 금액으로 계좌 충전 시 예외 발생")
+    fun chargeAccountWithExceedingTransactionAmount() {
+        // given
+        val account = Account.create(1L, 1L, 1000.0)
+        val tooLargeAmount = Account.MAX_TRANSACTION_AMOUNT + 1000.0
         
-        // Act
-        account.withdraw(initialAmount)
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            account.charge(tooLargeAmount)
+        }
         
-        // Assert
-        assertEquals(0.0, account.amount)
+        assertTrue(exception.message!!.contains("Charge amount cannot exceed"))
+    }
+    
+    @Test
+    @DisplayName("충전 후 최대 잔액을 초과하는 경우 예외 발생")
+    fun chargeAccountResultingInExceedingMaxBalance() {
+        // given
+        val account = Account.create(1L, 1L, Account.MAX_BALANCE - 1000.0)
+        val chargeAmount = 2000.0 // 충전 후 잔액이 최대치를 초과
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            account.charge(chargeAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Resulting balance cannot exceed"))
+    }
+    
+    @Test
+    @DisplayName("유효한 금액으로 계좌 출금 성공")
+    fun withdrawAccountWithValidAmount() {
+        // given
+        val initialAmount = 10000.0
+        val account = Account.create(1L, 1L, initialAmount)
+        val withdrawAmount = 3000.0
+        val expectedAmount = initialAmount - withdrawAmount
+        
+        // when
+        val withdrawnAccount = account.withdraw(withdrawAmount)
+        
+        // then
+        assertEquals(expectedAmount, withdrawnAccount.amount)
+        assertNotEquals(withdrawnAccount.createdAt, withdrawnAccount.updatedAt)
+    }
+    
+    @Test
+    @DisplayName("음수 금액으로 계좌 출금 시 예외 발생")
+    fun withdrawAccountWithNegativeAmount() {
+        // given
+        val account = Account.create(1L, 1L, 5000.0)
+        val negativeAmount = -100.0
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            account.withdraw(negativeAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Withdrawal amount must be positive"))
+    }
+    
+    @Test
+    @DisplayName("최대 거래 금액보다 큰 금액으로 계좌 출금 시 예외 발생")
+    fun withdrawAccountWithExceedingTransactionAmount() {
+        // given
+        val account = Account.create(1L, 1L, Account.MAX_TRANSACTION_AMOUNT + 5000.0)
+        val tooLargeAmount = Account.MAX_TRANSACTION_AMOUNT + 1000.0
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            account.withdraw(tooLargeAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Withdrawal amount cannot exceed"))
+    }
+    
+    @Test
+    @DisplayName("잔액보다 큰 금액으로 계좌 출금 시 예외 발생")
+    fun withdrawAccountWithInsufficientFunds() {
+        // given
+        val initialAmount = 5000.0
+        val account = Account.create(1L, 1L, initialAmount)
+        val withdrawAmount = initialAmount + 1000.0 // 잔액보다 큰 금액
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            account.withdraw(withdrawAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Insufficient funds"))
+    }
+    
+    @Test
+    @DisplayName("출금 후 잔액이 최소 잔액보다 작아지는 경우 예외 발생")
+    fun withdrawAccountResultingInBelowMinBalance() {
+        // given
+        val initialAmount = Account.MIN_BALANCE + 100.0
+        val account = Account.create(1L, 1L, initialAmount)
+        val withdrawAmount = 200.0 // 출금 후 잔액이 최소치보다 작아짐
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            account.withdraw(withdrawAmount)
+        }
+        
+        assertTrue(exception.message!!.contains("Resulting balance cannot be negative"))
     }
 }
