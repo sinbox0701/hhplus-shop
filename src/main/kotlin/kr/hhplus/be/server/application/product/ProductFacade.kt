@@ -143,6 +143,9 @@ data class ProductWithOptions(
     val options: List<ProductOption>
 ) 
 
+/**
+ * 상품 옵션 업데이트 요청 데이터 클래스
+ */
 data class ProductOptionUpdateRequest(
     val name: String? = null,
     val additionalPrice: Double? = null
