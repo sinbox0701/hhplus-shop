@@ -1,324 +1,301 @@
 package kr.hhplus.be.server.user
 
 import kr.hhplus.be.server.domain.user.Account
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-
 
 class AccountUnitTest {
 
     @Test
-    fun `create returns Account when valid parameters provided`() {
+    fun `create Balance with valid initial amount`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1" // 5글자 (4~8 글자 조건 충족)
-        val password = "pass1234" // 8글자, 영문과 숫자 조합
+        val balanceId = 1L
+        val accountId = 100L
+        val initialAmount = 5000000.0 // 5,000,000원, 유효 범위 내
 
         // Act
-        val createdAccount = Account.create(accountId, name, email, loginId, password)
+        val account = Account.create(balanceId, accountId, initialAmount)
 
         // Assert
-        assertEquals(accountId, createdAccount.accountId)
-        assertEquals(name, createdAccount.name)
-        assertEquals(email, createdAccount.email)
-        assertEquals(loginId, createdAccount.loginId)
-        assertEquals(password, createdAccount.password)
+        assertEquals(initialAmount, account.amount)
+        assertEquals(balanceId, account.id)
+        assertEquals(accountId, account.accountId)
     }
 
     @Test
-    fun `create throws exception when loginId is too short`() {
+    fun `create Balance throws exception when initial amount is negative`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val invalidLoginId = "usr" // 3글자, 조건 미충족
-        val password = "pass1234" // 유효한 비밀번호
+        val balanceId = 1L
+        val accountId = 100L
+        val invalidInitialAmount = -1.0
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(accountId, name, email, invalidLoginId, password)
+            Account.create(balanceId, accountId, invalidInitialAmount)
         }
-        assertEquals(
-            "Login ID must be between ${Account.MIN_LOGIN_ID_LENGTH} and ${Account.MAX_LOGIN_ID_LENGTH} characters",
-            exception.message
-        )
+        assertEquals("Initial amount must be between 0 and 10000000", exception.message)
     }
 
     @Test
-    fun `create throws exception when loginId is too long`() {
+    fun `create Balance throws exception when initial amount exceeds maximum`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val invalidLoginId = "verylonguser" // 12글자, 조건 미충족
-        val password = "pass1234" // 유효한 비밀번호
+        val balanceId = 1L
+        val accountId = 100L
+        val invalidInitialAmount = 10000001.0
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(accountId, name, email, invalidLoginId, password)
+            Account.create(balanceId, accountId, invalidInitialAmount)
         }
-        assertEquals(
-            "Login ID must be between ${Account.MIN_LOGIN_ID_LENGTH} and ${Account.MAX_LOGIN_ID_LENGTH} characters",
-            exception.message
-        )
+        assertEquals("Initial amount must be between 0 and 10000000", exception.message)
+    }
+    
+    @Test
+    fun `create Balance with boundary values succeeds`() {
+        // Arrange
+        val balanceId = 1L
+        val accountId = 100L
+        val minAmount = 0.0
+        val maxAmount = 10000000.0
+        
+        // Act & Assert - 최소값
+        val minAccount = Account.create(balanceId, accountId, minAmount)
+        assertEquals(minAmount, minAccount.amount)
+        
+        // Act & Assert - 최대값
+        val maxAccount = Account.create(balanceId, accountId, maxAmount)
+        assertEquals(maxAmount, maxAccount.amount)
     }
 
     @Test
-    fun `create with loginId boundary values succeeds`() {
+    fun `charge valid amount updates balance`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val minLengthLoginId = "abcd" // 최소 길이 4글자
-        val maxLengthLoginId = "abcdefgh" // 최대 길이 8글자
-        val password = "pass1234"
+        val account = Account.create(1L, 100L, 5000000.0)
+        val chargeAmount = 100000.0 // 100,000원, 유효한 충전액 (1,000,000원 이하)
+        val expectedAmount = 5100000.0 // 5,100,000원
 
-        // Act - 최소 길이 검증
-        val minLengthAccount = Account.create(accountId, name, email, minLengthLoginId, password)
-        
-        // Assert - 최소 길이
-        assertEquals(minLengthLoginId, minLengthAccount.loginId)
-        
-        // Act - 최대 길이 검증
-        val maxLengthAccount = Account.create(accountId, name, email, maxLengthLoginId, password)
-        
-        // Assert - 최대 길이
-        assertEquals(maxLengthLoginId, maxLengthAccount.loginId)
+        // Act
+        account.charge(chargeAmount)
+
+        // Assert
+        assertEquals(expectedAmount, account.amount)
     }
 
     @Test
-    fun `create with password boundary values succeeds`() {
+    fun `charge amount greater than maximum transaction amount throws exception`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val minLengthPassword = "pass123" // 최소 길이 7글자 (영문 + 숫자 조합)
-        val maxLengthPassword = "password12345" // 최대 길이 12글자 (영문 + 숫자 조합)
-        
-        // Act - 최소 길이 검증
-        val minLengthAccount = Account.create(accountId, name, email, loginId, minLengthPassword)
-        
-        // Assert - 최소 길이
-        assertEquals(minLengthPassword, minLengthAccount.password)
-        
-        // Act - 최대 길이 검증
-        val maxLengthAccount = Account.create(accountId, name, email, loginId, maxLengthPassword)
-        
-        // Assert - 최대 길이
-        assertEquals(maxLengthPassword, maxLengthAccount.password)
-    }
-
-    @Test
-    fun `create throws exception when password does not match policy`() {
-        // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1" // 유효한 로그인 아이디
-        val invalidPassword = "password" // 숫자가 없는 비밀번호 -> 정책 미충족
+        val account = Account.create(1L, 100L, 5000000.0)
+        val invalidChargeAmount = 1000001.0 // 1,000,001원, 한 번에 충전 가능한 금액 초과
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(accountId, name, email, loginId, invalidPassword)
+            account.charge(invalidChargeAmount)
         }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${Account.MIN_PASSWORD_LENGTH} and ${Account.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
+        assertEquals("Charge amount cannot exceed 1000000", exception.message)
     }
 
     @Test
-    fun `create throws exception when password is too short with right policy`() {
+    fun `charge resulting in balance exceeding maximum throws exception`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val tooShortPassword = "abc123" // 6글자 (영문+숫자이지만 최소길이 미달)
+        val account = Account.create(1L, 100L, 9900000.0)
+        val chargeAmount = 200000.0 // 9900000 + 200000 = 10100000원, 최대 잔고 초과
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(accountId, name, email, loginId, tooShortPassword)
+            account.charge(chargeAmount)
         }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${Account.MIN_PASSWORD_LENGTH} and ${Account.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
+        assertEquals("Resulting balance cannot exceed 10000000", exception.message)
+    }
+    
+    @Test
+    fun `charge with maximum allowed transaction amount succeeds`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 5000000.0)
+        val maxChargeAmount = 1000000.0 // 1,000,000원 (최대 충전 가능 금액)
+        val expectedAmount = 6000000.0 // 6,000,000원
+
+        // Act
+        account.charge(maxChargeAmount)
+
+        // Assert
+        assertEquals(expectedAmount, account.amount)
+    }
+    
+    @Test
+    fun `multiple consecutive charge operations succeed`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 1000000.0)
+        val chargeAmount1 = 500000.0 // 첫 번째 충전: 500,000원
+        val chargeAmount2 = 300000.0 // 두 번째 충전: 300,000원 
+        val chargeAmount3 = 200000.0 // 세 번째 충전: 200,000원
+        val expectedFinalAmount = 2000000.0 // 1,000,000 + 500,000 + 300,000 + 200,000 = 2,000,000원
+
+        // Act
+        account.charge(chargeAmount1)
+            .charge(chargeAmount2)
+            .charge(chargeAmount3)
+
+        // Assert
+        assertEquals(expectedFinalAmount, account.amount)
     }
 
     @Test
-    fun `create throws exception when password is too long with right policy`() {
+    fun `withdraw valid amount updates balance`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val tooLongPassword = "abcdefghi123456" // 15글자 (영문+숫자이지만 최대길이 초과)
+        val account = Account.create(1L, 100L, 5000000.0)
+        val withdrawAmount = 100000.0 // 100,000원, 유효한 인출액 (1,000,000원 이하)
+        val expectedAmount = 4900000.0 // 5,000,000 - 100,000 = 4,900,000원
+
+        // Act
+        account.withdraw(withdrawAmount)
+
+        // Assert
+        assertEquals(expectedAmount, account.amount)
+    }
+
+    @Test
+    fun `withdraw amount greater than maximum transaction amount throws exception`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 5000000.0)
+        val invalidWithdrawAmount = 1000001.0 // 1,000,001원, 한 번에 인출 가능한 금액 초과
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(accountId, name, email, loginId, tooLongPassword)
+            account.withdraw(invalidWithdrawAmount)
         }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${Account.MIN_PASSWORD_LENGTH} and ${Account.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
+        assertEquals("Withdrawal amount cannot exceed 1000000", exception.message)
     }
 
     @Test
-    fun `create throws exception when password has only numbers`() {
+    fun `withdraw amount exceeding current balance throws exception`() {
         // Arrange
-        val accountId = 1
-        val name = "John Doe"
-        val email = "john@example.com"
-        val loginId = "user1"
-        val onlyNumbersPassword = "12345678" // 숫자만 있는 비밀번호
+        val account = Account.create(1L, 100L, 500000.0)
+        val withdrawAmount = 600000.0 // 600,000원, 잔고 부족
 
         // Act & Assert
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(accountId, name, email, loginId, onlyNumbersPassword)
+            account.withdraw(withdrawAmount)
         }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${Account.MIN_PASSWORD_LENGTH} and ${Account.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
+        assertEquals("Insufficient funds", exception.message)
+    }
+    
+    @Test
+    fun `withdraw with maximum allowed transaction amount succeeds`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 5000000.0)
+        val maxWithdrawAmount = 1000000.0 // 1,000,000원 (최대 출금 가능 금액)
+        val expectedAmount = 4000000.0 // 5,000,000 - 1,000,000 = 4,000,000원
+
+        // Act
+        account.withdraw(maxWithdrawAmount)
+
+        // Assert
+        assertEquals(expectedAmount, account.amount)
+    }
+    
+    @Test
+    fun `multiple consecutive withdraw operations succeed`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 2000000.0)
+        val withdrawAmount1 = 500000.0 // 첫 번째 출금: 500,000원
+        val withdrawAmount2 = 300000.0 // 두 번째 출금: 300,000원 
+        val withdrawAmount3 = 200000.0 // 세 번째 출금: 200,000원
+        val expectedFinalAmount = 1000000.0 // 2,000,000 - 500,000 - 300,000 - 200,000 = 1,000,000원
+
+        // Act
+        account.withdraw(withdrawAmount1)
+            .withdraw(withdrawAmount2)
+            .withdraw(withdrawAmount3)
+
+        // Assert
+        assertEquals(expectedFinalAmount, account.amount)
+    }
+    
+    @Test
+    fun `mixed charge and withdraw operations succeed`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 1000000.0)
+        val chargeAmount1 = 500000.0 // 첫 번째 충전: 500,000원
+        val withdrawAmount1 = 200000.0 // 첫 번째 출금: 200,000원
+        val chargeAmount2 = 300000.0 // 두 번째 충전: 300,000원
+        val withdrawAmount2 = 100000.0 // 두 번째 출금: 100,000원
+        
+        // 1,000,000 + 500,000 - 200,000 + 300,000 - 100,000 = 1,500,000원
+        val expectedFinalAmount = 1500000.0
+
+        // Act
+        account.charge(chargeAmount1)
+            .withdraw(withdrawAmount1)
+            .charge(chargeAmount2)
+            .withdraw(withdrawAmount2)
+
+        // Assert
+        assertEquals(expectedFinalAmount, account.amount)
     }
 
     @Test
-    fun `update with valid values successfully updates the account`() {
+    fun `charge negative amount throws exception`() {
         // Arrange
-        val account = Account.create(
-            accountId = 1, 
-            name = "Old Name", 
-            email = "old@example.com", 
-            loginId = "oldid", 
-            password = "oldpass1"
-        )
-        val newName = "New Name"
-        val newEmail = "new@example.com"
-        val newLoginId = "newid"
-        val newPassword = "newpass2"
+        val account = Account.create(1L, 100L, 5000000.0)
+        val negativeAmount = -100.0
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            account.charge(negativeAmount)
+        }
+        assertEquals("Charge amount must be positive", exception.message)
+    }
+
+    @Test
+    fun `withdraw negative amount throws exception`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 5000000.0)
+        val negativeAmount = -100.0
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            account.withdraw(negativeAmount)
+        }
+        assertEquals("Withdrawal amount must be positive", exception.message)
+    }
+
+    @Test
+    fun `charge zero amount throws exception`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 5000000.0)
+        val zeroAmount = 0.0
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            account.charge(zeroAmount)
+        }
+        assertEquals("Charge amount must be positive", exception.message)
+    }
+
+    @Test
+    fun `withdraw zero amount throws exception`() {
+        // Arrange
+        val account = Account.create(1L, 100L, 5000000.0)
+        val zeroAmount = 0.0
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            account.withdraw(zeroAmount)
+        }
+        assertEquals("Withdrawal amount must be positive", exception.message)
+    }
+    
+    @Test
+    fun `withdraw entire balance succeeds`() {
+        // Arrange
+        val initialAmount = 1000000.0
+        val account = Account.create(1L, 100L, initialAmount)
         
         // Act
-        val updatedAccount = account.update(
-            newName = newName,
-            newEmail = newEmail,
-            newLoginId = newLoginId,
-            newPassword = newPassword
-        )
+        account.withdraw(initialAmount)
         
         // Assert
-        assertEquals(newName, updatedAccount.name)
-        assertEquals(newEmail, updatedAccount.email)
-        assertEquals(newLoginId, updatedAccount.loginId)
-        assertEquals(newPassword, updatedAccount.password)
-    }
-    
-    @Test
-    fun `update with invalid loginId throws exception`() {
-        // Arrange
-        val account = Account.create(
-            accountId = 1, 
-            name = "User", 
-            email = "user@example.com", 
-            loginId = "valid1", 
-            password = "valid123"
-        )
-        val invalidLoginId = "verylongloginid" // Too long
-        
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.update(newLoginId = invalidLoginId)
-        }
-        assertEquals(
-            "Login ID must be between ${Account.MIN_LOGIN_ID_LENGTH} and ${Account.MAX_LOGIN_ID_LENGTH} characters",
-            exception.message
-        )
-    }
-    
-    @Test
-    fun `update with invalid password throws exception`() {
-        // Arrange
-        val account = Account.create(
-            accountId = 1, 
-            name = "User", 
-            email = "user@example.com", 
-            loginId = "valid1", 
-            password = "valid123"
-        )
-        val invalidPassword = "onlyletters" // No numbers
-        
-        // Act & Assert
-        val exception = assertThrows<IllegalArgumentException> {
-            account.update(newPassword = invalidPassword)
-        }
-        assertEquals(
-            "Password must be a combination of letters and numbers and between ${Account.MIN_PASSWORD_LENGTH} and ${Account.MAX_PASSWORD_LENGTH} characters",
-            exception.message
-        )
-    }
-    
-    @Test
-    fun `partial update only updates provided fields`() {
-        // Arrange
-        val originalName = "Original Name"
-        val originalEmail = "original@example.com"
-        val originalLoginId = "origId"
-        val originalPassword = "origPass1"
-        
-        val account = Account.create(
-            accountId = 1, 
-            name = originalName, 
-            email = originalEmail, 
-            loginId = originalLoginId, 
-            password = originalPassword
-        )
-        
-        val newName = "New Name"
-        
-        // Act - only update name
-        val updatedAccount = account.update(newName = newName)
-        
-        // Assert
-        assertEquals(newName, updatedAccount.name)
-        assertEquals(originalEmail, updatedAccount.email)
-        assertEquals(originalLoginId, updatedAccount.loginId)
-        assertEquals(originalPassword, updatedAccount.password)
-    }
-    
-    @Test
-    fun `multiple fields partial update works correctly`() {
-        // Arrange
-        val originalName = "Original Name"
-        val originalEmail = "original@example.com"
-        val originalLoginId = "origId"
-        val originalPassword = "origPass1"
-        
-        val account = Account.create(
-            accountId = 1, 
-            name = originalName, 
-            email = originalEmail, 
-            loginId = originalLoginId, 
-            password = originalPassword
-        )
-        
-        val newEmail = "new@example.com"
-        val newPassword = "newPass2"
-        
-        // Act - update email and password only
-        val updatedAccount = account.update(
-            newEmail = newEmail,
-            newPassword = newPassword
-        )
-        
-        // Assert
-        assertEquals(originalName, updatedAccount.name) // unchanged
-        assertEquals(newEmail, updatedAccount.email)
-        assertEquals(originalLoginId, updatedAccount.loginId) // unchanged
-        assertEquals(newPassword, updatedAccount.password)
+        assertEquals(0.0, account.amount)
     }
 }
