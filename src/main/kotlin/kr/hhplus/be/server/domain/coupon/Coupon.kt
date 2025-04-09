@@ -2,8 +2,14 @@ package kr.hhplus.be.server.domain.coupon
 
 import java.time.LocalDateTime
 
+enum class CouponType {
+    DISCOUNT_PRODUCT, // 상품 할인
+    DISCOUNT_ORDER, // 주문 할인
+}
+
 data class Coupon private constructor(
     val id: Long,
+    var couponType: CouponType,
     var discountRate: Double,
     var description: String,
     var startDate: LocalDateTime,
@@ -29,7 +35,8 @@ data class Coupon private constructor(
             description: String,
             startDate: LocalDateTime,
             endDate: LocalDateTime,
-            quantity: Int
+            quantity: Int,
+            couponType: CouponType
         ): Coupon {
             require(discountRate in MIN_DISCOUNT_RATE..MAX_DISCOUNT_RATE) { "할인율은 $MIN_DISCOUNT_RATE 부터 $MAX_DISCOUNT_RATE 사이여야 합니다." }
             require(description.length in MIN_DESCRIPTION_LENGTH..MAX_DESCRIPTION_LENGTH) { "설명은 $MIN_DESCRIPTION_LENGTH 부터 $MAX_DESCRIPTION_LENGTH 사이여야 합니다." }
@@ -45,6 +52,7 @@ data class Coupon private constructor(
                 endDate = endDate,
                 quantity = quantity,
                 remainingQuantity = quantity,
+                couponType = couponType,
                 createdAt = now,
                 updatedAt = now
             )
