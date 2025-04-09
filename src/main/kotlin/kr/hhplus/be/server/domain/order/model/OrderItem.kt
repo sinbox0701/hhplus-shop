@@ -1,16 +1,39 @@
 package kr.hhplus.be.server.domain.order.model
 
 import java.time.LocalDateTime
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
 
+@Entity
+@Table(name = "order_items")
 data class OrderItem private constructor(
+    @Id
     val id: Long,
+    
+    @Column(nullable = false)
     val orderId: Long,
+    
+    @Column(nullable = false)
     val productId: Long,
+    
+    @Column(nullable = false)
     val productOptionId: Long,
+    
+    @Column(nullable = true)
     val accountCouponId: Long?,
+    
+    @Column(nullable = false)
     var quantity: Int,
+    
+    @Column(nullable = false)
     var price: Double,
+    
+    @Column(nullable = false)
     var createdAt: LocalDateTime,
+    
+    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ){
     companion object {

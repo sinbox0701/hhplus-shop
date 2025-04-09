@@ -1,14 +1,33 @@
 package kr.hhplus.be.server.domain.user.model
 
 import java.time.LocalDateTime
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
 
+@Entity
+@Table(name = "users")
 data class User private constructor(
+    @Id
     val id: Long,
+    
+    @Column(nullable = false)
     var name: String,
+    
+    @Column(nullable = false, unique = true)
     var email: String,
+    
+    @Column(nullable = false, unique = true, length = MAX_LOGIN_ID_LENGTH)
     var loginId: String,
+    
+    @Column(nullable = false, length = MAX_PASSWORD_LENGTH)
     var password: String,
+    
+    @Column(nullable = false)
     var createdAt: LocalDateTime,
+    
+    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
     companion object {

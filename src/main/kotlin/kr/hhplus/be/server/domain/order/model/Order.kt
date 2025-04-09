@@ -1,6 +1,12 @@
 package kr.hhplus.be.server.domain.order.model
 
 import java.time.LocalDateTime
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Id
+import jakarta.persistence.Table
 
 enum class OrderStatus {
     PENDING, // 주문 대기
@@ -8,14 +14,32 @@ enum class OrderStatus {
     CANCELLED // 주문 취소
 }
 
+@Entity
+@Table(name = "orders")
 data class Order private constructor(
+    @Id
     val id: Long,
+    
+    @Column(nullable = false)
     val accountId: Long,
+    
+    @Column(nullable = true)
     val accountCouponId: Long?,
+    
+    @Column(nullable = false)
     var totalPrice: Double,
+    
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     var status: OrderStatus,
+    
+    @Column(nullable = false)
     var orderDate: LocalDateTime,
+    
+    @Column(nullable = false)
     var createdAt: LocalDateTime,
+    
+    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ){
     companion object {
