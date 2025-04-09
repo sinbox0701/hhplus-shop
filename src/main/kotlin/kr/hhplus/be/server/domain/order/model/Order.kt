@@ -30,8 +30,8 @@ data class Order private constructor(
         this.updatedAt = LocalDateTime.now()
     }
 
-    fun updateTotalPrice(totalPrice: Double) {
-        this.totalPrice = totalPrice
+    fun updateTotalPrice(totalPrice: Double, discountRate: Double? = null) {
+        this.totalPrice = discountRate?.let { totalPrice * (1 - it / 100) } ?: totalPrice
         this.updatedAt = LocalDateTime.now()
     }
     

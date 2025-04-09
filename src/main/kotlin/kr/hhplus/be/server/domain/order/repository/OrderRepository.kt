@@ -13,6 +13,6 @@ interface OrderRepository {
     fun findByCreatedAtBetween(startDate: LocalDateTime, endDate: LocalDateTime): List<Order>
     fun update(order: Order): Order
     fun updateStatus(id: Long, status: OrderStatus): Order
-    fun updateTotalPrice(id: Long, totalPrice: Double): Order
+    fun updateTotalPrice(id: Long, totalPrice: Double, discountRate: Double? = null): Order
     fun delete(id: Long)
 }
