@@ -3,8 +3,13 @@ package kr.hhplus.be.server.domain.order.model
 import java.time.LocalDateTime
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import kr.hhplus.be.server.domain.product.model.Product
+import kr.hhplus.be.server.domain.product.model.ProductOption
 
 @Entity
 @Table(name = "order_items")
@@ -12,14 +17,17 @@ data class OrderItem private constructor(
     @Id
     val id: Long,
     
-    @Column(nullable = false)
-    val orderId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    val order: Order,
     
-    @Column(nullable = false)
-    val productId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    val product: Product,
     
-    @Column(nullable = false)
-    val productOptionId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_option_id")
+    val productOption: ProductOption,
     
     @Column(nullable = true)
     val accountCouponId: Long?,
@@ -41,12 +49,13 @@ data class OrderItem private constructor(
         const val MAX_QUANTITY = 100
         val MIN_PRICE = 100.0
 
-        fun create(id: Long, orderId: Long, productId: Long, productOptionId: Long, quantity: Int, productPrice: Double, accountCouponId: Long?, discountRate: Double?): OrderItem {
+        fun create(id: Long, order: Order, product: Product, productOption: ProductOption, 
+                   quantity: Int, accountCouponId: Long?, discountRate: Double?): OrderItem {
             require(quantity in MIN_QUANTITY..MAX_QUANTITY) { "수량은 $MIN_QUANTITY 부터 $MAX_QUANTITY 사이여야 합니다." }
-            val basePrice = productPrice * quantity
+            val basePrice = (product.price + productOption.additionalPrice) * quantity
             val finalPrice = discountRate?.let { basePrice * (1 - it / 100) } ?: basePrice
             require(finalPrice >= MIN_PRICE) { "가격은 $MIN_PRICE 이상이어야 합니다." }
-            return OrderItem(id, orderId, productId, productOptionId, accountCouponId, quantity, finalPrice, LocalDateTime.now(), LocalDateTime.now())
+            return OrderItem(id, order, product, productOption, accountCouponId, quantity, finalPrice, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 

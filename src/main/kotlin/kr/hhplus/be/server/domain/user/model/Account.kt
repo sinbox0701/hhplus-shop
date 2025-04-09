@@ -3,7 +3,10 @@ package kr.hhplus.be.server.domain.user.model
 import java.time.LocalDateTime
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity
@@ -12,8 +15,9 @@ data class Account private constructor(
     @Id
     val id: Long,
     
-    @Column(nullable = false)
-    val userId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    val user: User,
     
     @Column(nullable = false)
     var amount: Double,
@@ -29,11 +33,11 @@ data class Account private constructor(
         const val MAX_BALANCE: Double = 100000000.0 // 100,000,000 원
         const val MAX_TRANSACTION_AMOUNT: Double = 10000000.0 // 10,000,000 원
 
-        fun create(id: Long, userId: Long, initialAmount: Double = MIN_BALANCE): Account {
+        fun create(id: Long, user: User, initialAmount: Double = MIN_BALANCE): Account {
             require(initialAmount >= MIN_BALANCE && initialAmount <= MAX_BALANCE) {
                 "Initial amount must be between $MIN_BALANCE and $MAX_BALANCE"
             }
-            return Account(id, userId, initialAmount, LocalDateTime.now(), LocalDateTime.now())
+            return Account(id, user, initialAmount, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 

@@ -5,8 +5,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import kr.hhplus.be.server.domain.user.model.Account
 
 enum class OrderStatus {
     PENDING, // 주문 대기
@@ -20,8 +24,9 @@ data class Order private constructor(
     @Id
     val id: Long,
     
-    @Column(nullable = false)
-    val accountId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    val account: Account,
     
     @Column(nullable = true)
     val accountCouponId: Long?,
@@ -43,8 +48,8 @@ data class Order private constructor(
     var updatedAt: LocalDateTime
 ){
     companion object {
-        fun create(id: Long, accountId: Long, accountCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
-            return Order(id, accountId, accountCouponId, totalPrice, status, LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now())
+        fun create(id: Long, account: Account, accountCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
+            return Order(id, account, accountCouponId, totalPrice, status, LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now())
         }
     }
 

@@ -3,7 +3,10 @@ package kr.hhplus.be.server.domain.product.model
 import java.time.LocalDateTime
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity
@@ -12,8 +15,9 @@ data class ProductOption private constructor(
     @Id
     val id: Long,
     
-    @Column(nullable = false)
-    val productId: Long,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    val product: Product,
     
     @Column(nullable = false, length = MAX_NAME_LENGTH)
     var name: String,
@@ -37,14 +41,14 @@ data class ProductOption private constructor(
         private const val MIN_AVAILABLE_QUANTITY = 0
         private const val MAX_AVAILABLE_QUANTITY = 1000
 
-        fun create(id: Long, productId: Long, name: String, availableQuantity: Int, additionalPrice: Double): ProductOption {
+        fun create(id: Long, product: Product, name: String, availableQuantity: Int, additionalPrice: Double): ProductOption {
             require(name.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
                 "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
             }
             require(availableQuantity in MIN_AVAILABLE_QUANTITY..MAX_AVAILABLE_QUANTITY) {
                 "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
             }
-            return ProductOption(id, productId, name, availableQuantity, additionalPrice, LocalDateTime.now(), LocalDateTime.now())
+            return ProductOption(id, product, name, availableQuantity, additionalPrice, LocalDateTime.now(), LocalDateTime.now())
         }
     }
 
