@@ -72,25 +72,20 @@ class OrderFacade(
         // 1. 주문 조회
         val order = orderService.getOrder(orderId)
         
-        // 2. 주문 상태 확인
-        if (order.status != OrderStatus.PENDING) {
-            throw IllegalStateException("결제할 수 없는 주문 상태입니다: ${order.status}")
-        }
-        
-        // 3. 계정 확인
+        // 2. 계정 확인
         if (order.accountId != accountId) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
-        // 4. 결제 모듈 호출 (외부 결제 API 호출을 대신하여 계좌 잔액 차감으로 대체)
+        // 3. 결제 모듈 호출 (외부 결제 API 호출을 대신하여 계좌 잔액 차감으로 대체)
         val paymentResult = processExternalPayment(order)
         
         if (paymentResult) {
             try {
-                // 5. 계좌에서 금액 차감
+                // 4. 계좌에서 금액 차감
                 accountService.withdraw(accountId, order.totalPrice)
                 
-                // 6. 주문 상태 완료로 변경
+                // 5. 주문 상태 완료로 변경
                 return orderService.completeOrder(orderId)
             } catch (e: Exception) {
                 // 결제는 성공했으나 내부 처리 실패 시 환불 처리 (실제로는 더 복잡한 로직이 필요)

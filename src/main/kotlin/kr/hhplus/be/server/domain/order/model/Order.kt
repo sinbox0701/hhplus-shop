@@ -36,7 +36,7 @@ data class Order private constructor(
     }
     
     fun isCancellable(): Boolean {
-        return status == OrderStatus.PENDING
+        return status == OrderStatus.CANCELLED
     }
 }
 

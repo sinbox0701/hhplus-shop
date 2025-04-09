@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.controller.order.api
+package kr.hhplus.be.server.interfaces.order.api
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -6,9 +6,9 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import kr.hhplus.be.server.controller.order.dto.request.OrderCreateRequest
-import kr.hhplus.be.server.controller.order.dto.request.OrderStatusUpdateRequest
-import kr.hhplus.be.server.controller.order.dto.response.OrderResponse
+import kr.hhplus.be.server.application.order.OrderFacade
+import kr.hhplus.be.server.interfaces.order.OrderRequest
+import kr.hhplus.be.server.interfaces.order.OrderResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import jakarta.validation.Valid
@@ -29,8 +29,34 @@ interface OrderApi {
     )
     @PostMapping
     fun createOrder(
-        @Valid @RequestBody orderCreateRequest: OrderCreateRequest
-    ): ResponseEntity<OrderResponse>
+        @Valid @RequestBody orderCreateRequest: OrderRequest.OrderCreateRequest
+    ): ResponseEntity<OrderResponse.Response>
+
+    @Operation(
+        summary = "주문 결제",
+        description = "주문 결제를 처리합니다.",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결제 처리 성공",
+                content = [Content(schema = Schema(implementation = OrderResponse::class))]
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "주문을 찾을 수 없음"
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "결제 처리 실패"
+            )
+        ]
+    )
+    @PostMapping("/{orderId}/payment")
+    fun processPayment(
+        @Parameter(description = "주문 ID", example = "1")
+        @PathVariable orderId: Long,
+        @Valid @RequestBody orderPaymentRequest: OrderRequest.OrderPaymentRequest
+    ): ResponseEntity<OrderResponse.Response>
 
     @Operation(
         summary = "주문 내역 조회",
@@ -47,7 +73,7 @@ interface OrderApi {
     fun getOrdersByAccountId(
         @Parameter(description = "사용자 ID", example = "1")
         @PathVariable accountId: Long
-    ): ResponseEntity<List<OrderResponse>>
+    ): ResponseEntity<List<OrderResponse.Response>>
 
     @Operation(
         summary = "주문 상세 조회",
@@ -67,34 +93,14 @@ interface OrderApi {
     @GetMapping("/{orderId}")
     fun getOrder(
         @Parameter(description = "주문 ID", example = "1")
-        @PathVariable orderId: Long
-    ): ResponseEntity<OrderResponse>
-
-    @Operation(
-        summary = "주문 상태 업데이트",
-        description = "주문 상태를 업데이트합니다.",
-        responses = [
-            ApiResponse(
-                responseCode = "200",
-                description = "주문 상태 업데이트 성공",
-                content = [Content(schema = Schema(implementation = OrderResponse::class))]
-            ),
-            ApiResponse(
-                responseCode = "404",
-                description = "주문을 찾을 수 없음"
-            )
-        ]
-    )
-    @PatchMapping("/{orderId}/status")
-    fun updateOrderStatus(
-        @Parameter(description = "주문 ID", example = "1")
         @PathVariable orderId: Long,
-        @Valid @RequestBody orderStatusUpdateRequest: OrderStatusUpdateRequest
-    ): ResponseEntity<OrderResponse>
+        @Parameter(description = "사용자 ID", example = "1")
+        @RequestParam accountId: Long
+    ): ResponseEntity<OrderResponse.Response>
 
     @Operation(
         summary = "주문 취소",
-        description = "주문을 취소합니다. 주문 상태를 CANCELLED로 변경합니다.",
+        description = "주문을 취소합니다. 완료된 주문인 경우 환불 처리가 진행됩니다.",
         responses = [
             ApiResponse(
                 responseCode = "200",
@@ -107,13 +113,15 @@ interface OrderApi {
             ),
             ApiResponse(
                 responseCode = "400",
-                description = "이미 완료된 주문은 취소할 수 없습니다."
+                description = "취소할 수 없는 주문 상태입니다."
             )
         ]
     )
     @DeleteMapping("/{orderId}")
     fun cancelOrder(
         @Parameter(description = "주문 ID", example = "1")
-        @PathVariable orderId: Long
-    ): ResponseEntity<OrderResponse>
+        @PathVariable orderId: Long,
+        @Parameter(description = "사용자 ID", example = "1")
+        @RequestParam accountId: Long
+    ): ResponseEntity<OrderResponse.Response>
 }
