@@ -54,7 +54,7 @@ class ProductOptionUnitTest {
     fun createProductOptionWithTooLongName() {
         // given
         val product = mockk<Product>()
-        val name = "아주아주아주길다" // 최대 길이는 10
+        val name = "아주아주아주길다아주길다" // 최대 길이는 10
         val availableQuantity = 100
         val additionalPrice = 1000.0
         
@@ -174,7 +174,7 @@ class ProductOptionUnitTest {
         // given
         val product = mockk<Product>()
         val productOption = ProductOption.create(product, "옵션", 100, 1000.0)
-        val invalidName = "아주아주아주길다" // 최대 10자 필요
+        val invalidName = "아주아주아주아주아주아주길다" // 최대 10자 필요
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {

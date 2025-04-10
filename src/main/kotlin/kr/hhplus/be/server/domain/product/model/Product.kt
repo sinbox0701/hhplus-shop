@@ -38,6 +38,9 @@ data class Product private constructor(
         const val MAX_NAME_LENGTH = 20
 
         fun create(name: String, description: String, price: Double): Product {
+            require(name.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
+                "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
+            }
             require(price >= MIN_PRICE && price <= MAX_PRICE) {
                 "Initial amount must be between $MIN_PRICE and $MAX_PRICE"
             }
@@ -47,7 +50,9 @@ data class Product private constructor(
 
     fun update(name: String? = null, description: String? = null, price: Double? = null): Product {
         name?.let {
-            require(it.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) { "Name must be between 3 and 20 characters" }
+            require(it.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) { 
+                "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters" 
+            }
             this.name = it
             this.updatedAt = LocalDateTime.now()
         }

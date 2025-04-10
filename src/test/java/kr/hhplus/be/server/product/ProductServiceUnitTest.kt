@@ -1,8 +1,8 @@
 package kr.hhplus.be.server.product
 
 import io.mockk.*
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import kr.hhplus.be.server.domain.product.service.ProductCommand
@@ -12,30 +12,41 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(MockKExtension::class)
 class ProductServiceUnitTest {
 
     @MockK
     private lateinit var productRepository: ProductRepository
-
-    @InjectMockKs
     private lateinit var productService: ProductService
 
-    private val testName = "테스트 상품"
-    private val testDescription = "테스트 상품 설명"
-    private val testPrice = 10000.0
+    // 테스트 상수 정의
+    companion object {
+        private const val TEST_NAME = "테스트 상품"
+        private const val TEST_DESCRIPTION = "테스트 상품 설명"
+        private const val TEST_PRICE = 10000.0
+        
+        private const val UPDATED_NAME = "업데이트된 상품"
+        private const val UPDATED_DESCRIPTION = "업데이트된 상품 설명"
+        private const val UPDATED_PRICE = 20000.0
+    }
 
     @BeforeEach
     fun setup() {
-        MockKAnnotations.init(this)
+        productService = ProductService(productRepository)
     }
 
     @Test
     @DisplayName("새로운 상품 생성 성공")
     fun createProductSuccess() {
         // given
-        val command = ProductCommand.CreateProductCommand(testName, testDescription, testPrice)
-        val product = Product.create(testName, testDescription, testPrice)
+        val command = ProductCommand.CreateProductCommand(TEST_NAME, TEST_DESCRIPTION, TEST_PRICE)
+        val product = mockk<Product> {
+            every { name } returns TEST_NAME
+            every { description } returns TEST_DESCRIPTION
+            every { price } returns TEST_PRICE
+        }
         
         every { productRepository.save(any()) } returns product
         
@@ -43,9 +54,9 @@ class ProductServiceUnitTest {
         val createdProduct = productService.create(command)
         
         // then
-        assertEquals(testName, createdProduct.name)
-        assertEquals(testDescription, createdProduct.description)
-        assertEquals(testPrice, createdProduct.price)
+        assertEquals(TEST_NAME, createdProduct.name)
+        assertEquals(TEST_DESCRIPTION, createdProduct.description)
+        assertEquals(TEST_PRICE, createdProduct.price)
         
         verify(exactly = 1) { productRepository.save(any()) }
     }
@@ -54,44 +65,56 @@ class ProductServiceUnitTest {
     @DisplayName("ID로 상품 조회 성공")
     fun getProductByIdSuccess() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
+        val product = mockk<Product> {
+            every { id } returns 1L
+            every { name } returns TEST_NAME
+            every { description } returns TEST_DESCRIPTION
+            every { price } returns TEST_PRICE
+        }
         
-        every { productRepository.findById(product.id!!) } returns product
+        every { productRepository.findById(1L) } returns product
         
         // when
-        val foundProduct = productService.get(product.id!!)
+        val foundProduct = productService.get(1L)
         
         // then
-        assertEquals(testName, foundProduct.name)
-        assertEquals(testDescription, foundProduct.description)
-        assertEquals(testPrice, foundProduct.price)
+        assertEquals(TEST_NAME, foundProduct.name)
+        assertEquals(TEST_DESCRIPTION, foundProduct.description)
+        assertEquals(TEST_PRICE, foundProduct.price)
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
     }
     
     @Test
     @DisplayName("존재하지 않는 ID로 상품 조회 시 예외 발생")
     fun getProductByIdNotFound() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
-        every { productRepository.findById(product.id!!) } returns null
+        every { productRepository.findById(1L) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.get(product.id!!)
+            productService.get(1L)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
     }
     
     @Test
     @DisplayName("모든 상품 조회 성공")
     fun getAllProductsSuccess() {
         // given
-        val product1 = Product.create(testName, testDescription, testPrice)
-        val product2 = Product.create("상품2", "설명2", 20000.0)
+        val product1 = mockk<Product> {
+            every { name } returns TEST_NAME
+            every { description } returns TEST_DESCRIPTION
+            every { price } returns TEST_PRICE
+        }
+        val product2 = mockk<Product> {
+            every { name } returns "상품2"
+            every { description } returns "설명2"
+            every { price } returns 20000.0
+        }
         val products = listOf(product1, product2)
         
         every { productRepository.findAll() } returns products
@@ -101,7 +124,7 @@ class ProductServiceUnitTest {
         
         // then
         assertEquals(2, result.size)
-        assertEquals(testName, result[0].name)
+        assertEquals(TEST_NAME, result[0].name)
         assertEquals("상품2", result[1].name)
         
         verify(exactly = 1) { productRepository.findAll() }
@@ -111,41 +134,48 @@ class ProductServiceUnitTest {
     @DisplayName("상품 정보 업데이트 성공")
     fun updateProductSuccess() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
-        val newName = "업데이트된 상품"
-        val newDescription = "업데이트된 상품 설명"
-        val newPrice = 20000.0
+        val product = mockk<Product> {
+            every { id } returns 1L
+            every { update(any(), any(), any()) } returns mockk {
+                every { name } returns UPDATED_NAME
+                every { description } returns UPDATED_DESCRIPTION
+                every { price } returns UPDATED_PRICE
+            }
+        }
         
-        val command = ProductCommand.UpdateProductCommand(product.id!!, newName, newDescription, newPrice)
-        val updatedProduct = product.update(newName, newDescription, newPrice)
+        val command = ProductCommand.UpdateProductCommand(1L, UPDATED_NAME, UPDATED_DESCRIPTION, UPDATED_PRICE)
         
-        every { productRepository.findById(product.id!!) } returns product
-        every { productRepository.save(any()) } returns updatedProduct
+        every { productRepository.findById(1L) } returns product
+        every { productRepository.save(any()) } answers {
+            firstArg<Product>().run {
+                mockk {
+                    every { name } returns UPDATED_NAME
+                    every { description } returns UPDATED_DESCRIPTION
+                    every { price } returns UPDATED_PRICE
+                }
+            }
+        }
         
         // when
         val result = productService.update(command)
         
         // then
-        assertEquals(newName, result.name)
-        assertEquals(newDescription, result.description)
-        assertEquals(newPrice, result.price)
+        assertEquals(UPDATED_NAME, result.name)
+        assertEquals(UPDATED_DESCRIPTION, result.description)
+        assertEquals(UPDATED_PRICE, result.price)
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 1) { productRepository.save(any()) }
+        verify(exactly = 1) { product.update(UPDATED_NAME, UPDATED_DESCRIPTION, UPDATED_PRICE) }
     }
     
     @Test
     @DisplayName("존재하지 않는 상품 업데이트 시 예외 발생")
     fun updateNonExistentProduct() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
-        val newName = "업데이트된 상품"
-        val newDescription = "업데이트된 상품 설명"
-        val newPrice = 20000.0
+        val command = ProductCommand.UpdateProductCommand(1L, UPDATED_NAME, UPDATED_DESCRIPTION, UPDATED_PRICE)
         
-        val command = ProductCommand.UpdateProductCommand(product.id!!, newName, newDescription, newPrice)
-        
-        every { productRepository.findById(product.id!!) } returns null
+        every { productRepository.findById(1L) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -154,7 +184,7 @@ class ProductServiceUnitTest {
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 0) { productRepository.save(any()) }
     }
     
@@ -162,60 +192,78 @@ class ProductServiceUnitTest {
     @DisplayName("일부 필드만 업데이트 성공")
     fun updatePartialFieldsSuccess() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
-        val newName = "업데이트된 상품"
+        val product = mockk<Product> {
+            every { id } returns 1L
+            every { name } returns TEST_NAME
+            every { description } returns TEST_DESCRIPTION
+            every { price } returns TEST_PRICE
+            every { update(any(), any(), any()) } returns mockk {
+                every { name } returns UPDATED_NAME
+                every { description } returns TEST_DESCRIPTION
+                every { price } returns TEST_PRICE
+            }
+        }
         
-        val command = ProductCommand.UpdateProductCommand(product.id!!, newName)
-        val updatedProduct = product.update(newName, null, null)
+        val command = ProductCommand.UpdateProductCommand(1L, UPDATED_NAME)
         
-        every { productRepository.findById(product.id!!) } returns product
-        every { productRepository.save(any()) } returns updatedProduct
+        every { productRepository.findById(1L) } returns product
+        every { productRepository.save(any()) } answers {
+            firstArg<Product>().run {
+                mockk {
+                    every { name } returns UPDATED_NAME
+                    every { description } returns TEST_DESCRIPTION
+                    every { price } returns TEST_PRICE
+                }
+            }
+        }
         
         // when
         val result = productService.update(command)
         
         // then
-        assertEquals(newName, result.name)
-        assertEquals(testDescription, result.description)
-        assertEquals(testPrice, result.price)
+        assertEquals(UPDATED_NAME, result.name)
+        assertEquals(TEST_DESCRIPTION, result.description)
+        assertEquals(TEST_PRICE, result.price)
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 1) { productRepository.save(any()) }
+        verify(exactly = 1) { product.update(UPDATED_NAME, null, null) }
     }
     
     @Test
     @DisplayName("상품 삭제 성공")
     fun deleteProductSuccess() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
+        val product = mockk<Product> {
+            every { id } returns 1L
+        }
         
-        every { productRepository.findById(product.id!!) } returns product
-        every { productRepository.delete(product.id!!) } returns Unit
+        every { productRepository.findById(1L) } returns product
+        every { productRepository.delete(1L) } returns Unit
         
         // when & then
         assertDoesNotThrow {
-            productService.delete(product.id!!)
+            productService.delete(1L)
         }
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
-        verify(exactly = 1) { productRepository.delete(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
+        verify(exactly = 1) { productRepository.delete(1L) }
     }
     
     @Test
     @DisplayName("존재하지 않는 상품 삭제 시 예외 발생")
     fun deleteNonExistentProduct() {
         // given
-        val product = Product.create(testName, testDescription, testPrice)
-        every { productRepository.findById(product.id!!) } returns null
+        every { productRepository.findById(1L) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.delete(product.id!!)
+            productService.delete(1L)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 0) { productRepository.delete(any()) }
     }
 } 

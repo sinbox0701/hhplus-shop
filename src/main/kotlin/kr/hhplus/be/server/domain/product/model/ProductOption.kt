@@ -71,18 +71,23 @@ data class ProductOption private constructor(
     }
 
     fun add(quantity: Int): ProductOption {
-        if (quantity < 0) {
-            throw IllegalArgumentException("Cannot add negative quantity")
+        require(quantity >= 0) {
+            "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
         }
         
-        this.availableQuantity += quantity
+        val newQuantity = this.availableQuantity + quantity
+        require(newQuantity in MIN_AVAILABLE_QUANTITY..MAX_AVAILABLE_QUANTITY) {
+            "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
+        }
+        
+        this.availableQuantity = newQuantity
         this.updatedAt = LocalDateTime.now()
         return this
     }
 
     fun subtract(quantity: Int): ProductOption {
-        if (quantity < 0) {
-            throw IllegalArgumentException("Cannot subtract negative quantity")
+        require(quantity >= 0 && quantity <= MAX_AVAILABLE_QUANTITY) {
+            "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
         }
         
         if (this.availableQuantity < quantity) {

@@ -153,7 +153,7 @@ class ProductUnitTest {
     fun updateWithTooLongName() {
         // given
         val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
-        val invalidName = "아주아주아주아주아주아주아주아주긴이름" // 최대 20자 필요
+        val invalidName = "아주아주아주아앙아아아아아아아아아ㅏ아앙주아주아주아주아주긴이름" // 최대 20자 필요
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
