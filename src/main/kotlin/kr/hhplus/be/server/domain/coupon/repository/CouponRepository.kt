@@ -10,5 +10,5 @@ interface CouponRepository {
     fun findByCode(code: String): Coupon?
     fun findByType(type: CouponType): List<Coupon>
     fun update(coupon: Coupon): Coupon
-    fun delete(coupon: Coupon)
+    fun delete(id: Long)
 }
