@@ -34,13 +34,18 @@ class OrderItemServiceUnitTest {
     @DisplayName("주문 상품을 성공적으로 생성한다")
     fun createOrderItemSuccess() {
         // given
-        val account = mockk<Account>()
-        val order = mockk<Order>()
-        val product = mockk<Product>()
-        val productOption = mockk<ProductOption>()
+        val order = mockk<Order> {
+            every { id } returns 1L
+        }
+        val product = mockk<Product> {
+            every { id } returns 2L
+            every { price } returns 10000.0
+        }
+        val productOption = mockk<ProductOption> {
+            every { id } returns 3L
+            every { additionalPrice } returns 0.0
+        }
         val quantity = 2
-        val productPrice = 10000.0
-        val mockOrderItem = mockk<OrderItem>()
         
         val command = OrderItemCommand.CreateOrderItemCommand(
             order = order,
@@ -51,11 +56,14 @@ class OrderItemServiceUnitTest {
             discountRate = null
         )
         
+        val mockOrderItem = mockk<OrderItem>()
+        
+        every { mockOrderItem.id } returns 4L
         every { mockOrderItem.order } returns order
         every { mockOrderItem.product } returns product
         every { mockOrderItem.productOption } returns productOption
         every { mockOrderItem.quantity } returns quantity
-        every { mockOrderItem.price } returns productPrice * quantity
+        every { mockOrderItem.price } returns 20000.0
         
         every { orderItemRepository.save(any()) } returns mockOrderItem
         
@@ -64,11 +72,12 @@ class OrderItemServiceUnitTest {
         
         // then
         verify { orderItemRepository.save(any()) }
+        assertEquals(4L, result.id)
         assertEquals(order, result.order)
         assertEquals(product, result.product)
         assertEquals(productOption, result.productOption)
         assertEquals(quantity, result.quantity)
-        assertEquals(productPrice * quantity, result.price)
+        assertEquals(20000.0, result.price)
     }
     
     @Test
