@@ -4,6 +4,7 @@ import kr.hhplus.be.server.domain.user.model.User
 
 interface UserRepository {
     fun save(user: User): User
+    fun findAll(): List<User>
     fun findByEmail(email: String): User?
     fun findByLoginId(loginId: String): User?
     fun findById(id: Long): User?

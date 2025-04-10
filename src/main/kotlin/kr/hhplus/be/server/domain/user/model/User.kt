@@ -5,28 +5,31 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 
 @Entity
 @Table(name = "users")
 data class User private constructor(
     @Id
-    val id: Long,
-    
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
+
     @Column(nullable = false)
     var name: String,
-    
+
     @Column(nullable = false, unique = true)
     var email: String,
-    
+
     @Column(nullable = false, unique = true, length = MAX_LOGIN_ID_LENGTH)
     var loginId: String,
-    
+
     @Column(nullable = false, length = MAX_PASSWORD_LENGTH)
     var password: String,
-    
+
     @Column(nullable = false)
     var createdAt: LocalDateTime,
-    
+
     @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
@@ -42,7 +45,6 @@ data class User private constructor(
             Regex("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{$MIN_PASSWORD_LENGTH,$MAX_PASSWORD_LENGTH}\$")
 
         fun create(
-            id: Long,
             name: String,
             email: String,
             loginId: String,
@@ -54,7 +56,15 @@ data class User private constructor(
             require(PASSWORD_REGEX.matches(password)) {
                 "Password must be a combination of letters and numbers and between $MIN_PASSWORD_LENGTH and $MAX_PASSWORD_LENGTH characters"
             }
-            return User(id, name, email, loginId, password, LocalDateTime.now(), LocalDateTime.now())
+            val now = LocalDateTime.now()
+            return User(
+                name = name,
+                email = email,
+                loginId = loginId,
+                password = password,
+                createdAt = now,
+                updatedAt = now
+            )
         }
     }
 

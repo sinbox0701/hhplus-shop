@@ -1,7 +1,9 @@
 package kr.hhplus.be.server.application.user
 
+import kr.hhplus.be.server.application.user.UserCriteria
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
+import kr.hhplus.be.server.domain.user.service.AccountCommand
 import kr.hhplus.be.server.domain.user.service.AccountService
 import kr.hhplus.be.server.domain.user.service.UserService
 import org.springframework.stereotype.Service
@@ -16,12 +18,12 @@ class UserAccountFacade(
      * 유저 생성과 동시에 계좌 생성
      */
     @Transactional
-    fun createUserWithAccount(name: String, email: String, loginId: String, password: String, initialAmount: Double = Account.MIN_BALANCE): User {
+    fun createUserWithAccount(criteria: UserCriteria.CreateUserCriteria): User {
         // 유저 생성
-        val user = userService.create(name, email, loginId, password)
+        val user = userService.create(criteria.toUserCommand())
         
         // 계좌 생성
-        accountService.create(user.id, initialAmount)
+        accountService.create(criteria.toAccountCommand(user))
         
         return user
     }
@@ -41,16 +43,18 @@ class UserAccountFacade(
      * 유저 확인 후 계좌 잔액 충전
      */
     @Transactional
-    fun chargeAccount(userId: Long, amount: Double): Account {
+    fun chargeAccount(criteria: UserCriteria.ChargeAccountCriteria): Account {
         // 유저 확인
-        val user = userService.findById(userId)
+        val user = userService.findById(criteria.userId)
         
-        // 계좌 확인
-        val account = accountService.findByUserId(userId) 
-            ?: throw IllegalArgumentException("해당 유저의 계좌가 존재하지 않습니다: ${user.id}")
+        // 계좌 확인 - findByUserId는 계좌가 없을 경우 이미 예외를 던집니다
+        val account = accountService.findByUserId(user.id!!)
+        
+        // account.id가 null이 아님을 보장 (이 시점에서 account 객체는 유효함)
+        val accountId = account.id ?: throw IllegalStateException("계좌 ID가 null입니다")
         
         // 계좌 충전
-        return accountService.charge(account.id, amount)
+        return accountService.charge(criteria.toChargeAccountCommand(accountId))
     }
     
     /**
@@ -61,12 +65,15 @@ class UserAccountFacade(
         // 유저 확인
         val user = userService.findById(userId)
         
-        // 계좌 확인
-        val account = accountService.findByUserId(userId)
-            ?: throw IllegalArgumentException("해당 유저의 계좌가 존재하지 않습니다: ${user.id}")
+        // 계좌 확인 - findByUserId는 계좌가 없을 경우 이미 예외를 던집니다
+        val account = accountService.findByUserId(user.id!!)
+        
+        // account.id가 null이 아님을 보장 (이 시점에서 account 객체는 유효함)
+        val accountId = account.id ?: throw IllegalStateException("계좌 ID가 null입니다")
         
         // 계좌 차감
-        return accountService.withdraw(account.id, amount)
+        val command = AccountCommand.UpdateAccountCommand(id = accountId, amount = amount)
+        return accountService.withdraw(command)
     }
     
     /**
@@ -76,7 +83,10 @@ class UserAccountFacade(
     fun deleteUserWithAccount(userId: Long) {
         // 계좌 확인 및 삭제
         val account = accountService.findByUserId(userId)
-        account?.let { accountService.delete(it.id) }
+        
+        // account.id가 null이 아님을 보장
+        val accountId = account.id ?: throw IllegalStateException("계좌 ID가 null입니다")
+        accountService.delete(accountId)
         
         // 유저 삭제
         userService.delete(userId)

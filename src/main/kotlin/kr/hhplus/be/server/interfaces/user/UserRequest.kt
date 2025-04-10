@@ -8,7 +8,8 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-
+import kr.hhplus.be.server.application.user.UserCriteria
+import kr.hhplus.be.server.domain.user.service.UserCommand
 class UserRequest {
     
     data class CreateRequest(
@@ -35,7 +36,16 @@ class UserRequest {
             message = "비밀번호는 8-12자의 영문, 숫자 조합이어야 합니다"
         )
         val password: String
-    )
+    ) {
+        fun toCriteria(): UserCriteria.CreateUserCriteria {
+            return UserCriteria.CreateUserCriteria(
+                name = name,
+                email = email,
+                loginId = loginId,
+                password = password
+            )
+        }
+    }
     
     data class UpdateRequest(
         @field:Size(min = 2, max = 50, message = "이름은 2자 이상 50자 이하여야 합니다")
@@ -57,12 +67,27 @@ class UserRequest {
             message = "비밀번호는 8-12자의 영문, 숫자 조합이어야 합니다"
         )
         val password: String? = null
-    )
+    ) {
+        fun toCommand(id: Long): UserCommand.UpdateUserCommand {
+            return UserCommand.UpdateUserCommand(
+                id = id,
+                loginId = loginId,
+                password = password
+            )
+        }
+    }
     
     data class AccountDepositRequest(
         @field:NotNull(message = "입금액은 필수입니다")
         @field:DecimalMin(value = "1", message = "최소 입금액은 1원입니다")
         @field:DecimalMax(value = "10000000", message = "최대 입금액은 1000만원입니다")
         val amount: Double
-    )
+    ) {
+        fun toCriteria(userId: Long): UserCriteria.ChargeAccountCriteria {
+            return UserCriteria.ChargeAccountCriteria(
+                userId = userId,
+                amount = amount
+            )
+        }
+    }
 }

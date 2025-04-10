@@ -32,26 +32,18 @@ class UserController(
     @GetMapping
     override fun getAllUsers(): ResponseEntity<List<UserResponse.Response>> {
         // 목업 데이터 (추후 userService.findAll()로 대체 필요)
-        val now = LocalDateTime.now()
-        val users = listOf(
+        val users = userService.findAll()
+        val userResponses = users.map { user ->
             UserResponse.Response(
-                id = 1L,
-                name = "홍길동",
-                email = "hong@example.com",
-                loginId = "hong1234",
-                createdAt = now.minusDays(5),
-                updatedAt = now.minusDays(2)
-            ),
-            UserResponse.Response(
-                id = 2L,
-                name = "김철수",
-                email = "kim@example.com",
-                loginId = "kim5678",
-                createdAt = now.minusDays(3),
-                updatedAt = now.minusDays(1)
+                id = user.id!!,
+                name = user.name,
+                email = user.email,
+                loginId = user.loginId,
+                createdAt = user.createdAt,
+                updatedAt = user.updatedAt
             )
-        )
-        return ResponseEntity.ok(users)
+        }
+        return ResponseEntity.ok(userResponses)
     }
 
     @GetMapping("/{id}")
@@ -60,8 +52,8 @@ class UserController(
         val (user, account) = userAccountFacade.findUserWithAccount(id)
         
         val accountResponse = UserResponse.AccountResponse(
-            id = account.id,
-            userId = account.userId,
+            id = account.id!!,
+            userId = user.id!!,
             amount = account.amount,
             createdAt = account.createdAt,
             updatedAt = account.updatedAt
@@ -83,19 +75,16 @@ class UserController(
     @PostMapping
     override fun createUser(@Valid @RequestBody request: UserRequest.CreateRequest): ResponseEntity<UserResponse.DetailResponse> {
         // 유저 생성과 동시에 계좌 생성
-        val user = userAccountFacade.createUserWithAccount(
-            name = request.name,
-            email = request.email,
-            loginId = request.loginId,
-            password = request.password
-        )
+        val criteria = request.toCriteria()
+        val user = userAccountFacade.createUserWithAccount(criteria)
+        
         
         // 생성된 계좌 정보 조회
-        val account = userAccountFacade.findUserWithAccount(user.id).second
+        val account = userAccountFacade.findUserWithAccount(user.id!!).second
         
         val accountResponse = UserResponse.AccountResponse(
-            id = account.id,
-            userId = account.userId,
+            id = account.id!!,
+            userId = user.id,
             amount = account.amount,
             createdAt = account.createdAt,
             updatedAt = account.updatedAt
@@ -120,14 +109,11 @@ class UserController(
         @Valid @RequestBody request: UserRequest.UpdateRequest
     ): ResponseEntity<UserResponse.Response> {
         // 유저 정보 업데이트
-        val updatedUser = userService.update(
-            id = id,
-            loginId = request.loginId, 
-            password = request.password
-        )
+        val criteria = request.toCommand(id)
+        val updatedUser = userService.update(criteria)
         
         val userResponse = UserResponse.Response(
-            id = updatedUser.id,
+            id = updatedUser.id!!,
             name = updatedUser.name,
             email = updatedUser.email,
             loginId = updatedUser.loginId,
@@ -151,11 +137,13 @@ class UserController(
         @Valid @RequestBody request: UserRequest.AccountDepositRequest
     ): ResponseEntity<UserResponse.AccountResponse> {
         // 계좌 충전
-        val updatedAccount = userAccountFacade.chargeAccount(id, request.amount)
+        val criteria = request.toCriteria(id)
+        val user = userService.findById(id)
+        val updatedAccount = userAccountFacade.chargeAccount(criteria)
         
         val accountResponse = UserResponse.AccountResponse(
-            id = updatedAccount.id,
-            userId = updatedAccount.userId,
+            id = updatedAccount.id!!,
+            userId = user.id!!,
             amount = updatedAccount.amount,
             createdAt = updatedAccount.createdAt,
             updatedAt = updatedAccount.updatedAt

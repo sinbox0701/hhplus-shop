@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.domain.user.service
 
+import kr.hhplus.be.server.domain.user.service.UserCommand
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
@@ -9,19 +10,22 @@ import kotlin.random.Random
 class UserService(
     private val userRepository: UserRepository
 ) {
-    fun create(name: String, email: String, loginId: String, password: String): User {
+    fun create(command: UserCommand.CreateUserCommand): User {
         // 이메일, 로그인 ID 중복 체크
-        userRepository.findByEmail(email)?.let {
-            throw IllegalArgumentException("이미 사용 중인 이메일입니다: $email")
+        userRepository.findByEmail(command.email)?.let {
+            throw IllegalArgumentException("이미 사용 중인 이메일입니다: $command.email")
         }
         
-        userRepository.findByLoginId(loginId)?.let {
-            throw IllegalArgumentException("이미 사용 중인 로그인 ID입니다: $loginId")
+        userRepository.findByLoginId(command.loginId)?.let {
+            throw IllegalArgumentException("이미 사용 중인 로그인 ID입니다: $command.loginId")
         }
         
-        val userId = System.currentTimeMillis() // 현재 시간을 밀리초 단위로 사용하여 고유한 ID 생성
-        val user = User.create(userId, name, email, loginId, password)
+        val user = User.create(command.name, command.email, command.loginId, command.password)
         return userRepository.save(user)
+    }
+
+    fun findAll(): List<User> {
+        return userRepository.findAll()
     }
     
     fun findById(id: Long): User {
@@ -36,21 +40,21 @@ class UserService(
         return userRepository.findByEmail(email)
     }
     
-    fun update(id: Long, loginId: String?, password: String?): User {
-        val user = findById(id)
-        user.update(loginId, password)
-        return userRepository.update(loginId, password)
+    fun update(command: UserCommand.UpdateUserCommand): User {
+        val user = findById(command.id)
+        user.update(command.loginId, command.password)
+        return userRepository.update(command.loginId, command.password)
     }
     
     fun delete(id: Long) {
         userRepository.delete(id)
     }
     
-    fun login(loginId: String, password: String): User {
-        val user = userRepository.findByLoginId(loginId) 
+    fun login(command: UserCommand.LoginCommand): User {
+        val user = userRepository.findByLoginId(command.loginId) 
             ?: throw IllegalArgumentException("존재하지 않는 사용자입니다")
             
-        if (user.password != password) {
+        if (user.password != command.password) {
             throw IllegalArgumentException("비밀번호가 일치하지 않습니다")
         }
         
