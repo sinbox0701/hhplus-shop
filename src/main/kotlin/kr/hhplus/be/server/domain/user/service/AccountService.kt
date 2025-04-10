@@ -19,8 +19,8 @@ class AccountService(
         return accountRepository.findByUserId(userId) ?: throw IllegalArgumentException("계좌를 찾을 수 없습니다: $userId")
     }
 
-    fun findById(id: Long): Account? {
-        return accountRepository.findById(id)
+    fun findById(id: Long): Account {
+        return accountRepository.findById(id) ?: throw IllegalArgumentException("계좌를 찾을 수 없습니다: $id")
     }
     
     fun charge(command: AccountCommand.UpdateAccountCommand): Account {

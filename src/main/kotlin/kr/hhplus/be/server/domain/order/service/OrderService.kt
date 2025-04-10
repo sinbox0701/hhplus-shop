@@ -13,7 +13,7 @@ class OrderService(
     private val orderRepository: OrderRepository,
 ) {
     fun createOrder(command: OrderCommand.CreateOrderCommand): Order {
-        val order = Order.create(command.account, command.accountCouponId, status = OrderStatus.PENDING, totalPrice = 0.0)
+        val order = Order.create(account = command.account, accountCouponId = command.accountCouponId, totalPrice = command.totalPrice)
         return orderRepository.save(order)
     }
     
@@ -55,6 +55,6 @@ class OrderService(
     
     fun updateOrderTotalPrice(command: OrderCommand.UpdateOrderTotalPriceCommand): Order {
         getOrder(command.id)
-        return orderRepository.updateTotalPrice(command.id, command.totalPrice, command.discountRate)
+        return orderRepository.updateTotalPrice(command.id, command.totalPrice)
     }
 }

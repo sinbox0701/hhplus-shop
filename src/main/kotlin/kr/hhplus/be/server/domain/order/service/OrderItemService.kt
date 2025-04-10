@@ -15,6 +15,10 @@ class OrderItemService(
         val orderItem = OrderItem.create(command.order, command.product, command.productOption, command.quantity, command.accountCouponId, command.discountRate)
         return orderItemRepository.save(orderItem)
     }
+
+    fun createAll(command: List<OrderItemCommand.CreateOrderItemCommand>): List<OrderItem> {
+        return command.map { create(it) }
+    }
     
     fun getById(id: Long): OrderItem {
         return orderItemRepository.findById(id) ?: throw IllegalArgumentException("주문 상품을 찾을 수 없습니다: $id")
