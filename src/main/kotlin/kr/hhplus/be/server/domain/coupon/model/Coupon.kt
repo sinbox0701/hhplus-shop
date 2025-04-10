@@ -27,6 +27,9 @@ data class Coupon private constructor(
     var couponType: CouponType,
 
     @Column(nullable = false)
+    var code: String,
+    
+    @Column(nullable = false)
     var discountRate: Double,
 
     @Column(nullable = false)
@@ -57,10 +60,14 @@ data class Coupon private constructor(
         const val MIN_QUANTITY = 1
         const val MAX_QUANTITY = 100
 
+        const val CODE_LENGTH = 6
+        private val CODE_PATTERN = Regex("^[A-Z]{6}$")
+
         const val MIN_DESCRIPTION_LENGTH = 2
         const val MAX_DESCRIPTION_LENGTH = 30
         
         fun create(
+            code: String,
             discountRate: Double,
             description: String,
             startDate: LocalDateTime,
@@ -68,6 +75,7 @@ data class Coupon private constructor(
             quantity: Int,
             couponType: CouponType
         ): Coupon {
+            require(CODE_PATTERN.matches(code)) { "쿠폰 코드는 대문자 영어 6자리여야 합니다." }
             require(discountRate in MIN_DISCOUNT_RATE..MAX_DISCOUNT_RATE) { "할인율은 $MIN_DISCOUNT_RATE 부터 $MAX_DISCOUNT_RATE 사이여야 합니다." }
             require(description.length in MIN_DESCRIPTION_LENGTH..MAX_DESCRIPTION_LENGTH) { "설명은 $MIN_DESCRIPTION_LENGTH 부터 $MAX_DESCRIPTION_LENGTH 사이여야 합니다." }
             require(startDate.isBefore(endDate)) { "시작일은 종료일보다 이전이어야 합니다." }
@@ -75,6 +83,7 @@ data class Coupon private constructor(
             
             val now = LocalDateTime.now()
             return Coupon(
+                code = code,
                 discountRate = discountRate,
                 description = description,
                 startDate = startDate,
@@ -127,9 +136,10 @@ data class Coupon private constructor(
         return this
     }
     
-    fun decreaseQuantity(): Coupon {
+    fun decreaseQuantity(count: Int): Coupon {
         require(remainingQuantity > 0) { "남은 쿠폰이 없습니다." }
-        remainingQuantity--
+        require(count > 0) { "쿠폰 수량은 0보다 크게 감소할 수 없습니다." }
+        remainingQuantity -= count
         this.updatedAt = LocalDateTime.now()
         return this
     }

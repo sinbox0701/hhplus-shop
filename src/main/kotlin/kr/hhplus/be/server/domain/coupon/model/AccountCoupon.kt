@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.domain.coupon
+package kr.hhplus.be.server.domain.coupon.model
 
 import java.time.LocalDateTime
 import jakarta.persistence.Entity
