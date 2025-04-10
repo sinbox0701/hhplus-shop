@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import kr.hhplus.be.server.domain.user.service.UserCommand
 
 class UserServiceUnitTest {
 
@@ -20,7 +21,6 @@ class UserServiceUnitTest {
     @InjectMockKs
     private lateinit var userService: UserService
 
-    private val testId = 1L
     private val testName = "홍길동"
     private val testEmail = "user@example.com"
     private val testLoginId = "user123"
@@ -35,14 +35,14 @@ class UserServiceUnitTest {
     @DisplayName("새로운 사용자 생성 성공")
     fun createUserSuccess() {
         // given
-        val user = User.create(testId, testName, testEmail, testLoginId, testPassword)
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
         
         every { userRepository.findByEmail(testEmail) } returns null
         every { userRepository.findByLoginId(testLoginId) } returns null
         every { userRepository.save(any()) } returns user
         
         // when
-        val createdUser = userService.create(testName, testEmail, testLoginId, testPassword)
+        val createdUser = userService.create(UserCommand.CreateUserCommand(testName, testEmail, testLoginId, testPassword))
         
         // then
         assertEquals(testName, createdUser.name)
@@ -59,13 +59,13 @@ class UserServiceUnitTest {
     @DisplayName("이미 사용 중인 이메일로 사용자 생성 시 예외 발생")
     fun createUserWithExistingEmail() {
         // given
-        val existingUser = User.create(testId, testName, testEmail, testLoginId, testPassword)
+        val existingUser = User.create(testName, testEmail, testLoginId, testPassword)
         
         every { userRepository.findByEmail(testEmail) } returns existingUser
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.create(testName, testEmail, testLoginId, testPassword)
+            userService.create(UserCommand.CreateUserCommand(testName, testEmail, testLoginId, testPassword))
         }
         
         assertTrue(exception.message!!.contains("이미 사용 중인 이메일입니다"))
@@ -79,14 +79,14 @@ class UserServiceUnitTest {
     @DisplayName("이미 사용 중인 로그인ID로 사용자 생성 시 예외 발생")
     fun createUserWithExistingLoginId() {
         // given
-        val existingUser = User.create(testId, testName, testEmail, testLoginId, testPassword)
-        
+        val existingUser = User.create(testName, testEmail, testLoginId, testPassword)
+
         every { userRepository.findByEmail(testEmail) } returns null
         every { userRepository.findByLoginId(testLoginId) } returns existingUser
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.create(testName, testEmail, testLoginId, testPassword)
+            userService.create(UserCommand.CreateUserCommand(testName, testEmail, testLoginId, testPassword))
         }
         
         assertTrue(exception.message!!.contains("이미 사용 중인 로그인 ID입니다"))
@@ -100,57 +100,58 @@ class UserServiceUnitTest {
     @DisplayName("ID로 사용자 조회 성공")
     fun findUserByIdSuccess() {
         // given
-        val user = User.create(testId, testName, testEmail, testLoginId, testPassword)
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
         
-        every { userRepository.findById(testId) } returns user
+        every { userRepository.findById(user.id!!) } returns user
         
         // when
-        val foundUser = userService.findById(testId)
+        val foundUser = userService.findById(user.id!!)
         
         // then
-        assertEquals(testId, foundUser.id)
+        assertEquals(user.id, foundUser.id)
         assertEquals(testName, foundUser.name)
         assertEquals(testEmail, foundUser.email)
         
-        verify(exactly = 1) { userRepository.findById(testId) }
+        verify(exactly = 1) { userRepository.findById(user.id!!) }
     }
     
     @Test
     @DisplayName("존재하지 않는 ID로 사용자 조회 시 예외 발생")
     fun findUserByIdNotFound() {
         // given
-        every { userRepository.findById(testId) } returns null
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
+        every { userRepository.findById(user.id!!) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.findById(testId)
+            userService.findById(user.id!!)
         }
         
         assertTrue(exception.message!!.contains("사용자를 찾을 수 없습니다"))
         
-        verify(exactly = 1) { userRepository.findById(testId) }
+        verify(exactly = 1) { userRepository.findById(user.id!!) }
     }
     
     @Test
     @DisplayName("사용자 정보 업데이트 성공")
     fun updateUserSuccess() {
         // given
-        val user = User.create(testId, testName, testEmail, testLoginId, testPassword)
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
         val newLoginId = "newuser"
         val newPassword = "newpass1"
         val updatedUser = user.update(newLoginId, newPassword)
         
-        every { userRepository.findById(testId) } returns user
+        every { userRepository.findById(user.id!!) } returns user
         every { userRepository.update(newLoginId, newPassword) } returns updatedUser
         
         // when
-        val result = userService.update(testId, newLoginId, newPassword)
+        val result = userService.update(UserCommand.UpdateUserCommand(user.id!!, newLoginId, newPassword))
         
         // then
         assertEquals(newLoginId, result.loginId)
         assertEquals(newPassword, result.password)
         
-        verify(exactly = 1) { userRepository.findById(testId) }
+        verify(exactly = 1) { userRepository.findById(user.id!!) }
         verify(exactly = 1) { userRepository.update(newLoginId, newPassword) }
     }
     
@@ -158,19 +159,20 @@ class UserServiceUnitTest {
     @DisplayName("존재하지 않는 사용자 업데이트 시 예외 발생")
     fun updateNonExistentUser() {
         // given
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
         val newLoginId = "newuser"
         val newPassword = "newpass1"
         
-        every { userRepository.findById(testId) } returns null
+        every { userRepository.findById(user.id!!) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.update(testId, newLoginId, newPassword)
+            userService.update(UserCommand.UpdateUserCommand(user.id!!, newLoginId, newPassword))
         }
         
         assertTrue(exception.message!!.contains("사용자를 찾을 수 없습니다"))
         
-        verify(exactly = 1) { userRepository.findById(testId) }
+        verify(exactly = 1) { userRepository.findById(user.id!!) }
         verify(exactly = 0) { userRepository.update(any(), any()) }
     }
     
@@ -178,15 +180,15 @@ class UserServiceUnitTest {
     @DisplayName("사용자 로그인 성공")
     fun loginSuccess() {
         // given
-        val user = User.create(testId, testName, testEmail, testLoginId, testPassword)
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
         
         every { userRepository.findByLoginId(testLoginId) } returns user
         
         // when
-        val loggedInUser = userService.login(testLoginId, testPassword)
+        val loggedInUser = userService.login(UserCommand.LoginCommand(testLoginId, testPassword))
         
         // then
-        assertEquals(testId, loggedInUser.id)
+        assertEquals(user.id, loggedInUser.id)
         assertEquals(testName, loggedInUser.name)
         assertEquals(testLoginId, loggedInUser.loginId)
         
@@ -201,7 +203,7 @@ class UserServiceUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.login(testLoginId, testPassword)
+            userService.login(UserCommand.LoginCommand(testLoginId, testPassword))
         }
         
         assertTrue(exception.message!!.contains("존재하지 않는 사용자입니다"))
@@ -213,14 +215,14 @@ class UserServiceUnitTest {
     @DisplayName("잘못된 비밀번호로 로그인 시 예외 발생")
     fun loginWithWrongPassword() {
         // given
-        val user = User.create(testId, testName, testEmail, testLoginId, testPassword)
+        val user = User.create(testName, testEmail, testLoginId, testPassword)
         val wrongPassword = "wrongpass1"
         
         every { userRepository.findByLoginId(testLoginId) } returns user
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.login(testLoginId, wrongPassword)
+            userService.login(UserCommand.LoginCommand(testLoginId, wrongPassword))
         }
         
         assertTrue(exception.message!!.contains("비밀번호가 일치하지 않습니다"))

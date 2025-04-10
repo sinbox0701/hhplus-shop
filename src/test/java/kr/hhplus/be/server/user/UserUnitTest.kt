@@ -13,17 +13,15 @@ class UserUnitTest {
     @DisplayName("유효한 데이터로 User 객체 생성 성공")
     fun createUserWithValidData() {
         // given
-        val id = 1L
         val name = "홍길동"
         val email = "user@example.com"
         val loginId = "user123"
         val password = "pass123a"
         
         // when
-        val user = User.create(id, name, email, loginId, password)
+        val user = User.create(name, email, loginId, password)
         
         // then
-        assertEquals(id, user.id)
         assertEquals(name, user.name)
         assertEquals(email, user.email)
         assertEquals(loginId, user.loginId)
@@ -36,7 +34,6 @@ class UserUnitTest {
     @DisplayName("로그인ID가 최소 길이보다 짧을 경우 예외 발생")
     fun createUserWithTooShortLoginId() {
         // given
-        val id = 1L
         val name = "홍길동"
         val email = "user@example.com"
         val loginId = "usr" // 3자 (최소 4자 필요)
@@ -44,7 +41,7 @@ class UserUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            User.create(id, name, email, loginId, password)
+            User.create(name, email, loginId, password)
         }
         
         assertTrue(exception.message!!.contains("Login ID must be between"))
@@ -54,7 +51,6 @@ class UserUnitTest {
     @DisplayName("로그인ID가 최대 길이보다 길 경우 예외 발생")
     fun createUserWithTooLongLoginId() {
         // given
-        val id = 1L
         val name = "홍길동"
         val email = "user@example.com"
         val loginId = "user12345" // 9자 (최대 8자 필요)
@@ -62,7 +58,7 @@ class UserUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            User.create(id, name, email, loginId, password)
+            User.create(name, email, loginId, password)
         }
         
         assertTrue(exception.message!!.contains("Login ID must be between"))
@@ -72,7 +68,6 @@ class UserUnitTest {
     @DisplayName("비밀번호가 영문자와 숫자의 조합이 아닐 경우 예외 발생")
     fun createUserWithInvalidPasswordFormat() {
         // given
-        val id = 1L
         val name = "홍길동"
         val email = "user@example.com"
         val loginId = "user123"
@@ -80,7 +75,7 @@ class UserUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            User.create(id, name, email, loginId, password)
+            User.create(name, email, loginId, password)
         }
         
         assertTrue(exception.message!!.contains("Password must be a combination"))
@@ -90,7 +85,6 @@ class UserUnitTest {
     @DisplayName("비밀번호가 최소 길이보다 짧을 경우 예외 발생")
     fun createUserWithTooShortPassword() {
         // given
-        val id = 1L
         val name = "홍길동"
         val email = "user@example.com"
         val loginId = "user123"
@@ -98,7 +92,7 @@ class UserUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            User.create(id, name, email, loginId, password)
+            User.create(name, email, loginId, password)
         }
         
         assertTrue(exception.message!!.contains("Password must be a combination"))
@@ -108,7 +102,6 @@ class UserUnitTest {
     @DisplayName("비밀번호가 최대 길이보다 길 경우 예외 발생")
     fun createUserWithTooLongPassword() {
         // given
-        val id = 1L
         val name = "홍길동"
         val email = "user@example.com"
         val loginId = "user123"
@@ -116,7 +109,7 @@ class UserUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            User.create(id, name, email, loginId, password)
+            User.create(name, email, loginId, password)
         }
         
         assertTrue(exception.message!!.contains("Password must be a combination"))
@@ -126,7 +119,7 @@ class UserUnitTest {
     @DisplayName("유효한 데이터로 사용자 정보 업데이트 성공")
     fun updateUserWithValidData() {
         // given
-        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val user = User.create("홍길동", "user@example.com", "user123", "pass123a")
         val newLoginId = "user456"
         val newPassword = "pass456a"
         
@@ -143,7 +136,7 @@ class UserUnitTest {
     @DisplayName("로그인ID만 업데이트 성공")
     fun updateOnlyLoginId() {
         // given
-        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val user = User.create("홍길동", "user@example.com", "user123", "pass123a")
         val originalPassword = user.password
         val newLoginId = "user456"
         
@@ -159,7 +152,7 @@ class UserUnitTest {
     @DisplayName("비밀번호만 업데이트 성공")
     fun updateOnlyPassword() {
         // given
-        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val user = User.create("홍길동", "user@example.com", "user123", "pass123a")
         val originalLoginId = user.loginId
         val newPassword = "pass456a"
         
@@ -175,7 +168,7 @@ class UserUnitTest {
     @DisplayName("잘못된 로그인ID로 업데이트 시 예외 발생")
     fun updateWithInvalidLoginId() {
         // given
-        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val user = User.create("홍길동", "user@example.com", "user123", "pass123a")
         val invalidLoginId = "usr" // 3자 (최소 4자 필요)
         
         // when & then
@@ -190,7 +183,7 @@ class UserUnitTest {
     @DisplayName("잘못된 비밀번호로 업데이트 시 예외 발생")
     fun updateWithInvalidPassword() {
         // given
-        val user = User.create(1L, "홍길동", "user@example.com", "user123", "pass123a")
+        val user = User.create("홍길동", "user@example.com", "user123", "pass123a")
         val invalidPassword = "password" // 숫자 없음
         
         // when & then

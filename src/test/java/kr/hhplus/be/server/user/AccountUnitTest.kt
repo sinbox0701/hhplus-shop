@@ -6,23 +6,22 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
-
+import io.mockk.mockk
+import kr.hhplus.be.server.domain.user.model.User
 class AccountUnitTest {
     
     @Test
     @DisplayName("유효한 데이터로 Account 객체 생성 성공")
     fun createAccountWithValidData() {
         // given
-        val id = 1L
-        val userId = 1L
+        val user = mockk<User>()
         val initialAmount = 5000.0
         
         // when
-        val account = Account.create(id, userId, initialAmount)
+        val account = Account.create(user, initialAmount)
         
         // then
-        assertEquals(id, account.id)
-        assertEquals(userId, account.userId)
+        assertEquals(user, account.user)
         assertEquals(initialAmount, account.amount)
         assertNotNull(account.createdAt)
         assertNotNull(account.updatedAt)
@@ -32,15 +31,14 @@ class AccountUnitTest {
     @DisplayName("기본 금액으로 Account 객체 생성 성공")
     fun createAccountWithDefaultAmount() {
         // given
-        val id = 1L
-        val userId = 1L
+        val user = mockk<User>()
+        val initialAmount = 0.0
         
         // when
-        val account = Account.create(id, userId)
+        val account = Account.create(user, initialAmount)
         
         // then
-        assertEquals(id, account.id)
-        assertEquals(userId, account.userId)
+        assertEquals(user, account.user)
         assertEquals(Account.MIN_BALANCE, account.amount)
         assertNotNull(account.createdAt)
         assertNotNull(account.updatedAt)
@@ -50,13 +48,12 @@ class AccountUnitTest {
     @DisplayName("최소 금액보다 작은 초기 금액으로 Account 생성 시 예외 발생")
     fun createAccountWithTooSmallInitialAmount() {
         // given
-        val id = 1L
-        val userId = 1L
+        val user = mockk<User>()
         val tooSmallAmount = -100.0 // 최소 금액(0.0)보다 작음
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(id, userId, tooSmallAmount)
+            Account.create(user, tooSmallAmount)
         }
         
         assertTrue(exception.message!!.contains("Initial amount must be between"))
@@ -66,13 +63,12 @@ class AccountUnitTest {
     @DisplayName("최대 금액보다 큰 초기 금액으로 Account 생성 시 예외 발생")
     fun createAccountWithTooLargeInitialAmount() {
         // given
-        val id = 1L
-        val userId = 1L
+        val user = mockk<User>()
         val tooLargeAmount = Account.MAX_BALANCE + 1000.0
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            Account.create(id, userId, tooLargeAmount)
+            Account.create(user, tooLargeAmount)
         }
         
         assertTrue(exception.message!!.contains("Initial amount must be between"))
@@ -82,7 +78,7 @@ class AccountUnitTest {
     @DisplayName("유효한 금액으로 계좌 충전 성공")
     fun chargeAccountWithValidAmount() {
         // given
-        val account = Account.create(1L, 1L, 1000.0)
+        val account = Account.create(mockk<User>(), 1000.0)
         val chargeAmount = 5000.0
         val expectedAmount = account.amount + chargeAmount
         
@@ -98,7 +94,7 @@ class AccountUnitTest {
     @DisplayName("음수 금액으로 계좌 충전 시 예외 발생")
     fun chargeAccountWithNegativeAmount() {
         // given
-        val account = Account.create(1L, 1L, 1000.0)
+        val account = Account.create(mockk<User>(), 1000.0)
         val negativeAmount = -100.0
         
         // when & then
@@ -113,7 +109,7 @@ class AccountUnitTest {
     @DisplayName("최대 거래 금액보다 큰 금액으로 계좌 충전 시 예외 발생")
     fun chargeAccountWithExceedingTransactionAmount() {
         // given
-        val account = Account.create(1L, 1L, 1000.0)
+        val account = Account.create(mockk<User>(), 1000.0)
         val tooLargeAmount = Account.MAX_TRANSACTION_AMOUNT + 1000.0
         
         // when & then
@@ -128,7 +124,7 @@ class AccountUnitTest {
     @DisplayName("충전 후 최대 잔액을 초과하는 경우 예외 발생")
     fun chargeAccountResultingInExceedingMaxBalance() {
         // given
-        val account = Account.create(1L, 1L, Account.MAX_BALANCE - 1000.0)
+        val account = Account.create(mockk<User>(), Account.MAX_BALANCE - 1000.0)
         val chargeAmount = 2000.0 // 충전 후 잔액이 최대치를 초과
         
         // when & then
@@ -144,7 +140,7 @@ class AccountUnitTest {
     fun withdrawAccountWithValidAmount() {
         // given
         val initialAmount = 10000.0
-        val account = Account.create(1L, 1L, initialAmount)
+        val account = Account.create(mockk<User>(), initialAmount)
         val withdrawAmount = 3000.0
         val expectedAmount = initialAmount - withdrawAmount
         
@@ -160,7 +156,7 @@ class AccountUnitTest {
     @DisplayName("음수 금액으로 계좌 출금 시 예외 발생")
     fun withdrawAccountWithNegativeAmount() {
         // given
-        val account = Account.create(1L, 1L, 5000.0)
+        val account = Account.create(mockk<User>(), 5000.0)
         val negativeAmount = -100.0
         
         // when & then
@@ -175,7 +171,7 @@ class AccountUnitTest {
     @DisplayName("최대 거래 금액보다 큰 금액으로 계좌 출금 시 예외 발생")
     fun withdrawAccountWithExceedingTransactionAmount() {
         // given
-        val account = Account.create(1L, 1L, Account.MAX_TRANSACTION_AMOUNT + 5000.0)
+        val account = Account.create(mockk<User>(), Account.MAX_TRANSACTION_AMOUNT + 5000.0)
         val tooLargeAmount = Account.MAX_TRANSACTION_AMOUNT + 1000.0
         
         // when & then
@@ -191,7 +187,7 @@ class AccountUnitTest {
     fun withdrawAccountWithInsufficientFunds() {
         // given
         val initialAmount = 5000.0
-        val account = Account.create(1L, 1L, initialAmount)
+        val account = Account.create(mockk<User>(), initialAmount)
         val withdrawAmount = initialAmount + 1000.0 // 잔액보다 큰 금액
         
         // when & then
@@ -207,7 +203,7 @@ class AccountUnitTest {
     fun withdrawAccountResultingInBelowMinBalance() {
         // given
         val initialAmount = Account.MIN_BALANCE + 100.0
-        val account = Account.create(1L, 1L, initialAmount)
+        val account = Account.create(mockk<User>(), initialAmount)
         val withdrawAmount = 200.0 // 출금 후 잔액이 최소치보다 작아짐
         
         // when & then
