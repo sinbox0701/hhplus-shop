@@ -3,8 +3,6 @@ package kr.hhplus.be.server.domain.order.service
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
-import kr.hhplus.be.server.domain.user.model.Account
-import kr.hhplus.be.server.domain.order.service.OrderCommand
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 

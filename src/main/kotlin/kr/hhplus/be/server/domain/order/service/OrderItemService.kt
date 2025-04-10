@@ -1,12 +1,9 @@
 package kr.hhplus.be.server.domain.order.service
 
 import kr.hhplus.be.server.domain.order.model.OrderItem
-import kr.hhplus.be.server.domain.order.model.Order
-import kr.hhplus.be.server.domain.product.model.Product
-import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.order.repository.OrderItemRepository
 import org.springframework.stereotype.Service
-import kr.hhplus.be.server.domain.order.service.OrderItemCommand
+
 @Service
 class OrderItemService(
     private val orderItemRepository: OrderItemRepository

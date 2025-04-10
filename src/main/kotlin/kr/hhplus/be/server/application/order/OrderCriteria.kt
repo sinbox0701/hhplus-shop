@@ -25,9 +25,8 @@ class OrderCriteria{
 
     data class OrderCreateCriteria(
         val accountId: Long,
-        val items: List<OrderItemCreateCriteria>,
-        val accountCouponId: Long? = null,
-        val orderItems: List<OrderItemCreateCriteria>
+        val orderItems: List<OrderItemCreateCriteria>,
+        val accountCouponId: Long? = null
     ){
         fun toOrderCommand(account: Account): OrderCommand.CreateOrderCommand {
             return OrderCommand.CreateOrderCommand(

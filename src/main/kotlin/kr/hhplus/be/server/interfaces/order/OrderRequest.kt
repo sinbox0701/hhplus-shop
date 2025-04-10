@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import io.swagger.v3.oas.annotations.media.Schema
 import kr.hhplus.be.server.domain.order.model.OrderStatus
+import kr.hhplus.be.server.application.order.OrderCriteria
 
 class OrderRequest {
     
@@ -20,7 +21,15 @@ class OrderRequest {
         @field:NotEmpty(message = "주문 상품 목록은 비어있을 수 없습니다.")
         @field:Valid
         val orderItems: List<OrderItemCreateRequest>
-    )
+    ) {
+        fun toCriteria(): OrderCriteria.OrderCreateCriteria {
+            return OrderCriteria.OrderCreateCriteria(
+                accountId = accountId,
+                orderItems = orderItems.map { it.toCriteria() },
+                accountCouponId = accountCouponId
+            )
+        }
+    }
     
     data class OrderItemCreateRequest(
         @field:NotNull(message = "상품 ID는 필수입니다.")
@@ -32,12 +41,27 @@ class OrderRequest {
         @field:NotNull(message = "수량은 필수입니다.")
         @field:Min(value = 1, message = "수량은 최소 1개 이상이어야 합니다.")
         val quantity: Int
-    ) 
+    ) {
+        fun toCriteria(): OrderCriteria.OrderItemCreateCriteria {
+            return OrderCriteria.OrderItemCreateCriteria(
+                productId = productId,
+                productOptionId = productOptionId,
+                quantity = quantity
+            )
+        }
+    }
 
     data class OrderPaymentRequest(
         @field:NotNull(message = "계정 ID는 필수입니다.")
         val accountId: Long
-    ) 
+    ) {
+        fun toCriteria(orderId: Long): OrderCriteria.OrderPaymentCriteria {
+            return OrderCriteria.OrderPaymentCriteria(
+                orderId = orderId,
+                accountId = accountId
+            )
+        }
+    }
 
     data class OrderStatusUpdateRequest(
         @field:NotNull(message = "주문 상태는 필수입니다")

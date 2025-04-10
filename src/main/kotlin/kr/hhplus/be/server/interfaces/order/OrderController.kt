@@ -1,11 +1,8 @@
 package kr.hhplus.be.server.interfaces.order
 
 import kr.hhplus.be.server.application.order.OrderFacade
-import kr.hhplus.be.server.application.order.OrderItemRequest
-import kr.hhplus.be.server.application.order.OrderWithItems
+import kr.hhplus.be.server.application.order.OrderCriteria
 import kr.hhplus.be.server.interfaces.order.api.OrderApi
-import kr.hhplus.be.server.interfaces.order.OrderRequest
-import kr.hhplus.be.server.interfaces.order.OrderResponse   
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RequestMapping
@@ -23,25 +20,38 @@ class OrderController(
 
     override fun createOrder(@Valid orderCreateRequest: OrderRequest.OrderCreateRequest): ResponseEntity<OrderResponse.Response> {
         try {
-            // OrderItemRequest로 변환
-            val orderItems = orderCreateRequest.orderItems.map {
-                OrderItemRequest(
-                    productId = it.productId,
-                    productOptionId = it.productOptionId,
-                    quantity = it.quantity
-                )
-            }
+            // 요청을 Criteria로 변환
+            val criteria = orderCreateRequest.toCriteria()
             
             // 주문 생성
-            val result = orderFacade.createOrder(
-                accountId = orderCreateRequest.accountId,
-                items = orderItems,
-                accountCouponId = orderCreateRequest.accountCouponId,
-                couponDiscountRate = orderCreateRequest.couponDiscountRate
+            val result = orderFacade.createOrder(criteria)
+            
+            // OrderResponse.Response 객체 생성
+            val response = OrderResponse.Response(
+                id = result.order.id!!,
+                accountId = result.order.account.id!!,
+                accountCouponId = result.order.accountCouponId,
+                totalPrice = result.order.totalPrice,
+                status = result.order.status,
+                orderDate = result.order.orderDate,
+                createdAt = result.order.createdAt,
+                updatedAt = result.order.updatedAt,
+                items = result.items.map { item ->
+                    OrderResponse.OrderItemResponse(
+                        id = item.id!!,
+                        orderId = item.order.id!!,
+                        productId = item.product.id!!,
+                        productOptionId = item.productOption.id!!,
+                        accountCouponId = item.accountCouponId,
+                        quantity = item.quantity,
+                        price = item.price,
+                        createdAt = item.createdAt,
+                        updatedAt = item.updatedAt
+                    )
+                }
             )
             
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body(OrderResponse.Response.of(result.order, result.items))
+            return ResponseEntity.status(HttpStatus.CREATED).body(response)
         } catch (e: Exception) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message)
         }
@@ -49,13 +59,41 @@ class OrderController(
 
     override fun processPayment(orderId: Long, @Valid orderPaymentRequest: OrderRequest.OrderPaymentRequest): ResponseEntity<OrderResponse.Response> {
         try {
+            // 요청을 Criteria로 변환
+            val criteria = orderPaymentRequest.toCriteria(orderId)
+            
             // 결제 처리
-            val order = orderFacade.processPayment(orderId, orderPaymentRequest.accountId)
+            val order = orderFacade.processPayment(criteria)
             
             // 주문 상세 정보 조회
-            val result = orderFacade.getOrderWithItems(orderId, orderPaymentRequest.accountId)
+            val result = orderFacade.getOrderWithItems(criteria)
             
-            return ResponseEntity.ok(OrderResponse.Response.of(result.order, result.items))
+            // OrderResponse.Response 객체 생성
+            val response = OrderResponse.Response(
+                id = result.order.id!!,
+                accountId = result.order.account.id!!,
+                accountCouponId = result.order.accountCouponId,
+                totalPrice = result.order.totalPrice,
+                status = result.order.status,
+                orderDate = result.order.orderDate,
+                createdAt = result.order.createdAt,
+                updatedAt = result.order.updatedAt,
+                items = result.items.map { item ->
+                    OrderResponse.OrderItemResponse(
+                        id = item.id!!,
+                        orderId = item.order.id!!,
+                        productId = item.product.id!!,
+                        productOptionId = item.productOption.id!!,
+                        accountCouponId = item.accountCouponId,
+                        quantity = item.quantity,
+                        price = item.price,
+                        createdAt = item.createdAt,
+                        updatedAt = item.updatedAt
+                    )
+                }
+            )
+            
+            return ResponseEntity.ok(response)
         } catch (e: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, e.message)
         } catch (e: IllegalStateException) {
@@ -72,8 +110,31 @@ class OrderController(
             
             // 각 주문별로 상세 정보 조회하여 응답 생성
             val response = orders.map { order -> 
-                val result = orderFacade.getOrderWithItems(order.id, accountId)
-                OrderResponse.Response.of(result.order, result.items)
+                val criteria = OrderCriteria.OrderPaymentCriteria(order.id!!, accountId)
+                val result = orderFacade.getOrderWithItems(criteria)
+                OrderResponse.Response(
+                    id = result.order.id!!,
+                    accountId = result.order.account.id!!,
+                    accountCouponId = result.order.accountCouponId,
+                    totalPrice = result.order.totalPrice,
+                    status = result.order.status,
+                    orderDate = result.order.orderDate,
+                    createdAt = result.order.createdAt,
+                    updatedAt = result.order.updatedAt,
+                    items = result.items.map { item ->
+                        OrderResponse.OrderItemResponse(
+                            id = item.id!!,
+                            orderId = item.order.id!!,
+                            productId = item.product.id!!,
+                            productOptionId = item.productOption.id!!,
+                            accountCouponId = item.accountCouponId,
+                            quantity = item.quantity,
+                            price = item.price,
+                            createdAt = item.createdAt,
+                            updatedAt = item.updatedAt
+                        )
+                    }
+                )
             }
             
             return ResponseEntity.ok(response)
@@ -85,9 +146,35 @@ class OrderController(
     override fun getOrder(orderId: Long, accountId: Long): ResponseEntity<OrderResponse.Response> {
         try {
             // 주문 상세 정보 조회
-            val result = orderFacade.getOrderWithItems(orderId, accountId)
+            val criteria = OrderCriteria.OrderPaymentCriteria(orderId, accountId)
+            val result = orderFacade.getOrderWithItems(criteria)
             
-            return ResponseEntity.ok(OrderResponse.Response.of(result.order, result.items))
+            // OrderResponse.Response 객체 생성
+            val response = OrderResponse.Response(
+                id = result.order.id!!,
+                accountId = result.order.account.id!!,
+                accountCouponId = result.order.accountCouponId,
+                totalPrice = result.order.totalPrice,
+                status = result.order.status,
+                orderDate = result.order.orderDate,
+                createdAt = result.order.createdAt,
+                updatedAt = result.order.updatedAt,
+                items = result.items.map { item ->
+                    OrderResponse.OrderItemResponse(
+                        id = item.id!!,
+                        orderId = item.order.id!!,
+                        productId = item.product.id!!,
+                        productOptionId = item.productOption.id!!,
+                        accountCouponId = item.accountCouponId,
+                        quantity = item.quantity,
+                        price = item.price,
+                        createdAt = item.createdAt,
+                        updatedAt = item.updatedAt
+                    )
+                }
+            )
+            
+            return ResponseEntity.ok(response)
         } catch (e: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, e.message)
         } catch (e: Exception) {
@@ -98,12 +185,38 @@ class OrderController(
     override fun cancelOrder(orderId: Long, accountId: Long): ResponseEntity<OrderResponse.Response> {
         try {
             // 주문 취소
-            val order = orderFacade.cancelOrder(orderId, accountId)
+            val criteria = OrderCriteria.OrderPaymentCriteria(orderId, accountId)
+            val order = orderFacade.cancelOrder(criteria)
             
             // 주문 상세 정보 조회
-            val result = orderFacade.getOrderWithItems(orderId, accountId)
+            val result = orderFacade.getOrderWithItems(criteria)
             
-            return ResponseEntity.ok(OrderResponse.Response.of(result.order, result.items))
+            // OrderResponse.Response 객체 생성
+            val response = OrderResponse.Response(
+                id = result.order.id!!,
+                accountId = result.order.account.id!!,
+                accountCouponId = result.order.accountCouponId,
+                totalPrice = result.order.totalPrice,
+                status = result.order.status,
+                orderDate = result.order.orderDate,
+                createdAt = result.order.createdAt,
+                updatedAt = result.order.updatedAt,
+                items = result.items.map { item ->
+                    OrderResponse.OrderItemResponse(
+                        id = item.id!!,
+                        orderId = item.order.id!!,
+                        productId = item.product.id!!,
+                        productOptionId = item.productOption.id!!,
+                        accountCouponId = item.accountCouponId,
+                        quantity = item.quantity,
+                        price = item.price,
+                        createdAt = item.createdAt,
+                        updatedAt = item.updatedAt
+                    )
+                }
+            )
+            
+            return ResponseEntity.ok(response)
         } catch (e: IllegalArgumentException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, e.message)
         } catch (e: IllegalStateException) {

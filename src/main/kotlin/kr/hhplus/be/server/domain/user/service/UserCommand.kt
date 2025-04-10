@@ -1,7 +1,5 @@
 package kr.hhplus.be.server.domain.user.service
 
-import kr.hhplus.be.server.domain.user.model.User
-
 class UserCommand {
     data class CreateUserCommand(
         val name: String,

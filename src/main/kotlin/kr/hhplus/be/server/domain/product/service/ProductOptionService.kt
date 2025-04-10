@@ -1,7 +1,6 @@
 package kr.hhplus.be.server.domain.product.service
 
 import kr.hhplus.be.server.domain.product.model.ProductOption
-import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.repository.ProductOptionRepository
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import org.springframework.stereotype.Service

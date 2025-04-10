@@ -2,13 +2,14 @@ package kr.hhplus.be.server.interfaces.product
 
 import kr.hhplus.be.server.application.product.ProductCriteria
 import kr.hhplus.be.server.application.product.ProductFacade
+import kr.hhplus.be.server.interfaces.product.ProductResponse
+import kr.hhplus.be.server.interfaces.product.ProductRequest
 import kr.hhplus.be.server.domain.product.service.ProductService
 import kr.hhplus.be.server.interfaces.product.api.ProductApi
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import java.time.LocalDateTime
 import jakarta.validation.Valid
 
 @RestController

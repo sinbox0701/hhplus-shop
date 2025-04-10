@@ -1,18 +1,14 @@
 package kr.hhplus.be.server.application.order
 
 import kr.hhplus.be.server.domain.order.model.Order
-import kr.hhplus.be.server.domain.order.model.OrderItem
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.order.service.OrderService
 import kr.hhplus.be.server.domain.product.service.ProductService
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.user.service.AccountService
-import kr.hhplus.be.server.application.order.OrderResult
-import kr.hhplus.be.server.application.order.OrderCriteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.Objects
 
 @Service
 class OrderFacade(

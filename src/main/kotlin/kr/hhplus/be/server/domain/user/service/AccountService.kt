@@ -1,10 +1,8 @@
 package kr.hhplus.be.server.domain.user.service
 
-import kr.hhplus.be.server.domain.user.service.AccountCommand
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.repository.AccountRepository
 import org.springframework.stereotype.Service
-import kotlin.random.Random
 
 @Service
 class AccountService(

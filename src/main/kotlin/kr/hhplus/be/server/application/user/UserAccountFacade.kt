@@ -1,6 +1,5 @@
 package kr.hhplus.be.server.application.user
 
-import kr.hhplus.be.server.application.user.UserCriteria
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.AccountCommand

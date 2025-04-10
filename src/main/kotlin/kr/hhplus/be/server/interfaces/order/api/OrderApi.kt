@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import kr.hhplus.be.server.application.order.OrderFacade
 import kr.hhplus.be.server.interfaces.order.OrderRequest
 import kr.hhplus.be.server.interfaces.order.OrderResponse
 import org.springframework.http.ResponseEntity
