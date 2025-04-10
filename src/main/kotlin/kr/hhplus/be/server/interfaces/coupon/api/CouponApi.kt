@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.controller.coupon.api
+package kr.hhplus.be.server.interfaces.coupon.api
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -7,11 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import kr.hhplus.be.server.controller.coupon.dto.request.CouponCreateRequest
-import kr.hhplus.be.server.controller.coupon.dto.request.CouponIssueRequest
-import kr.hhplus.be.server.controller.coupon.dto.request.CouponUpdateRequest
-import kr.hhplus.be.server.controller.coupon.dto.response.AccountCouponResponse
-import kr.hhplus.be.server.controller.coupon.dto.response.CouponResponse
+import kr.hhplus.be.server.interfaces.coupon.CouponRequest
+import kr.hhplus.be.server.interfaces.coupon.CouponResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import jakarta.validation.Valid
@@ -24,18 +21,18 @@ interface CouponApi {
         ApiResponse(
             responseCode = "200",
             description = "조회 성공",
-            content = [Content(schema = Schema(implementation = CouponResponse::class))]
+            content = [Content(schema = Schema(implementation = CouponResponse.Response::class))]
         )
     )
     @GetMapping
-    fun getAllCoupons(): ResponseEntity<List<CouponResponse>>
+    fun getAllCoupons(): ResponseEntity<List<CouponResponse.Response>>
     
     @Operation(summary = "쿠폰 상세 조회", description = "특정 쿠폰의 상세 정보를 조회합니다.")
     @ApiResponses(
         ApiResponse(
             responseCode = "200",
             description = "조회 성공",
-            content = [Content(schema = Schema(implementation = CouponResponse::class))]
+            content = [Content(schema = Schema(implementation = CouponResponse.Response::class))]
         ),
         ApiResponse(
             responseCode = "404",
@@ -47,14 +44,14 @@ interface CouponApi {
     fun getCouponById(
         @Parameter(description = "쿠폰 ID", required = true)
         @PathVariable couponId: Long
-    ): ResponseEntity<CouponResponse>
+    ): ResponseEntity<CouponResponse.Response>
     
     @Operation(summary = "쿠폰 생성", description = "새로운 쿠폰을 생성합니다.")
     @ApiResponses(
         ApiResponse(
             responseCode = "201",
             description = "생성 성공",
-            content = [Content(schema = Schema(implementation = CouponResponse::class))]
+            content = [Content(schema = Schema(implementation = CouponResponse.Response::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -65,15 +62,15 @@ interface CouponApi {
     @PostMapping
     fun createCoupon(
         @Parameter(description = "쿠폰 생성 정보", required = true)
-        @Valid @RequestBody request: CouponCreateRequest
-    ): ResponseEntity<CouponResponse>
+        @Valid @RequestBody request: CouponRequest.CreateCouponRequest
+    ): ResponseEntity<CouponResponse.Response>
     
     @Operation(summary = "쿠폰 수정", description = "기존 쿠폰 정보를 수정합니다.")
     @ApiResponses(
         ApiResponse(
             responseCode = "200",
             description = "수정 성공",
-            content = [Content(schema = Schema(implementation = CouponResponse::class))]
+            content = [Content(schema = Schema(implementation = CouponResponse.Response::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -92,8 +89,8 @@ interface CouponApi {
         @PathVariable couponId: Long,
         
         @Parameter(description = "쿠폰 수정 정보", required = true)
-        @Valid @RequestBody request: CouponUpdateRequest
-    ): ResponseEntity<CouponResponse>
+        @Valid @RequestBody request: CouponRequest.UpdateCouponRequest
+    ): ResponseEntity<CouponResponse.Response>
     
     @Operation(summary = "쿠폰 삭제", description = "쿠폰을 삭제합니다. 이미 발급된 쿠폰은 삭제할 수 없습니다.")
     @ApiResponses(
@@ -124,7 +121,7 @@ interface CouponApi {
         ApiResponse(
             responseCode = "201",
             description = "발급 성공",
-            content = [Content(schema = Schema(implementation = AccountCouponResponse::class))]
+            content = [Content(schema = Schema(implementation = CouponResponse.AccountCouponResponse::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -143,15 +140,15 @@ interface CouponApi {
         @PathVariable couponId: Long,
         
         @Parameter(description = "쿠폰 발급 정보", required = true)
-        @Valid @RequestBody request: CouponIssueRequest
-    ): ResponseEntity<AccountCouponResponse>
+        @Valid @RequestBody request: CouponRequest.CouponIssueRequest
+    ): ResponseEntity<CouponResponse.AccountCouponResponse>
     
     @Operation(summary = "쿠폰 사용", description = "사용자의 쿠폰을 사용 처리합니다.")
     @ApiResponses(
         ApiResponse(
             responseCode = "200",
             description = "쿠폰 사용 성공",
-            content = [Content(schema = Schema(implementation = AccountCouponResponse::class))]
+            content = [Content(schema = Schema(implementation = CouponResponse.AccountCouponResponse::class))]
         ),
         ApiResponse(
             responseCode = "400",
@@ -164,12 +161,31 @@ interface CouponApi {
             content = [Content()]
         )
     )
-    @PostMapping("/account/{accountId}/coupons/{accountCouponId}/use")
+    @PostMapping("/use/account/{accountId}/coupons/{accountCouponId}")
     fun useCoupon(
         @Parameter(description = "계정 ID", required = true)
         @PathVariable accountId: Long,
         
         @Parameter(description = "계정 쿠폰 ID", required = true)
         @PathVariable accountCouponId: Long
-    ): ResponseEntity<AccountCouponResponse>
+    ): ResponseEntity<CouponResponse.AccountCouponResponse>
+    
+    @Operation(summary = "사용자 쿠폰 목록 조회", description = "특정 사용자의 모든 쿠폰 목록을 조회합니다.")
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = [Content(schema = Schema(implementation = CouponResponse.AccountCouponResponse::class))]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "사용자를 찾을 수 없음",
+            content = [Content()]
+        )
+    )
+    @GetMapping("/account/{accountId}/coupons")
+    fun getUserCoupons(
+        @Parameter(description = "계정 ID", required = true)
+        @PathVariable accountId: Long
+    ): ResponseEntity<List<CouponResponse.AccountCouponResponse>>
 } 
