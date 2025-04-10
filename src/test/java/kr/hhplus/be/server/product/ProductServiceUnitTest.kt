@@ -5,6 +5,7 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
+import kr.hhplus.be.server.domain.product.service.ProductCommand
 import kr.hhplus.be.server.domain.product.service.ProductService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -34,12 +35,13 @@ class ProductServiceUnitTest {
     @DisplayName("새로운 상품 생성 성공")
     fun createProductSuccess() {
         // given
-        val product = Product.create(testId, testName, testDescription, testPrice)
+        val command = ProductCommand.CreateProductCommand(testName, testDescription, testPrice)
+        val product = Product.create(testName, testDescription, testPrice)
         
         every { productRepository.save(any()) } returns product
         
         // when
-        val createdProduct = productService.createProduct(testName, testDescription, testPrice)
+        val createdProduct = productService.create(command)
         
         // then
         assertEquals(testName, createdProduct.name)
@@ -53,15 +55,14 @@ class ProductServiceUnitTest {
     @DisplayName("ID로 상품 조회 성공")
     fun getProductByIdSuccess() {
         // given
-        val product = Product.create(testId, testName, testDescription, testPrice)
+        val product = Product.create(testName, testDescription, testPrice)
         
         every { productRepository.findById(testId) } returns product
         
         // when
-        val foundProduct = productService.getProduct(testId)
+        val foundProduct = productService.get(testId)
         
         // then
-        assertEquals(testId, foundProduct.id)
         assertEquals(testName, foundProduct.name)
         assertEquals(testDescription, foundProduct.description)
         assertEquals(testPrice, foundProduct.price)
@@ -77,7 +78,7 @@ class ProductServiceUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.getProduct(testId)
+            productService.get(testId)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
@@ -86,21 +87,43 @@ class ProductServiceUnitTest {
     }
     
     @Test
+    @DisplayName("모든 상품 조회 성공")
+    fun getAllProductsSuccess() {
+        // given
+        val product1 = Product.create(testName, testDescription, testPrice)
+        val product2 = Product.create("상품2", "설명2", 20000.0)
+        val products = listOf(product1, product2)
+        
+        every { productRepository.findAll() } returns products
+        
+        // when
+        val result = productService.getAll()
+        
+        // then
+        assertEquals(2, result.size)
+        assertEquals(testName, result[0].name)
+        assertEquals("상품2", result[1].name)
+        
+        verify(exactly = 1) { productRepository.findAll() }
+    }
+    
+    @Test
     @DisplayName("상품 정보 업데이트 성공")
     fun updateProductSuccess() {
         // given
-        val product = Product.create(testId, testName, testDescription, testPrice)
+        val product = Product.create(testName, testDescription, testPrice)
         val newName = "업데이트된 상품"
         val newDescription = "업데이트된 상품 설명"
         val newPrice = 20000.0
         
+        val command = ProductCommand.UpdateProductCommand(testId, newName, newDescription, newPrice)
         val updatedProduct = product.update(newName, newDescription, newPrice)
         
         every { productRepository.findById(testId) } returns product
-        every { productRepository.update(any()) } returns updatedProduct
+        every { productRepository.save(any()) } returns updatedProduct
         
         // when
-        val result = productService.updateProduct(testId, newName, newDescription, newPrice)
+        val result = productService.update(command)
         
         // then
         assertEquals(newName, result.name)
@@ -108,7 +131,7 @@ class ProductServiceUnitTest {
         assertEquals(newPrice, result.price)
         
         verify(exactly = 1) { productRepository.findById(testId) }
-        verify(exactly = 1) { productRepository.update(any()) }
+        verify(exactly = 1) { productRepository.save(any()) }
     }
     
     @Test
@@ -119,33 +142,36 @@ class ProductServiceUnitTest {
         val newDescription = "업데이트된 상품 설명"
         val newPrice = 20000.0
         
+        val command = ProductCommand.UpdateProductCommand(testId, newName, newDescription, newPrice)
+        
         every { productRepository.findById(testId) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.updateProduct(testId, newName, newDescription, newPrice)
+            productService.update(command)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
         
         verify(exactly = 1) { productRepository.findById(testId) }
-        verify(exactly = 0) { productRepository.update(any()) }
+        verify(exactly = 0) { productRepository.save(any()) }
     }
     
     @Test
     @DisplayName("일부 필드만 업데이트 성공")
     fun updatePartialFieldsSuccess() {
         // given
-        val product = Product.create(testId, testName, testDescription, testPrice)
+        val product = Product.create(testName, testDescription, testPrice)
         val newName = "업데이트된 상품"
         
+        val command = ProductCommand.UpdateProductCommand(testId, newName)
         val updatedProduct = product.update(newName, null, null)
         
         every { productRepository.findById(testId) } returns product
-        every { productRepository.update(any()) } returns updatedProduct
+        every { productRepository.save(any()) } returns updatedProduct
         
         // when
-        val result = productService.updateProduct(testId, newName, null, null)
+        val result = productService.update(command)
         
         // then
         assertEquals(newName, result.name)
@@ -153,21 +179,21 @@ class ProductServiceUnitTest {
         assertEquals(testPrice, result.price)
         
         verify(exactly = 1) { productRepository.findById(testId) }
-        verify(exactly = 1) { productRepository.update(any()) }
+        verify(exactly = 1) { productRepository.save(any()) }
     }
     
     @Test
     @DisplayName("상품 삭제 성공")
     fun deleteProductSuccess() {
         // given
-        val product = Product.create(testId, testName, testDescription, testPrice)
+        val product = Product.create(testName, testDescription, testPrice)
         
         every { productRepository.findById(testId) } returns product
         every { productRepository.delete(testId) } returns Unit
         
         // when & then
         assertDoesNotThrow {
-            productService.deleteProduct(testId)
+            productService.delete(testId)
         }
         
         verify(exactly = 1) { productRepository.findById(testId) }
@@ -182,7 +208,7 @@ class ProductServiceUnitTest {
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.deleteProduct(testId)
+            productService.delete(testId)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
