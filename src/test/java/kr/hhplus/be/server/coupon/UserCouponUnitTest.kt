@@ -1,5 +1,7 @@
 package kr.hhplus.be.server.coupon
 
+import io.mockk.every
+import io.mockk.mockk
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
@@ -16,8 +18,8 @@ class UserCouponUnitTest {
     @DisplayName("계정 쿠폰 생성 성공")
     fun createAccountCoupon() {
         // given
-        val user = createUser()
-        val coupon = createCoupon()
+        val user = mockk<User>()
+        val coupon = mockk<Coupon>()
         
         // when
         val userCoupon = UserCoupon.create(user, coupon, 1)
@@ -34,8 +36,11 @@ class UserCouponUnitTest {
     @DisplayName("쿠폰 발행 성공")
     fun issueCouponSuccess() {
         // given
-        val user = createUser()
-        val coupon = createCoupon()
+        val user = mockk<User>()
+        val coupon = mockk<Coupon> {
+            every { startDate } returns LocalDateTime.now().minusDays(1)
+            every { endDate } returns LocalDateTime.now().plusDays(10)
+        }
         val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // when
@@ -51,8 +56,11 @@ class UserCouponUnitTest {
     @DisplayName("이미 발행된 쿠폰 재발행 시도 시 예외 발생")
     fun issueAlreadyIssuedCoupon() {
         // given
-        val user = createUser()
-        val coupon = createCoupon()
+        val user = mockk<User>()
+        val coupon = mockk<Coupon> {
+            every { startDate } returns LocalDateTime.now().minusDays(1)
+            every { endDate } returns LocalDateTime.now().plusDays(10)
+        }
         val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // 쿠폰 발행
@@ -70,16 +78,11 @@ class UserCouponUnitTest {
     @DisplayName("쿠폰 유효기간 외 발행 시도 시 예외 발생")
     fun issueCouponOutOfValidPeriod() {
         // given
-        val user = createUser()
-        val futureCoupon = Coupon.create(
-            code = "ABCDEF",
-            discountRate = 10.0,
-            description = "미래 쿠폰",
-            startDate = LocalDateTime.now().plusDays(10),
-            endDate = LocalDateTime.now().plusDays(20),
-            quantity = 50,
-            couponType = CouponType.DISCOUNT_PRODUCT
-        )
+        val user = mockk<User>()
+        val futureCoupon = mockk<Coupon> {
+            every { startDate } returns LocalDateTime.now().plusDays(10)
+            every { endDate } returns LocalDateTime.now().plusDays(20)
+        }
         val userCoupon = UserCoupon.create(user, futureCoupon, 1)
         
         // when & then
@@ -94,8 +97,11 @@ class UserCouponUnitTest {
     @DisplayName("쿠폰 사용 성공")
     fun useCouponSuccess() {
         // given
-        val user = createUser()
-        val coupon = createCoupon()
+        val user = mockk<User>()
+        val coupon = mockk<Coupon> {
+            every { startDate } returns LocalDateTime.now().minusDays(1)
+            every { endDate } returns LocalDateTime.now().plusDays(10)
+        }
         val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // 쿠폰 발행
@@ -113,8 +119,8 @@ class UserCouponUnitTest {
     @DisplayName("발행되지 않은 쿠폰 사용 시도 시 예외 발생")
     fun useNotIssuedCoupon() {
         // given
-        val user = createUser()
-        val coupon = createCoupon()
+        val user = mockk<User>()
+        val coupon = mockk<Coupon>()
         val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // when & then
@@ -129,8 +135,11 @@ class UserCouponUnitTest {
     @DisplayName("이미 사용한 쿠폰 재사용 시도 시 예외 발생")
     fun useAlreadyUsedCoupon() {
         // given
-        val user = createUser()
-        val coupon = createCoupon()
+        val user = mockk<User>()
+        val coupon = mockk<Coupon> {
+            every { startDate } returns LocalDateTime.now().minusDays(1)
+            every { endDate } returns LocalDateTime.now().plusDays(10)
+        }
         val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // 쿠폰 발행 및 사용
@@ -143,26 +152,5 @@ class UserCouponUnitTest {
         }
         
         assertTrue(exception.message!!.contains("이미 사용된 쿠폰입니다"))
-    }
-
-    private fun createUser(): User {
-        return User.create(
-            email = "test@example.com",
-            password = "password",
-            loginId = "test",
-            name = "테스트계정",
-        )
-    }
-    
-    private fun createCoupon(): Coupon {
-        return Coupon.create(
-            code = "ABCDEF",
-            discountRate = 10.0,
-            description = "테스트 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
-            quantity = 50,
-            couponType = CouponType.DISCOUNT_PRODUCT
-        )
     }
 }

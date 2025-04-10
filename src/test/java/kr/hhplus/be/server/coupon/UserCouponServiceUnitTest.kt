@@ -40,23 +40,20 @@ class UserCouponServiceUnitTest {
             quantity = 1
         )
 
-        val userCoupon = mockk<UserCoupon> {
-            every { id } returns 3L
-            every { user } returns user
-            every { coupon } returns coupon
-        }
-
-        every { UserCoupon.create(user, coupon, 1) } returns userCoupon
-        every { userCouponRepository.save(any()) } returns userCoupon
+        // 실제 UserCoupon.create 메서드를 사용하여 객체 생성
+        val expectedUserCoupon = UserCoupon.create(user, coupon, 1)
+        
+        // 저장소 계층만 모킹
+        every { userCouponRepository.save(any()) } returns expectedUserCoupon
 
         // when
         val result = userCouponService.create(command)
 
         // then
-        assertEquals(3L, result.id)
-        assertEquals(1L, result.user.id)
-        assertEquals(2L, result.coupon.id)
-        verify { userCouponRepository.save(userCoupon) }
+        assertEquals(expectedUserCoupon.id, result.id)
+        assertEquals(user.id, result.user.id)
+        assertEquals(coupon.id, result.coupon.id)
+        verify { userCouponRepository.save(any()) }
     }
 
     @Test
@@ -164,11 +161,15 @@ class UserCouponServiceUnitTest {
     @Test
     fun `issue 메서드는 사용자 쿠폰을 발급해야 한다`() {
         // given
-        val userCoupon = mockk<UserCoupon>(relaxUnitFun = true) {
+        val startDate = LocalDateTime.now().minusDays(1)  // 어제 시작
+        val endDate = LocalDateTime.now().plusDays(30)    // 30일 후 종료
+        
+        val userCoupon = mockk<UserCoupon> {
             every { id } returns 1L
+            every { issued } returns false  // 아직 발급되지 않은 쿠폰
+            every { issue(startDate, endDate) } returns this@mockk  // issue 호출 시 자기 자신 반환
         }
-        val startDate = LocalDateTime.now()
-        val endDate = LocalDateTime.now().plusDays(30)
+        
         val command = UserCouponCommand.IssueCouponCommand(
             id = 1L,
             couponStartDate = startDate,
@@ -183,17 +184,22 @@ class UserCouponServiceUnitTest {
 
         // then
         verify { userCouponRepository.findById(1L) }
-        verify { userCoupon.issue(startDate, endDate) }
+        verify { userCoupon.issue(startDate, endDate) }  // 정확한 파라미터로 issue 호출 확인
         verify { userCouponRepository.save(userCoupon) }
     }
 
     @Test
     fun `use 메서드는 사용자 쿠폰을 사용해야 한다`() {
         // given
-        val userCoupon = mockk<UserCoupon>(relaxUnitFun = true) {
+        // 더 완전한 UserCoupon mock 생성 - 초기 상태 설정
+        val userCoupon = mockk<UserCoupon> {
             every { id } returns 1L
+            every { isIssued() } returns true  // 발행된 쿠폰이어야 사용 가능
+            every { isUsed() } returns false   // 아직 사용되지 않은 쿠폰
+            every { use() } returns this@mockk // use() 메서드 호출 시 자기 자신 반환
         }
 
+        // 저장소 계층 모킹
         every { userCouponRepository.findById(1L) } returns userCoupon
         every { userCouponRepository.save(any()) } returns userCoupon
 
@@ -202,7 +208,7 @@ class UserCouponServiceUnitTest {
 
         // then
         verify { userCouponRepository.findById(1L) }
-        verify { userCoupon.use() }
+        verify { userCoupon.use() }             // use() 메서드가 호출되었는지 확인
         verify { userCouponRepository.save(userCoupon) }
     }
 

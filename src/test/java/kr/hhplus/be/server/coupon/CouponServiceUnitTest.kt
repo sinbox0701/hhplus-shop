@@ -27,7 +27,7 @@ class CouponServiceUnitTest {
     fun `create 메서드는 쿠폰을 생성하고 저장해야 한다`() {
         // given
         val command = CouponCommand.CreateCouponCommand(
-            code = "TEST001",
+            code = "ABCDEF",
             couponType = CouponType.DISCOUNT_PRODUCT,
             discountRate = 10.0,
             description = "테스트 쿠폰",

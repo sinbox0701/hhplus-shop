@@ -85,6 +85,7 @@ class ProductOptionServiceUnitTest {
                     testOptionName, 
                     testAvailableQuantity, 
                     testAdditionalPrice
+                )
             )
         }
         

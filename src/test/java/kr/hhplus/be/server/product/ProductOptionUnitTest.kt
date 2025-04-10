@@ -54,7 +54,6 @@ class ProductOptionUnitTest {
     fun createProductOptionWithTooLongName() {
         // given
         val product = mockk<Product>()
-        val productId = 10L
         val name = "아주아주아주길다" // 최대 길이는 10
         val availableQuantity = 100
         val additionalPrice = 1000.0
