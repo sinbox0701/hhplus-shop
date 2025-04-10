@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.interfaces.user.dto.request
+package kr.hhplus.be.server.interfaces.user
 
 import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin

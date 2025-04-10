@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.interfaces.user.dto.response
+package kr.hhplus.be.server.interfaces.user
 
 import java.time.LocalDateTime
 
