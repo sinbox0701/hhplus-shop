@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.domain.product.service
 
 import kr.hhplus.be.server.domain.product.model.ProductOption
+import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.repository.ProductOptionRepository
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import org.springframework.stereotype.Service
@@ -10,53 +11,44 @@ class ProductOptionService(
     private val productOptionRepository: ProductOptionRepository,
     private val productRepository: ProductRepository
 ) {
-    fun createProductOption(
-        productId: Long, 
-        name: String, 
-        availableQuantity: Int, 
-        additionalPrice: Double
-    ): ProductOption {
+    fun create(command: ProductOptionCommand.CreateProductOptionCommand): ProductOption {
         // 상품이 존재하는지 확인
-        productRepository.findById(productId) 
-            ?: throw IllegalArgumentException("Product not found with id: $productId")
+        val product = productRepository.findById(command.productId) 
+            ?: throw IllegalArgumentException("Product not found with id: ${command.productId}")
         
-        val id = System.currentTimeMillis() // 임시 ID 생성 방식
-        val productOption = ProductOption.create(id, productId, name, availableQuantity, additionalPrice)
+        val productOption = ProductOption.create(product, command.name, command.availableQuantity, command.additionalPrice)
         return productOptionRepository.save(productOption)
     }
 
     fun createAll(
-        productId: Long,
-        options: List<ProductOptionRequest>
+        commands: List<ProductOptionCommand.CreateProductOptionCommand>
     ): List<ProductOption> {
         // 상품이 존재하는지 확인
-        productRepository.findById(productId)
-            ?: throw IllegalArgumentException("Product not found with id: $productId")
+        val product = productRepository.findById(commands[0].productId)
+            ?: throw IllegalArgumentException("Product not found with id: ${commands[0].productId}")
         
-        return options.map { option ->
-            val id = System.currentTimeMillis() + options.indexOf(option) // 임시 ID 생성 방식 (중복 방지)
+        return commands.map { command ->
             val productOption = ProductOption.create(
-                id, 
-                productId, 
-                option.name, 
-                option.availableQuantity, 
-                option.additionalPrice
+                product, 
+                command.name, 
+                command.availableQuantity, 
+                command.additionalPrice
             )
             productOptionRepository.save(productOption)
         }
     }
 
-    fun getProductOption(id: Long): ProductOption {
+    fun get(id: Long): ProductOption {
         return productOptionRepository.findById(id) 
             ?: throw IllegalArgumentException("Product option not found with id: $id")
     }
 
-    fun getProductOptionByProductIdAndId(productId: Long, id: Long): ProductOption {
+    fun getByProductIdAndId(productId: Long, id: Long): ProductOption {
         return productOptionRepository.findByProductIdAndId(productId, id)
             ?: throw IllegalArgumentException("Product option not found with id: $id")
     }
 
-    fun getProductOptionsByProductId(productId: Long): List<ProductOption> {
+    fun getAllByProductId(productId: Long): List<ProductOption> {
         // 상품이 존재하는지 확인
         productRepository.findById(productId) 
             ?: throw IllegalArgumentException("Product not found with id: $productId")
@@ -64,30 +56,34 @@ class ProductOptionService(
         return productOptionRepository.findByProductId(productId)
     }
 
-    fun updateProductOption(
-        id: Long,
-        name: String? = null,
-        additionalPrice: Double? = null
-    ): ProductOption {
-        val productOption = getProductOption(id)
-        val updatedOption = productOption.update(name, additionalPrice)
+    fun update(command: ProductOptionCommand.UpdateProductOptionCommand): ProductOption {
+        val productOption = get(command.id)
+        val updatedOption = productOption.update(command.name, command.additionalPrice)
         return productOptionRepository.update(updatedOption)
     }
 
-    fun addQuantity(id: Long, quantity: Int): ProductOption {
-        val productOption = getProductOption(id)
-        val updatedOption = productOption.add(quantity)
+    fun updateAll(commands: List<ProductOptionCommand.UpdateProductOptionCommand>): List<ProductOption> {
+        return commands.map { command ->
+            val productOption = get(command.id)
+            val updatedOption = productOption.update(command.name, command.additionalPrice)
+            productOptionRepository.update(updatedOption)
+        }
+    }
+
+    fun updateQuantity(command: ProductOptionCommand.UpdateQuantityCommand): ProductOption {
+        val productOption = get(command.id)
+        val updatedOption = productOption.add(command.quantity)
         return productOptionRepository.update(updatedOption)
     }
 
-    fun subtractQuantity(id: Long, quantity: Int): ProductOption {
-        val productOption = getProductOption(id)
-        val updatedOption = productOption.subtract(quantity)
+    fun subtractQuantity(command: ProductOptionCommand.UpdateQuantityCommand): ProductOption {
+        val productOption = get(command.id)
+        val updatedOption = productOption.subtract(command.quantity)
         return productOptionRepository.update(updatedOption)
     }
 
-    fun deleteProductOption(id: Long) {
-        getProductOption(id) // 옵션이 존재하는지 확인
+    fun delete(id: Long) {
+        get(id) // 옵션이 존재하는지 확인
         productOptionRepository.delete(id)
     }
     
@@ -98,13 +94,7 @@ class ProductOptionService(
             
         val options = productOptionRepository.findByProductId(productId)
         options.forEach { option ->
-            productOptionRepository.delete(option.id)
+            productOptionRepository.delete(option.id!!)
         }
     }
 }
-
-data class ProductOptionRequest(
-    val name: String,
-    val availableQuantity: Int,
-    val additionalPrice: Double
-) 
