@@ -20,7 +20,7 @@ class UserCouponUnitTest {
         val coupon = createCoupon()
         
         // when
-        val userCoupon = UserCoupon.create(user, coupon)
+        val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // then
         assertEquals(user, userCoupon.user)
@@ -36,7 +36,7 @@ class UserCouponUnitTest {
         // given
         val user = createUser()
         val coupon = createCoupon()
-        val userCoupon = UserCoupon.create(user, coupon)
+        val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // when
         val issuedCoupon = userCoupon.issue(coupon.startDate, coupon.endDate)
@@ -53,7 +53,7 @@ class UserCouponUnitTest {
         // given
         val user = createUser()
         val coupon = createCoupon()
-        val userCoupon = UserCoupon.create(user, coupon)
+        val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // 쿠폰 발행
         userCoupon.issue(coupon.startDate, coupon.endDate)
@@ -80,7 +80,7 @@ class UserCouponUnitTest {
             quantity = 50,
             couponType = CouponType.DISCOUNT_PRODUCT
         )
-        val userCoupon = UserCoupon.create(user, futureCoupon)
+        val userCoupon = UserCoupon.create(user, futureCoupon, 1)
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -96,7 +96,7 @@ class UserCouponUnitTest {
         // given
         val user = createUser()
         val coupon = createCoupon()
-        val userCoupon = UserCoupon.create(user, coupon)
+        val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // 쿠폰 발행
         userCoupon.issue(coupon.startDate, coupon.endDate)
@@ -115,7 +115,7 @@ class UserCouponUnitTest {
         // given
         val user = createUser()
         val coupon = createCoupon()
-        val userCoupon = UserCoupon.create(user, coupon)
+        val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -131,7 +131,7 @@ class UserCouponUnitTest {
         // given
         val user = createUser()
         val coupon = createCoupon()
-        val userCoupon = UserCoupon.create(user, coupon)
+        val userCoupon = UserCoupon.create(user, coupon, 1)
         
         // 쿠폰 발행 및 사용
         userCoupon.issue(coupon.startDate, coupon.endDate)
