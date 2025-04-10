@@ -4,6 +4,7 @@ import kr.hhplus.be.server.domain.coupon.model.AccountCoupon
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.user.model.Account
+import kr.hhplus.be.server.domain.user.model.User
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -144,15 +145,16 @@ class AccountCouponUnitTest {
         
         assertTrue(exception.message!!.contains("이미 사용된 쿠폰입니다"))
     }
-    
+
     private fun createAccount(): Account {
-        return Account(
-            id = 1L,
+        val user = User.create(
             email = "test@example.com",
             password = "password",
-            username = "테스트계정",
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now()
+            loginId = "test",
+            name = "테스트계정",
+        )
+        return Account.create(
+            user = user,
         )
     }
     
