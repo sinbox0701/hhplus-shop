@@ -1,22 +1,53 @@
-package kr.hhplus.be.server.domain.coupon
+package kr.hhplus.be.server.domain.coupon.model
 
 import java.time.LocalDateTime
+import jakarta.persistence.Entity
+import jakarta.persistence.Table
+import jakarta.persistence.Id
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Column
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 
 enum class CouponType {
     DISCOUNT_PRODUCT, // 상품 할인
     DISCOUNT_ORDER, // 주문 할인
 }
 
+@Entity
+@Table(name = "coupons")
 data class Coupon private constructor(
-    val id: Long,
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     var couponType: CouponType,
+
+    @Column(nullable = false)
     var discountRate: Double,
+
+    @Column(nullable = false)
     var description: String,
+
+    @Column(nullable = false)
     var startDate: LocalDateTime,
+
+    @Column(nullable = false)
     var endDate: LocalDateTime,
+
+    @Column(nullable = false)
     var quantity: Int,
+
+    @Column(nullable = false)
     var remainingQuantity: Int,
+
+    @Column(nullable = false)
     var createdAt: LocalDateTime,
+
+    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
     companion object {
@@ -30,7 +61,6 @@ data class Coupon private constructor(
         const val MAX_DESCRIPTION_LENGTH = 30
         
         fun create(
-            id: Long,
             discountRate: Double,
             description: String,
             startDate: LocalDateTime,
@@ -45,7 +75,6 @@ data class Coupon private constructor(
             
             val now = LocalDateTime.now()
             return Coupon(
-                id = id,
                 discountRate = discountRate,
                 description = description,
                 startDate = startDate,
