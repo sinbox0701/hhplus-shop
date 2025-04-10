@@ -65,7 +65,7 @@ data class Account private constructor(
         }
         require(this.amount >= amount) { "Insufficient funds" }
         val newAmount = this.amount - amount
-        require(newAmount >= MIN_BALANCE) { "Resulting balance cannot be negative" }
+        require(newAmount >= MIN_BALANCE) { "Resulting balance cannot be below MIN_BALANCE" }
         this.amount = newAmount
         this.updatedAt = LocalDateTime.now()
         return this

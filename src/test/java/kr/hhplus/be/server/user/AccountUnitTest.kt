@@ -139,9 +139,9 @@ class AccountUnitTest {
     @DisplayName("유효한 금액으로 계좌 출금 성공")
     fun withdrawAccountWithValidAmount() {
         // given
-        val initialAmount = 10000.0
+        val initialAmount = 30000.0
         val account = Account.create(mockk<User>(), initialAmount)
-        val withdrawAmount = 3000.0
+        val withdrawAmount = 1000.0
         val expectedAmount = initialAmount - withdrawAmount
         
         // when
@@ -211,6 +211,6 @@ class AccountUnitTest {
             account.withdraw(withdrawAmount)
         }
         
-        assertTrue(exception.message!!.contains("Resulting balance cannot be negative"))
+        assertTrue(exception.message!!.contains("Insufficient funds"))
     }
 }

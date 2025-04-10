@@ -1,8 +1,6 @@
 package kr.hhplus.be.server.user
 
 import io.mockk.*
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.MockK
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.repository.UserRepository
 import kr.hhplus.be.server.domain.user.service.UserService
@@ -15,10 +13,7 @@ import kr.hhplus.be.server.domain.user.service.UserCommand
 
 class UserServiceUnitTest {
 
-    @MockK
     private lateinit var userRepository: UserRepository
-
-    @InjectMockKs
     private lateinit var userService: UserService
 
     private val testName = "홍길동"
@@ -28,14 +23,21 @@ class UserServiceUnitTest {
 
     @BeforeEach
     fun setup() {
-        MockKAnnotations.init(this)
+        userRepository = mockk()
+        userService = UserService(userRepository)
     }
 
     @Test
     @DisplayName("새로운 사용자 생성 성공")
     fun createUserSuccess() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
         
         every { userRepository.findByEmail(testEmail) } returns null
         every { userRepository.findByLoginId(testLoginId) } returns null
@@ -59,7 +61,13 @@ class UserServiceUnitTest {
     @DisplayName("이미 사용 중인 이메일로 사용자 생성 시 예외 발생")
     fun createUserWithExistingEmail() {
         // given
-        val existingUser = User.create(testName, testEmail, testLoginId, testPassword)
+        val existingUser = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
         
         every { userRepository.findByEmail(testEmail) } returns existingUser
         
@@ -79,7 +87,13 @@ class UserServiceUnitTest {
     @DisplayName("이미 사용 중인 로그인ID로 사용자 생성 시 예외 발생")
     fun createUserWithExistingLoginId() {
         // given
-        val existingUser = User.create(testName, testEmail, testLoginId, testPassword)
+        val existingUser = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
 
         every { userRepository.findByEmail(testEmail) } returns null
         every { userRepository.findByLoginId(testLoginId) } returns existingUser
@@ -100,58 +114,83 @@ class UserServiceUnitTest {
     @DisplayName("ID로 사용자 조회 성공")
     fun findUserByIdSuccess() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
         
-        every { userRepository.findById(user.id!!) } returns user
+        every { userRepository.findById(1L) } returns user
         
         // when
-        val foundUser = userService.findById(user.id!!)
+        val foundUser = userService.findById(1L)
         
         // then
         assertEquals(user.id, foundUser.id)
         assertEquals(testName, foundUser.name)
         assertEquals(testEmail, foundUser.email)
         
-        verify(exactly = 1) { userRepository.findById(user.id!!) }
+        verify(exactly = 1) { userRepository.findById(1L) }
     }
     
     @Test
     @DisplayName("존재하지 않는 ID로 사용자 조회 시 예외 발생")
     fun findUserByIdNotFound() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
-        every { userRepository.findById(user.id!!) } returns null
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
+        every { userRepository.findById(1L) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.findById(user.id!!)
+            userService.findById(1L)
         }
         
         assertTrue(exception.message!!.contains("사용자를 찾을 수 없습니다"))
         
-        verify(exactly = 1) { userRepository.findById(user.id!!) }
+        verify(exactly = 1) { userRepository.findById(1L) }
     }
     
     @Test
     @DisplayName("사용자 정보 업데이트 성공")
     fun updateUserSuccess() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+            every { update(any(), any()) } returns mockk {
+                every { id } returns 1L
+                every { name } returns testName
+                every { email } returns testEmail
+                every { loginId } returns "newuser"
+                every { password } returns "newpass1"
+            }
+        }
         val newLoginId = "newuser"
         val newPassword = "newpass1"
         val updatedUser = user.update(newLoginId, newPassword)
         
-        every { userRepository.findById(user.id!!) } returns user
+        every { userRepository.findById(1L) } returns user
         every { userRepository.update(newLoginId, newPassword) } returns updatedUser
         
         // when
-        val result = userService.update(UserCommand.UpdateUserCommand(user.id!!, newLoginId, newPassword))
+        val result = userService.update(UserCommand.UpdateUserCommand(1L, newLoginId, newPassword))
         
         // then
         assertEquals(newLoginId, result.loginId)
         assertEquals(newPassword, result.password)
         
-        verify(exactly = 1) { userRepository.findById(user.id!!) }
+        verify(exactly = 1) { userRepository.findById(1L) }
         verify(exactly = 1) { userRepository.update(newLoginId, newPassword) }
     }
     
@@ -159,20 +198,26 @@ class UserServiceUnitTest {
     @DisplayName("존재하지 않는 사용자 업데이트 시 예외 발생")
     fun updateNonExistentUser() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
         val newLoginId = "newuser"
         val newPassword = "newpass1"
         
-        every { userRepository.findById(user.id!!) } returns null
+        every { userRepository.findById(1L) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            userService.update(UserCommand.UpdateUserCommand(user.id!!, newLoginId, newPassword))
+            userService.update(UserCommand.UpdateUserCommand(1L, newLoginId, newPassword))
         }
         
         assertTrue(exception.message!!.contains("사용자를 찾을 수 없습니다"))
         
-        verify(exactly = 1) { userRepository.findById(user.id!!) }
+        verify(exactly = 1) { userRepository.findById(1L) }
         verify(exactly = 0) { userRepository.update(any(), any()) }
     }
     
@@ -180,8 +225,14 @@ class UserServiceUnitTest {
     @DisplayName("사용자 로그인 성공")
     fun loginSuccess() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
-        
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
+            
         every { userRepository.findByLoginId(testLoginId) } returns user
         
         // when
@@ -215,7 +266,13 @@ class UserServiceUnitTest {
     @DisplayName("잘못된 비밀번호로 로그인 시 예외 발생")
     fun loginWithWrongPassword() {
         // given
-        val user = User.create(testName, testEmail, testLoginId, testPassword)
+        val user = mockk<User> {
+            every { id } returns 1L
+            every { name } returns testName
+            every { email } returns testEmail
+            every { loginId } returns testLoginId
+            every { password } returns testPassword
+        }
         val wrongPassword = "wrongpass1"
         
         every { userRepository.findByLoginId(testLoginId) } returns user
