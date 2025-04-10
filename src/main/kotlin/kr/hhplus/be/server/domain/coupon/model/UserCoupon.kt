@@ -35,19 +35,24 @@ data class UserCoupon private constructor(
     var issued: Boolean,
 
     @Column(nullable = false)
-    var used: Boolean
+    var used: Boolean,
+
+    @Column(nullable = false)
+    var quantity: Int
 ) {
     companion object {
         fun create(
             user: User,
-            coupon: Coupon
+            coupon: Coupon,
+            quantity: Int
         ): UserCoupon {
             return UserCoupon(
                 user = user,
                 coupon = coupon,
                 issueDate = LocalDateTime.MIN,
                 issued = false,
-                used = false
+                used = false,
+                quantity = quantity
             )
         }
     }

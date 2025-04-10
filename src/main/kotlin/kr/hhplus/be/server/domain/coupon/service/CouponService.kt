@@ -27,9 +27,17 @@ class CouponService(
         return couponRepository.findAll()
     }
 
+    fun findAllByIds(ids: List<Long>): List<Coupon> {
+        return ids.map { id -> findById(id) }
+    }
+
     fun findById(id: Long): Coupon {
         return couponRepository.findById(id)
             ?: throw IllegalArgumentException("Coupon not found with id: $id")
+    }
+
+    fun findByIds(ids: List<Long>): List<Coupon> {
+        return ids.map { id -> findById(id) }
     }
 
     fun findByCode(code: String): Coupon {
@@ -55,5 +63,11 @@ class CouponService(
 
     fun delete(id: Long) {
         couponRepository.delete(id)
+    }
+
+    fun deleteAll(ids: List<Long>) {
+        ids.forEach { id ->
+            delete(id)
+        }
     }
 }

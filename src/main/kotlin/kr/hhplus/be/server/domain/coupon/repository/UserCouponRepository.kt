@@ -10,4 +10,5 @@ interface UserCouponRepository {
     fun findByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon?
     fun update(userCoupon: UserCoupon): UserCoupon
     fun delete(id: Long)
+    fun deleteByUserIdAndCouponId(userId: Long, couponId: Long)
 }

@@ -7,6 +7,12 @@ import org.springframework.stereotype.Service
 
 @Service
 class UserCouponService(private val userCouponRepository: UserCouponRepository) {
+    
+    fun create(command: UserCouponCommand.CreateUserCouponCommand): UserCoupon {
+        val userCoupon = UserCoupon.create(command.user, command.coupon, command.quantity)
+        return userCouponRepository.save(userCoupon)
+    }
+
     fun findById(id: Long): UserCoupon {
         return userCouponRepository.findById(id)
             ?: throw IllegalArgumentException("UserCoupon not found with id: $id")
@@ -20,8 +26,9 @@ class UserCouponService(private val userCouponRepository: UserCouponRepository) 
         return userCouponRepository.findByCouponId(couponId)
     }
 
-    fun findByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon? {
+    fun findByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon {
         return userCouponRepository.findByUserIdAndCouponId(userId, couponId)
+            ?: throw IllegalArgumentException("UserCoupon not found with userId: $userId and couponId: $couponId")
     }
 
     fun issue(command: UserCouponCommand.IssueCouponCommand) {
@@ -38,6 +45,10 @@ class UserCouponService(private val userCouponRepository: UserCouponRepository) 
 
     fun delete(id: Long) {
         userCouponRepository.delete(id)
+    }
+
+    fun deleteByUserIdAndCouponId(userId: Long, couponId: Long) {
+        userCouponRepository.deleteByUserIdAndCouponId(userId, couponId)
     }
 
     fun deleteAllByUserId(userId: Long) {
