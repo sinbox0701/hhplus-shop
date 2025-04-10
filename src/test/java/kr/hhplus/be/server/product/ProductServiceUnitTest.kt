@@ -21,7 +21,6 @@ class ProductServiceUnitTest {
     @InjectMockKs
     private lateinit var productService: ProductService
 
-    private val testId = 1L
     private val testName = "테스트 상품"
     private val testDescription = "테스트 상품 설명"
     private val testPrice = 10000.0
@@ -57,33 +56,34 @@ class ProductServiceUnitTest {
         // given
         val product = Product.create(testName, testDescription, testPrice)
         
-        every { productRepository.findById(testId) } returns product
+        every { productRepository.findById(product.id!!) } returns product
         
         // when
-        val foundProduct = productService.get(testId)
+        val foundProduct = productService.get(product.id!!)
         
         // then
         assertEquals(testName, foundProduct.name)
         assertEquals(testDescription, foundProduct.description)
         assertEquals(testPrice, foundProduct.price)
         
-        verify(exactly = 1) { productRepository.findById(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
     }
     
     @Test
     @DisplayName("존재하지 않는 ID로 상품 조회 시 예외 발생")
     fun getProductByIdNotFound() {
         // given
-        every { productRepository.findById(testId) } returns null
+        val product = Product.create(testName, testDescription, testPrice)
+        every { productRepository.findById(product.id!!) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.get(testId)
+            productService.get(product.id!!)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
     }
     
     @Test
@@ -116,10 +116,10 @@ class ProductServiceUnitTest {
         val newDescription = "업데이트된 상품 설명"
         val newPrice = 20000.0
         
-        val command = ProductCommand.UpdateProductCommand(testId, newName, newDescription, newPrice)
+        val command = ProductCommand.UpdateProductCommand(product.id!!, newName, newDescription, newPrice)
         val updatedProduct = product.update(newName, newDescription, newPrice)
         
-        every { productRepository.findById(testId) } returns product
+        every { productRepository.findById(product.id!!) } returns product
         every { productRepository.save(any()) } returns updatedProduct
         
         // when
@@ -130,7 +130,7 @@ class ProductServiceUnitTest {
         assertEquals(newDescription, result.description)
         assertEquals(newPrice, result.price)
         
-        verify(exactly = 1) { productRepository.findById(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
         verify(exactly = 1) { productRepository.save(any()) }
     }
     
@@ -138,13 +138,14 @@ class ProductServiceUnitTest {
     @DisplayName("존재하지 않는 상품 업데이트 시 예외 발생")
     fun updateNonExistentProduct() {
         // given
+        val product = Product.create(testName, testDescription, testPrice)
         val newName = "업데이트된 상품"
         val newDescription = "업데이트된 상품 설명"
         val newPrice = 20000.0
         
-        val command = ProductCommand.UpdateProductCommand(testId, newName, newDescription, newPrice)
+        val command = ProductCommand.UpdateProductCommand(product.id!!, newName, newDescription, newPrice)
         
-        every { productRepository.findById(testId) } returns null
+        every { productRepository.findById(product.id!!) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -153,7 +154,7 @@ class ProductServiceUnitTest {
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
         verify(exactly = 0) { productRepository.save(any()) }
     }
     
@@ -164,10 +165,10 @@ class ProductServiceUnitTest {
         val product = Product.create(testName, testDescription, testPrice)
         val newName = "업데이트된 상품"
         
-        val command = ProductCommand.UpdateProductCommand(testId, newName)
+        val command = ProductCommand.UpdateProductCommand(product.id!!, newName)
         val updatedProduct = product.update(newName, null, null)
         
-        every { productRepository.findById(testId) } returns product
+        every { productRepository.findById(product.id!!) } returns product
         every { productRepository.save(any()) } returns updatedProduct
         
         // when
@@ -178,7 +179,7 @@ class ProductServiceUnitTest {
         assertEquals(testDescription, result.description)
         assertEquals(testPrice, result.price)
         
-        verify(exactly = 1) { productRepository.findById(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
         verify(exactly = 1) { productRepository.save(any()) }
     }
     
@@ -188,32 +189,33 @@ class ProductServiceUnitTest {
         // given
         val product = Product.create(testName, testDescription, testPrice)
         
-        every { productRepository.findById(testId) } returns product
-        every { productRepository.delete(testId) } returns Unit
+        every { productRepository.findById(product.id!!) } returns product
+        every { productRepository.delete(product.id!!) } returns Unit
         
         // when & then
         assertDoesNotThrow {
-            productService.delete(testId)
+            productService.delete(product.id!!)
         }
         
-        verify(exactly = 1) { productRepository.findById(testId) }
-        verify(exactly = 1) { productRepository.delete(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
+        verify(exactly = 1) { productRepository.delete(product.id!!) }
     }
     
     @Test
     @DisplayName("존재하지 않는 상품 삭제 시 예외 발생")
     fun deleteNonExistentProduct() {
         // given
-        every { productRepository.findById(testId) } returns null
+        val product = Product.create(testName, testDescription, testPrice)
+        every { productRepository.findById(product.id!!) } returns null
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            productService.delete(testId)
+            productService.delete(product.id!!)
         }
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(testId) }
+        verify(exactly = 1) { productRepository.findById(product.id!!) }
         verify(exactly = 0) { productRepository.delete(any()) }
     }
 } 
