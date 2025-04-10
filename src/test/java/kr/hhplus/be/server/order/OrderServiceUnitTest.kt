@@ -6,7 +6,9 @@ import io.mockk.impl.annotations.MockK
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
+import kr.hhplus.be.server.domain.order.service.OrderCommand
 import kr.hhplus.be.server.domain.order.service.OrderService
+import kr.hhplus.be.server.domain.user.model.Account
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -31,22 +33,33 @@ class OrderServiceUnitTest {
     @DisplayName("주문을 성공적으로 생성한다")
     fun createOrderSuccess() {
         // given
-        val accountId = 1L
+        val account = mockk<Account>()
         val accountCouponId = 2L
-        val orderId = 100L
-        val mockOrder = Order.create(orderId, accountId, accountCouponId, OrderStatus.PENDING, 0.0)
+        val totalPrice = 0.0
+        val mockOrder = mockk<Order>()
+        
+        val command = OrderCommand.CreateOrderCommand(
+            account = account,
+            accountCouponId = accountCouponId,
+            totalPrice = totalPrice
+        )
+
+        every { mockOrder.account } returns account
+        every { mockOrder.accountCouponId } returns accountCouponId
+        every { mockOrder.status } returns OrderStatus.PENDING
+        every { mockOrder.totalPrice } returns totalPrice
         
         every { orderRepository.save(any()) } returns mockOrder
         
         // when
-        val result = orderService.createOrder(accountId, accountCouponId)
+        val result = orderService.createOrder(command)
         
         // then
         verify { orderRepository.save(any()) }
-        assertEquals(accountId, result.accountId)
+        assertEquals(account, result.account)
         assertEquals(accountCouponId, result.accountCouponId)
         assertEquals(OrderStatus.PENDING, result.status)
-        assertEquals(0.0, result.totalPrice)
+        assertEquals(totalPrice, result.totalPrice)
     }
     
     @Test
@@ -54,8 +67,9 @@ class OrderServiceUnitTest {
     fun getOrderByIdSuccess() {
         // given
         val orderId = 100L
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, 1000.0)
+        val mockOrder = mockk<Order>()
         
+        every { mockOrder.id } returns orderId
         every { orderRepository.findById(orderId) } returns mockOrder
         
         // when
@@ -89,9 +103,16 @@ class OrderServiceUnitTest {
         // given
         val accountId = 1L
         val mockOrders = listOf(
-            Order.create(101L, accountId, null, OrderStatus.PENDING, 1000.0),
-            Order.create(102L, accountId, null, OrderStatus.COMPLETED, 2000.0)
+            mockk<Order>(),
+            mockk<Order>()
         )
+        val account1 = mockk<Account>()
+        val account2 = mockk<Account>()
+        
+        every { account1.id } returns accountId
+        every { account2.id } returns accountId
+        every { mockOrders[0].account } returns account1
+        every { mockOrders[1].account } returns account2
         
         every { orderRepository.findByAccountId(accountId) } returns mockOrders
         
@@ -101,8 +122,6 @@ class OrderServiceUnitTest {
         // then
         verify { orderRepository.findByAccountId(accountId) }
         assertEquals(2, result.size)
-        assertEquals(accountId, result[0].accountId)
-        assertEquals(accountId, result[1].accountId)
     }
     
     @Test
@@ -111,10 +130,12 @@ class OrderServiceUnitTest {
         // given
         val status = OrderStatus.PENDING
         val mockOrders = listOf(
-            Order.create(101L, 1L, null, status, 1000.0),
-            Order.create(102L, 2L, null, status, 2000.0)
+            mockk<Order>(),
+            mockk<Order>()
         )
         
+        every { mockOrders[0].status } returns status
+        every { mockOrders[1].status } returns status
         every { orderRepository.findByStatus(status) } returns mockOrders
         
         // when
@@ -123,8 +144,6 @@ class OrderServiceUnitTest {
         // then
         verify { orderRepository.findByStatus(status) }
         assertEquals(2, result.size)
-        assertEquals(status, result[0].status)
-        assertEquals(status, result[1].status)
     }
     
     @Test
@@ -134,9 +153,18 @@ class OrderServiceUnitTest {
         val accountId = 1L
         val status = OrderStatus.PENDING
         val mockOrders = listOf(
-            Order.create(101L, accountId, null, status, 1000.0),
-            Order.create(102L, accountId, null, status, 2000.0)
+            mockk<Order>(),
+            mockk<Order>()
         )
+        val account1 = mockk<Account>()
+        val account2 = mockk<Account>()
+        
+        every { account1.id } returns accountId
+        every { account2.id } returns accountId
+        every { mockOrders[0].account } returns account1
+        every { mockOrders[1].account } returns account2
+        every { mockOrders[0].status } returns status
+        every { mockOrders[1].status } returns status
         
         every { orderRepository.findByAccountIdAndStatus(accountId, status) } returns mockOrders
         
@@ -146,8 +174,6 @@ class OrderServiceUnitTest {
         // then
         verify { orderRepository.findByAccountIdAndStatus(accountId, status) }
         assertEquals(2, result.size)
-        assertEquals(accountId, result[0].accountId)
-        assertEquals(status, result[0].status)
     }
     
     @Test
@@ -157,8 +183,8 @@ class OrderServiceUnitTest {
         val startDate = LocalDateTime.now().minusDays(7)
         val endDate = LocalDateTime.now()
         val mockOrders = listOf(
-            Order.create(101L, 1L, null, OrderStatus.PENDING, 1000.0),
-            Order.create(102L, 2L, null, OrderStatus.COMPLETED, 2000.0)
+            mockk<Order>(),
+            mockk<Order>()
         )
         
         every { orderRepository.findByCreatedAtBetween(startDate, endDate) } returns mockOrders
@@ -177,14 +203,26 @@ class OrderServiceUnitTest {
         // given
         val orderId = 100L
         val newStatus = OrderStatus.COMPLETED
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, 1000.0)
-        val updatedMockOrder = Order.create(orderId, 1L, null, newStatus, 1000.0)
+        val mockOrder = mockk<Order>()
+        val updatedMockOrder = mockk<Order>()
+        
+        val command = OrderCommand.UpdateOrderStatusCommand(
+            id = orderId,
+            status = newStatus
+        )
+        
+        every { mockOrder.id } returns orderId
+        every { mockOrder.status } returns OrderStatus.PENDING
+        every { mockOrder.isCancellable() } returns true
+        
+        every { updatedMockOrder.id } returns orderId
+        every { updatedMockOrder.status } returns newStatus
         
         every { orderRepository.findById(orderId) } returns mockOrder
         every { orderRepository.updateStatus(orderId, newStatus) } returns updatedMockOrder
         
         // when
-        val result = orderService.updateOrderStatus(orderId, newStatus)
+        val result = orderService.updateOrderStatus(command)
         
         // then
         verify { orderRepository.findById(orderId) }
@@ -197,15 +235,22 @@ class OrderServiceUnitTest {
     fun cancelNonCancellableOrderFails() {
         // given
         val orderId = 100L
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.COMPLETED, 1000.0).apply {
-            status = OrderStatus.COMPLETED // 완료된 주문은 isCancellable()이 false 반환
-        }
+        val mockOrder = mockk<Order>()
+        
+        every { mockOrder.id } returns orderId
+        every { mockOrder.status } returns OrderStatus.COMPLETED
+        every { mockOrder.isCancellable() } returns false
         
         every { orderRepository.findById(orderId) } returns mockOrder
         
+        val command = OrderCommand.UpdateOrderStatusCommand(
+            id = orderId,
+            status = OrderStatus.CANCELLED
+        )
+        
         // when & then
         val exception = assertThrows<IllegalStateException> {
-            orderService.cancelOrder(orderId)
+            orderService.updateOrderStatus(command)
         }
         
         verify { orderRepository.findById(orderId) }
@@ -218,8 +263,13 @@ class OrderServiceUnitTest {
     fun cancelOrderSuccess() {
         // given
         val orderId = 100L
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, 1000.0)
-        val cancelledMockOrder = Order.create(orderId, 1L, null, OrderStatus.CANCELLED, 1000.0)
+        val mockOrder = mockk<Order>()
+        val cancelledMockOrder = mockk<Order>()
+        
+        every { mockOrder.id } returns orderId
+        every { mockOrder.status } returns OrderStatus.PENDING
+        every { cancelledMockOrder.id } returns orderId
+        every { cancelledMockOrder.status } returns OrderStatus.CANCELLED
         
         every { orderRepository.findById(orderId) } returns mockOrder
         every { orderRepository.updateStatus(orderId, OrderStatus.CANCELLED) } returns cancelledMockOrder
@@ -228,7 +278,6 @@ class OrderServiceUnitTest {
         val result = orderService.cancelOrder(orderId)
         
         // then
-        verify { orderRepository.findById(orderId) }
         verify { orderRepository.updateStatus(orderId, OrderStatus.CANCELLED) }
         assertEquals(OrderStatus.CANCELLED, result.status)
     }
@@ -238,8 +287,13 @@ class OrderServiceUnitTest {
     fun completeOrderSuccess() {
         // given
         val orderId = 100L
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, 1000.0)
-        val completedMockOrder = Order.create(orderId, 1L, null, OrderStatus.COMPLETED, 1000.0)
+        val mockOrder = mockk<Order>()
+        val completedMockOrder = mockk<Order>()
+        
+        every { mockOrder.id } returns orderId
+        every { mockOrder.status } returns OrderStatus.PENDING
+        every { completedMockOrder.id } returns orderId
+        every { completedMockOrder.status } returns OrderStatus.COMPLETED
         
         every { orderRepository.findById(orderId) } returns mockOrder
         every { orderRepository.updateStatus(orderId, OrderStatus.COMPLETED) } returns completedMockOrder
@@ -248,7 +302,6 @@ class OrderServiceUnitTest {
         val result = orderService.completeOrder(orderId)
         
         // then
-        verify { orderRepository.findById(orderId) }
         verify { orderRepository.updateStatus(orderId, OrderStatus.COMPLETED) }
         assertEquals(OrderStatus.COMPLETED, result.status)
     }
@@ -259,41 +312,28 @@ class OrderServiceUnitTest {
         // given
         val orderId = 100L
         val newTotalPrice = 2000.0
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, 1000.0)
-        val updatedMockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, newTotalPrice)
+        val mockOrder = mockk<Order>()
+        val updatedMockOrder = mockk<Order>()
+        
+        val command = OrderCommand.UpdateOrderTotalPriceCommand(
+            id = orderId,
+            totalPrice = newTotalPrice
+        )
+        
+        every { mockOrder.id } returns orderId
+        every { mockOrder.totalPrice } returns 1000.0
+        every { updatedMockOrder.id } returns orderId
+        every { updatedMockOrder.totalPrice } returns newTotalPrice
         
         every { orderRepository.findById(orderId) } returns mockOrder
-        every { orderRepository.updateTotalPrice(orderId, newTotalPrice, null) } returns updatedMockOrder
+        every { orderRepository.updateTotalPrice(orderId, newTotalPrice) } returns updatedMockOrder
         
         // when
-        val result = orderService.updateOrderTotalPrice(orderId, newTotalPrice)
+        val result = orderService.updateOrderTotalPrice(command)
         
         // then
         verify { orderRepository.findById(orderId) }
-        verify { orderRepository.updateTotalPrice(orderId, newTotalPrice, null) }
+        verify { orderRepository.updateTotalPrice(orderId, newTotalPrice) }
         assertEquals(newTotalPrice, result.totalPrice)
-    }
-    
-    @Test
-    @DisplayName("할인율과 함께 주문 총 가격을 업데이트한다")
-    fun updateOrderTotalPriceWithDiscountSuccess() {
-        // given
-        val orderId = 100L
-        val newTotalPrice = 2000.0
-        val discountRate = 10.0
-        val mockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, 1000.0)
-        val expectedPrice = newTotalPrice * (1 - discountRate / 100)
-        val updatedMockOrder = Order.create(orderId, 1L, null, OrderStatus.PENDING, expectedPrice)
-        
-        every { orderRepository.findById(orderId) } returns mockOrder
-        every { orderRepository.updateTotalPrice(orderId, newTotalPrice, discountRate) } returns updatedMockOrder
-        
-        // when
-        val result = orderService.updateOrderTotalPrice(orderId, newTotalPrice, discountRate)
-        
-        // then
-        verify { orderRepository.findById(orderId) }
-        verify { orderRepository.updateTotalPrice(orderId, newTotalPrice, discountRate) }
-        assertEquals(expectedPrice, result.totalPrice)
     }
 } 

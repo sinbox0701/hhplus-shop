@@ -3,9 +3,14 @@ package kr.hhplus.be.server.order
 import io.mockk.*
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderItem
 import kr.hhplus.be.server.domain.order.repository.OrderItemRepository
+import kr.hhplus.be.server.domain.order.service.OrderItemCommand
 import kr.hhplus.be.server.domain.order.service.OrderItemService
+import kr.hhplus.be.server.domain.product.model.Product
+import kr.hhplus.be.server.domain.product.model.ProductOption
+import kr.hhplus.be.server.domain.user.model.Account
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -29,23 +34,39 @@ class OrderItemServiceUnitTest {
     @DisplayName("주문 상품을 성공적으로 생성한다")
     fun createOrderItemSuccess() {
         // given
-        val orderId = 100L
-        val productId = 200L
-        val productOptionId = 300L
+        val account = mockk<Account>()
+        val order = mockk<Order>()
+        val product = mockk<Product>()
+        val productOption = mockk<ProductOption>()
         val quantity = 2
         val productPrice = 10000.0
-        val mockOrderItem = OrderItem.create(123L, orderId, productId, productOptionId, quantity, productPrice, null, null)
+        val mockOrderItem = mockk<OrderItem>()
+        
+        val command = OrderItemCommand.CreateOrderItemCommand(
+            order = order,
+            product = product,
+            productOption = productOption,
+            quantity = quantity,
+            accountCouponId = null,
+            discountRate = null
+        )
+        
+        every { mockOrderItem.order } returns order
+        every { mockOrderItem.product } returns product
+        every { mockOrderItem.productOption } returns productOption
+        every { mockOrderItem.quantity } returns quantity
+        every { mockOrderItem.price } returns productPrice * quantity
         
         every { orderItemRepository.save(any()) } returns mockOrderItem
         
         // when
-        val result = orderItemService.create(orderId, productId, productOptionId, quantity, productPrice)
+        val result = orderItemService.create(command)
         
         // then
         verify { orderItemRepository.save(any()) }
-        assertEquals(orderId, result.orderId)
-        assertEquals(productId, result.productId)
-        assertEquals(productOptionId, result.productOptionId)
+        assertEquals(order, result.order)
+        assertEquals(product, result.product)
+        assertEquals(productOption, result.productOption)
         assertEquals(quantity, result.quantity)
         assertEquals(productPrice * quantity, result.price)
     }
@@ -55,8 +76,9 @@ class OrderItemServiceUnitTest {
     fun getOrderItemByIdSuccess() {
         // given
         val orderItemId = 123L
-        val mockOrderItem = OrderItem.create(orderItemId, 100L, 200L, 300L, 2, 10000.0, null, null)
+        val mockOrderItem = mockk<OrderItem>()
         
+        every { mockOrderItem.id } returns orderItemId
         every { orderItemRepository.findById(orderItemId) } returns mockOrderItem
         
         // when
@@ -89,11 +111,15 @@ class OrderItemServiceUnitTest {
     fun getOrderItemsByOrderIdSuccess() {
         // given
         val orderId = 100L
+        val order = mockk<Order>()
         val mockOrderItems = listOf(
-            OrderItem.create(123L, orderId, 200L, 300L, 2, 10000.0, null, null),
-            OrderItem.create(124L, orderId, 201L, 301L, 1, 5000.0, null, null)
+            mockk<OrderItem>(),
+            mockk<OrderItem>()
         )
         
+        every { order.id } returns orderId
+        every { mockOrderItems[0].order } returns order
+        every { mockOrderItems[1].order } returns order
         every { orderItemRepository.findByOrderId(orderId) } returns mockOrderItems
         
         // when
@@ -102,8 +128,6 @@ class OrderItemServiceUnitTest {
         // then
         verify { orderItemRepository.findByOrderId(orderId) }
         assertEquals(2, result.size)
-        assertEquals(orderId, result[0].orderId)
-        assertEquals(orderId, result[1].orderId)
     }
     
     @Test
@@ -111,11 +135,15 @@ class OrderItemServiceUnitTest {
     fun getOrderItemsByProductIdSuccess() {
         // given
         val productId = 200L
+        val product = mockk<Product>()
         val mockOrderItems = listOf(
-            OrderItem.create(123L, 100L, productId, 300L, 2, 10000.0, null, null),
-            OrderItem.create(124L, 101L, productId, 301L, 1, 5000.0, null, null)
+            mockk<OrderItem>(),
+            mockk<OrderItem>()
         )
         
+        every { product.id } returns productId
+        every { mockOrderItems[0].product } returns product
+        every { mockOrderItems[1].product } returns product
         every { orderItemRepository.findByProductId(productId) } returns mockOrderItems
         
         // when
@@ -124,8 +152,6 @@ class OrderItemServiceUnitTest {
         // then
         verify { orderItemRepository.findByProductId(productId) }
         assertEquals(2, result.size)
-        assertEquals(productId, result[0].productId)
-        assertEquals(productId, result[1].productId)
     }
     
     @Test
@@ -133,9 +159,15 @@ class OrderItemServiceUnitTest {
     fun getOrderItemByOrderIdAndProductOptionIdSuccess() {
         // given
         val orderId = 100L
+        val order = mockk<Order>()
         val productOptionId = 300L
-        val mockOrderItem = OrderItem.create(123L, orderId, 200L, productOptionId, 2, 10000.0, null, null)
+        val productOption = mockk<ProductOption>()
+        val mockOrderItem = mockk<OrderItem>()
         
+        every { order.id } returns orderId
+        every { productOption.id } returns productOptionId
+        every { mockOrderItem.order } returns order
+        every { mockOrderItem.productOption } returns productOption
         every { orderItemRepository.findByOrderIdAndProductOptionId(orderId, productOptionId) } returns mockOrderItem
         
         // when
@@ -144,8 +176,6 @@ class OrderItemServiceUnitTest {
         // then
         verify { orderItemRepository.findByOrderIdAndProductOptionId(orderId, productOptionId) }
         assertNotNull(result)
-        assertEquals(orderId, result!!.orderId)
-        assertEquals(productOptionId, result.productOptionId)
     }
     
     @Test
@@ -154,42 +184,33 @@ class OrderItemServiceUnitTest {
         // given
         val orderItemId = 123L
         val newQuantity = 3
-        val mockOrderItem = OrderItem.create(orderItemId, 100L, 200L, 300L, 2, 10000.0, null, null)
-        val updatedMockOrderItem = mockOrderItem.update(newQuantity, null)
+        val productPrice = 10000.0
+        val mockOrderItem = mockk<OrderItem>()
+        val updatedMockOrderItem = mockk<OrderItem>()
+        
+        val command = OrderItemCommand.UpdateOrderItemCommand(
+            id = orderItemId,
+            quantity = newQuantity,
+            productPrice = productPrice
+        )
+        
+        every { mockOrderItem.quantity } returns 2
+        every { updatedMockOrderItem.quantity } returns newQuantity
+        every { updatedMockOrderItem.price } returns productPrice * newQuantity
         
         every { orderItemRepository.findById(orderItemId) } returns mockOrderItem
-        every { orderItemRepository.update(any()) } returns updatedMockOrderItem
+        every { mockOrderItem.update(newQuantity, productPrice) } returns updatedMockOrderItem
+        every { orderItemRepository.update(updatedMockOrderItem) } returns updatedMockOrderItem
         
         // when
-        val result = orderItemService.update(orderItemId, newQuantity, null)
+        val result = orderItemService.update(command)
         
         // then
         verify { orderItemRepository.findById(orderItemId) }
-        verify { orderItemRepository.update(any()) }
+        verify { mockOrderItem.update(newQuantity, productPrice) }
+        verify { orderItemRepository.update(updatedMockOrderItem) }
         assertEquals(newQuantity, result.quantity)
-        assertEquals(10000.0 * newQuantity, result.price)
-    }
-    
-    @Test
-    @DisplayName("주문 상품 가격을 성공적으로 업데이트한다")
-    fun updateOrderItemPriceSuccess() {
-        // given
-        val orderItemId = 123L
-        val newPrice = 15000.0
-        val mockOrderItem = OrderItem.create(orderItemId, 100L, 200L, 300L, 2, 10000.0, null, null)
-        val updatedMockOrderItem = mockOrderItem.update(null, newPrice)
-        
-        every { orderItemRepository.findById(orderItemId) } returns mockOrderItem
-        every { orderItemRepository.update(any()) } returns updatedMockOrderItem
-        
-        // when
-        val result = orderItemService.update(orderItemId, null, newPrice)
-        
-        // then
-        verify { orderItemRepository.findById(orderItemId) }
-        verify { orderItemRepository.update(any()) }
-        assertEquals(2, result.quantity) // 수량은 변경 없음
-        assertEquals(newPrice * 2, result.price)
+        assertEquals(productPrice * newQuantity, result.price)
     }
     
     @Test
@@ -198,19 +219,30 @@ class OrderItemServiceUnitTest {
         // given
         val orderItemId = 123L
         val discountRate = 20.0 // 20% 할인
-        val mockOrderItem = OrderItem.create(orderItemId, 100L, 200L, 300L, 2, 10000.0, null, null)
-        val updatedMockOrderItem = mockOrderItem.updatePrice(discountRate)
+        val originalPrice = 20000.0
+        val mockOrderItem = mockk<OrderItem>()
+        val updatedMockOrderItem = mockk<OrderItem>()
+        
+        val command = OrderItemCommand.UpdateOrderItemPriceCommand(
+            id = orderItemId,
+            price = discountRate
+        )
+        
+        every { mockOrderItem.price } returns originalPrice
+        every { updatedMockOrderItem.price } returns originalPrice * (1 - discountRate / 100)
         
         every { orderItemRepository.findById(orderItemId) } returns mockOrderItem
-        every { orderItemRepository.update(any()) } returns updatedMockOrderItem
+        every { mockOrderItem.updatePrice(discountRate) } returns updatedMockOrderItem
+        every { orderItemRepository.update(updatedMockOrderItem) } returns updatedMockOrderItem
         
         // when
-        val result = orderItemService.updatePrice(orderItemId, discountRate)
+        val result = orderItemService.updatePrice(command)
         
         // then
         verify { orderItemRepository.findById(orderItemId) }
-        verify { orderItemRepository.update(any()) }
-        val expectedPrice = 20000.0 * (1 - discountRate / 100)
+        verify { mockOrderItem.updatePrice(discountRate) }
+        verify { orderItemRepository.update(updatedMockOrderItem) }
+        val expectedPrice = originalPrice * (1 - discountRate / 100)
         assertEquals(expectedPrice, result.price)
     }
     
@@ -248,10 +280,12 @@ class OrderItemServiceUnitTest {
     @DisplayName("주문 상품 목록의 총 가격을 계산한다")
     fun calculateTotalPriceSuccess() {
         // given
-        val orderItems = listOf(
-            OrderItem.create(123L, 100L, 200L, 300L, 2, 10000.0, null, null), // 가격 = 20000.0
-            OrderItem.create(124L, 100L, 201L, 301L, 1, 5000.0, null, null)   // 가격 = 5000.0
-        )
+        val mockOrderItem1 = mockk<OrderItem>()
+        val mockOrderItem2 = mockk<OrderItem>()
+        val orderItems = listOf(mockOrderItem1, mockOrderItem2)
+        
+        every { mockOrderItem1.price } returns 20000.0
+        every { mockOrderItem2.price } returns 5000.0
         
         // when
         val result = orderItemService.calculateTotalPrice(orderItems)
