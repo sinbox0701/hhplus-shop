@@ -10,19 +10,19 @@ import jakarta.persistence.Column
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
-import kr.hhplus.be.server.domain.user.model.Account
+import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 
 @Entity
-@Table(name = "account_coupons")
-data class AccountCoupon private constructor(
+@Table(name = "user_coupons")
+data class UserCoupon private constructor(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    val account: Account,
+    @JoinColumn(name = "user_id")
+    val user: User,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coupon_id")
@@ -39,11 +39,11 @@ data class AccountCoupon private constructor(
 ) {
     companion object {
         fun create(
-            account: Account,
+            user: User,
             coupon: Coupon
-        ): AccountCoupon {
-            return AccountCoupon(
-                account = account,
+        ): UserCoupon {
+            return UserCoupon(
+                user = user,
                 coupon = coupon,
                 issueDate = LocalDateTime.MIN,
                 issued = false,
@@ -52,7 +52,7 @@ data class AccountCoupon private constructor(
         }
     }
     
-    fun issue(couponStartDate: LocalDateTime, couponEndDate: LocalDateTime): AccountCoupon {
+    fun issue(couponStartDate: LocalDateTime, couponEndDate: LocalDateTime): UserCoupon {
         require(!issued) { "이미 발행된 쿠폰입니다." }
         
         val now = LocalDateTime.now()
@@ -63,7 +63,7 @@ data class AccountCoupon private constructor(
         return this
     }
     
-    fun use(): AccountCoupon {
+    fun use(): UserCoupon {
         require(issued) { "발행되지 않은 쿠폰은 사용할 수 없습니다." }
         require(!used) { "이미 사용된 쿠폰입니다." }
         

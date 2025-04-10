@@ -2,7 +2,7 @@ package kr.hhplus.be.server.domain.coupon.service
 
 import java.time.LocalDateTime
 
-class AccountCouponCommand {
+class UserCouponCommand {
     data class IssueCouponCommand(
         val id: Long,
         val couponStartDate: LocalDateTime,
