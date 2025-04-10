@@ -10,6 +10,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import kr.hhplus.be.server.domain.user.model.Account
 
 enum class OrderStatus {
@@ -22,7 +24,8 @@ enum class OrderStatus {
 @Table(name = "orders")
 data class Order private constructor(
     @Id
-    val id: Long,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
@@ -48,8 +51,8 @@ data class Order private constructor(
     var updatedAt: LocalDateTime
 ){
     companion object {
-        fun create(id: Long, account: Account, accountCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
-            return Order(id, account, accountCouponId, totalPrice, status, LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now())
+        fun create(account: Account, accountCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
+            return Order(account=account, accountCouponId=accountCouponId, totalPrice=totalPrice, status=status, orderDate=LocalDateTime.now(), createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
         }
     }
 

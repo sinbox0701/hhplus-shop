@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 interface OrderRepository {
     fun save(order: Order): Order
+    fun findAll(): List<Order>
     fun findById(id: Long): Order?
     fun findByAccountId(accountId: Long): List<Order>
     fun findByStatus(status: OrderStatus): List<Order>

@@ -3,6 +3,8 @@ package kr.hhplus.be.server.domain.order.service
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
+import kr.hhplus.be.server.domain.user.model.Account
+import kr.hhplus.be.server.domain.order.service.OrderCommand
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -10,9 +12,8 @@ import java.time.LocalDateTime
 class OrderService(
     private val orderRepository: OrderRepository,
 ) {
-    fun createOrder(accountId: Long, accountCouponId: Long? = null): Order {
-        val id = System.currentTimeMillis()
-        val order = Order.create(id, accountId, accountCouponId, status = OrderStatus.PENDING, totalPrice = 0.0)
+    fun createOrder(command: OrderCommand.CreateOrderCommand): Order {
+        val order = Order.create(command.account, command.accountCouponId, status = OrderStatus.PENDING, totalPrice = 0.0)
         return orderRepository.save(order)
     }
     
@@ -36,24 +37,24 @@ class OrderService(
         return orderRepository.findByCreatedAtBetween(startDate, endDate)
     }
     
-    fun updateOrderStatus(id: Long, status: OrderStatus): Order {
-        val order = getOrder(id)
-        if (status == OrderStatus.CANCELLED && !order.isCancellable()) {
+    fun updateOrderStatus(command: OrderCommand.UpdateOrderStatusCommand): Order {
+        val order = getOrder(command.id)
+        if (command.status == OrderStatus.CANCELLED && !order.isCancellable()) {
             throw IllegalStateException("주문을 취소할 수 없습니다. 현재 상태: ${order.status}")
         }
-        return orderRepository.updateStatus(id, status)
+        return orderRepository.updateStatus(command.id, command.status)
     }
     
     fun cancelOrder(id: Long): Order {
-        return updateOrderStatus(id, OrderStatus.CANCELLED)
+        return orderRepository.updateStatus(id, OrderStatus.CANCELLED)
     }
     
     fun completeOrder(id: Long): Order {
-        return updateOrderStatus(id, OrderStatus.COMPLETED)
+        return orderRepository.updateStatus(id, OrderStatus.COMPLETED)
     }
     
-    fun updateOrderTotalPrice(id: Long, totalPrice: Double, discountRate: Double? = null): Order {
-        val order = getOrder(id)
-        return orderRepository.updateTotalPrice(id, totalPrice, discountRate)
+    fun updateOrderTotalPrice(command: OrderCommand.UpdateOrderTotalPriceCommand): Order {
+        getOrder(command.id)
+        return orderRepository.updateTotalPrice(command.id, command.totalPrice, command.discountRate)
     }
 }
