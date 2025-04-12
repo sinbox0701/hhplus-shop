@@ -9,7 +9,7 @@ class OrderItemService(
     private val orderItemRepository: OrderItemRepository
 ) {
     fun create(command: OrderItemCommand.CreateOrderItemCommand): OrderItem {
-        val orderItem = OrderItem.create(command.order, command.product, command.productOption, command.quantity, command.accountCouponId, command.discountRate)
+        val orderItem = OrderItem.create(command.order, command.product, command.productOption, command.quantity, command.userCoupon, command.discountRate)
         return orderItemRepository.save(orderItem)
     }
 

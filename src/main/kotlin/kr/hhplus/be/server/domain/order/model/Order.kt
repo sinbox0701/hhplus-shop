@@ -12,8 +12,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
-import kr.hhplus.be.server.domain.user.model.Account
-
+import kr.hhplus.be.server.domain.user.model.User
+import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 enum class OrderStatus {
     PENDING, // 주문 대기
     COMPLETED, // 주문 완료
@@ -28,11 +28,12 @@ data class Order private constructor(
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    val account: Account,
+    @JoinColumn(name = "user_id")
+    val user: User,
     
-    @Column(nullable = true)
-    val accountCouponId: Long?,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_coupon_id")
+    val userCoupon: UserCoupon?,
     
     @Column(nullable = false)
     var totalPrice: Double,
@@ -51,8 +52,8 @@ data class Order private constructor(
     var updatedAt: LocalDateTime
 ){
     companion object {
-        fun create(account: Account, accountCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
-            return Order(account=account, accountCouponId=accountCouponId, totalPrice=totalPrice, status=status, orderDate=LocalDateTime.now(), createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
+        fun create(user: User, userCoupon: UserCoupon?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
+            return Order(user=user, userCoupon=userCoupon, totalPrice=totalPrice, status=status, orderDate=LocalDateTime.now(), createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
         }
     }
 

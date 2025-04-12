@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType
 
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
+import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 
 @Entity
 @Table(name = "order_items")
@@ -33,8 +34,9 @@ data class OrderItem private constructor(
     @JoinColumn(name = "product_option_id")
     val productOption: ProductOption,
     
-    @Column(nullable = true)
-    val accountCouponId: Long?,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_coupon_id")
+    val userCoupon: UserCoupon?,
     
     @Column(nullable = false)
     var quantity: Int,
@@ -54,12 +56,12 @@ data class OrderItem private constructor(
         val MIN_PRICE = 100.0
 
         fun create(order: Order, product: Product, productOption: ProductOption, 
-                   quantity: Int, accountCouponId: Long?, discountRate: Double?): OrderItem {
+                   quantity: Int, userCoupon: UserCoupon?, discountRate: Double?): OrderItem {
             require(quantity in MIN_QUANTITY..MAX_QUANTITY) { "수량은 $MIN_QUANTITY 부터 $MAX_QUANTITY 사이여야 합니다." }
             val basePrice = (product.price + productOption.additionalPrice) * quantity
             val finalPrice = discountRate?.let { basePrice * (1 - it / 100) } ?: basePrice
             require(finalPrice >= MIN_PRICE) { "가격은 $MIN_PRICE 이상이어야 합니다." }
-            return OrderItem(order=order, product=product, productOption=productOption, accountCouponId=accountCouponId, quantity=quantity, price=finalPrice, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
+            return OrderItem(order=order, product=product, productOption=productOption, userCoupon=userCoupon, quantity=quantity, price=finalPrice, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
         }
     }
 

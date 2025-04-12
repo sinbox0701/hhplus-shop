@@ -11,7 +11,7 @@ class OrderService(
     private val orderRepository: OrderRepository,
 ) {
     fun createOrder(command: OrderCommand.CreateOrderCommand): Order {
-        val order = Order.create(account = command.account, accountCouponId = command.accountCouponId, totalPrice = command.totalPrice)
+        val order = Order.create(user = command.user, userCoupon = command.userCoupon, totalPrice = command.totalPrice)
         return orderRepository.save(order)
     }
     
@@ -19,16 +19,16 @@ class OrderService(
         return orderRepository.findById(id) ?: throw IllegalArgumentException("주문을 찾을 수 없습니다: $id")
     }
     
-    fun getOrdersByAccountId(accountId: Long): List<Order> {
-        return orderRepository.findByAccountId(accountId)
+    fun getOrdersByUserId(userId: Long): List<Order> {
+        return orderRepository.findByUserId(userId)
     }
     
     fun getOrdersByStatus(status: OrderStatus): List<Order> {
         return orderRepository.findByStatus(status)
     }
     
-    fun getOrdersByAccountIdAndStatus(accountId: Long, status: OrderStatus): List<Order> {
-        return orderRepository.findByAccountIdAndStatus(accountId, status)
+    fun getOrdersByUserIdAndStatus(userId: Long, status: OrderStatus): List<Order> {
+        return orderRepository.findByUserIdAndStatus(userId, status)
     }
     
     fun getOrdersByDateRange(startDate: LocalDateTime, endDate: LocalDateTime): List<Order> {

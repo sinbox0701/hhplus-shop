@@ -8,7 +8,9 @@ import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
 import kr.hhplus.be.server.domain.order.service.OrderCommand
 import kr.hhplus.be.server.domain.order.service.OrderService
-import kr.hhplus.be.server.domain.user.model.Account
+import kr.hhplus.be.server.domain.user.model.User
+import kr.hhplus.be.server.domain.coupon.model.UserCoupon
+import kr.hhplus.be.server.domain.coupon.model.Coupon
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -18,34 +20,42 @@ import java.time.LocalDateTime
 
 class OrderServiceUnitTest {
 
-    @MockK
     private lateinit var orderRepository: OrderRepository
-
-    @InjectMockKs
     private lateinit var orderService: OrderService
 
     @BeforeEach
-    fun setUp() {
-        MockKAnnotations.init(this)
+    fun setup() {
+        orderRepository = mockk()
+        orderService = OrderService(orderRepository)
     }
 
     @Test
     @DisplayName("주문을 성공적으로 생성한다")
     fun createOrderSuccess() {
         // given
-        val account = mockk<Account>()
-        val accountCouponId = 2L
+        val user = mockk<User>{
+            every { id } returns 1L
+        }
+        val coupon = mockk<Coupon>{
+            every { id } returns 2L
+        }
+        val userCoupon = mockk<UserCoupon>{
+            every { id } returns 3L
+            every { coupon.id } returns 2L
+            every { used } returns false
+        }
+
         val totalPrice = 0.0
         val mockOrder = mockk<Order>()
-        
+
         val command = OrderCommand.CreateOrderCommand(
-            account = account,
-            accountCouponId = accountCouponId,
+            user = user,
+            userCoupon = userCoupon,
             totalPrice = totalPrice
         )
 
-        every { mockOrder.account } returns account
-        every { mockOrder.accountCouponId } returns accountCouponId
+        every { mockOrder.user } returns user
+        every { mockOrder.userCoupon } returns userCoupon
         every { mockOrder.status } returns OrderStatus.PENDING
         every { mockOrder.totalPrice } returns totalPrice
         
@@ -56,8 +66,8 @@ class OrderServiceUnitTest {
         
         // then
         verify { orderRepository.save(any()) }
-        assertEquals(account, result.account)
-        assertEquals(accountCouponId, result.accountCouponId)
+        assertEquals(user, result.user)
+        assertEquals(userCoupon, result.userCoupon)
         assertEquals(OrderStatus.PENDING, result.status)
         assertEquals(totalPrice, result.totalPrice)
     }
@@ -103,24 +113,29 @@ class OrderServiceUnitTest {
         // given
         val accountId = 1L
         val mockOrders = listOf(
-            mockk<Order>(),
-            mockk<Order>()
+            mockk<Order>{
+                every { id } returns 2L
+                every { user.id } returns 4L
+            },
+            mockk<Order>{
+                every { id } returns 3L
+                every { user.id } returns 4L
+            }
         )
-        val account1 = mockk<Account>()
-        val account2 = mockk<Account>()
+        val user1 = mockk<User>{
+            every { id } returns 4L
+        }
         
-        every { account1.id } returns accountId
-        every { account2.id } returns accountId
-        every { mockOrders[0].account } returns account1
-        every { mockOrders[1].account } returns account2
+        every { mockOrders[0].user.id } returns 4L
+        every { mockOrders[1].user.id } returns 4L
         
-        every { orderRepository.findByAccountId(accountId) } returns mockOrders
+        every { orderRepository.findByUserId(4L) } returns mockOrders
         
         // when
-        val result = orderService.getOrdersByAccountId(accountId)
+        val result = orderService.getOrdersByUserId(4L)
         
         // then
-        verify { orderRepository.findByAccountId(accountId) }
+        verify { orderRepository.findByUserId(4L) }
         assertEquals(2, result.size)
     }
     
@@ -130,8 +145,14 @@ class OrderServiceUnitTest {
         // given
         val status = OrderStatus.PENDING
         val mockOrders = listOf(
-            mockk<Order>(),
-            mockk<Order>()
+            mockk<Order>{
+                every { id } returns 2L
+                every { user.id } returns 4L
+            },
+            mockk<Order>{
+                every { id } returns 3L
+                every { user.id } returns 4L
+            }
         )
         
         every { mockOrders[0].status } returns status
@@ -150,29 +171,33 @@ class OrderServiceUnitTest {
     @DisplayName("계정 ID와 상태로 주문 목록을 가져온다")
     fun getOrdersByAccountIdAndStatusSuccess() {
         // given
-        val accountId = 1L
         val status = OrderStatus.PENDING
         val mockOrders = listOf(
-            mockk<Order>(),
-            mockk<Order>()
+            mockk<Order>{
+                every { id } returns 2L
+                every { user.id } returns 4L
+            },
+            mockk<Order>{
+                every { id } returns 3L
+                every { user.id } returns 4L
+            }
         )
-        val account1 = mockk<Account>()
-        val account2 = mockk<Account>()
+        val user1 = mockk<User>{
+            every { id } returns 4L
+        }
         
-        every { account1.id } returns accountId
-        every { account2.id } returns accountId
-        every { mockOrders[0].account } returns account1
-        every { mockOrders[1].account } returns account2
+        every { mockOrders[0].user.id } returns 4L
+        every { mockOrders[1].user.id } returns 4L
         every { mockOrders[0].status } returns status
         every { mockOrders[1].status } returns status
         
-        every { orderRepository.findByAccountIdAndStatus(accountId, status) } returns mockOrders
+        every { orderRepository.findByUserIdAndStatus(4L, status) } returns mockOrders
         
         // when
-        val result = orderService.getOrdersByAccountIdAndStatus(accountId, status)
+        val result = orderService.getOrdersByUserIdAndStatus(4L, status)
         
         // then
-        verify { orderRepository.findByAccountIdAndStatus(accountId, status) }
+        verify { orderRepository.findByUserIdAndStatus(4L, status) }
         assertEquals(2, result.size)
     }
     
@@ -183,8 +208,14 @@ class OrderServiceUnitTest {
         val startDate = LocalDateTime.now().minusDays(7)
         val endDate = LocalDateTime.now()
         val mockOrders = listOf(
-            mockk<Order>(),
-            mockk<Order>()
+            mockk<Order>{
+                every { id } returns 2L
+                every { user.id } returns 4L
+            },
+            mockk<Order>{
+                every { id } returns 3L
+                every { user.id } returns 4L
+            }
         )
         
         every { orderRepository.findByCreatedAtBetween(startDate, endDate) } returns mockOrders

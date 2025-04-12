@@ -6,6 +6,9 @@ import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.order.model.Order
+import kr.hhplus.be.server.domain.user.model.User
+import kr.hhplus.be.server.domain.user.service.UserCommand
+import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.user.service.AccountCommand
 class OrderCriteria{
     /**
@@ -15,23 +18,23 @@ class OrderCriteria{
         val productId: Long,
         val productOptionId: Long,
         val quantity: Int,
-        val accountCouponId: Long? = null,
+        val userCouponId: Long? = null,
         val discountRate: Double? = null
     ){
-        fun toOrderItemCommand(order: Order, product: Product, productOption: ProductOption): OrderItemCommand.CreateOrderItemCommand {
-            return OrderItemCommand.CreateOrderItemCommand(order, product, productOption, quantity, accountCouponId, discountRate)
+        fun toOrderItemCommand(order: Order, product: Product, productOption: ProductOption, userCoupon: UserCoupon?): OrderItemCommand.CreateOrderItemCommand {
+            return OrderItemCommand.CreateOrderItemCommand(order, product, productOption, quantity, userCoupon, discountRate)
         }
     }
 
     data class OrderCreateCriteria(
-        val accountId: Long,
+        val userId: Long,
         val orderItems: List<OrderItemCreateCriteria>,
-        val accountCouponId: Long? = null
+        val userCouponId: Long? = null
     ){
-        fun toOrderCommand(account: Account): OrderCommand.CreateOrderCommand {
+        fun toOrderCommand(user: User, userCoupon: UserCoupon?): OrderCommand.CreateOrderCommand {
             return OrderCommand.CreateOrderCommand(
-                account,
-                accountCouponId,
+                user,
+                userCoupon,
                 totalPrice = 0.0
             )
         }
@@ -43,10 +46,14 @@ class OrderCriteria{
 
     data class OrderPaymentCriteria(
         val orderId: Long,
-        val accountId: Long
+        val userId: Long
     ){
-        fun toOrderPaymentCommand(totalPrice: Double): AccountCommand.UpdateAccountCommand {
-            return AccountCommand.UpdateAccountCommand(accountId, totalPrice)
+        fun toOrderPaymentCommand(totalPrice: Double): OrderCommand.UpdateOrderTotalPriceCommand {
+            return OrderCommand.UpdateOrderTotalPriceCommand(orderId, totalPrice)
+        }
+
+        fun toUpdateAccountCommand(totalPrice: Double): AccountCommand.UpdateAccountCommand {
+            return AccountCommand.UpdateAccountCommand(userId, totalPrice)
         }
     }
 }

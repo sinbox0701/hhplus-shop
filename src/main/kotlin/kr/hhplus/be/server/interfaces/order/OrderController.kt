@@ -29,8 +29,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                accountId = result.order.account.id!!,
-                accountCouponId = result.order.accountCouponId,
+                userId = result.order.user.id!!,
+                userCouponId = result.order.userCoupon?.id,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -42,7 +42,7 @@ class OrderController(
                         orderId = item.order.id!!,
                         productId = item.product.id!!,
                         productOptionId = item.productOption.id!!,
-                        accountCouponId = item.accountCouponId,
+                        userCouponId = item.userCoupon?.id,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
@@ -71,8 +71,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                accountId = result.order.account.id!!,
-                accountCouponId = result.order.accountCouponId,
+                userId = result.order.user.id!!,
+                userCouponId = result.order.userCoupon?.id,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -80,11 +80,11 @@ class OrderController(
                 updatedAt = result.order.updatedAt,
                 items = result.items.map { item ->
                     OrderResponse.OrderItemResponse(
-                        id = item.id!!,
+                        id = item.id!!,,
                         orderId = item.order.id!!,
                         productId = item.product.id!!,
                         productOptionId = item.productOption.id!!,
-                        accountCouponId = item.accountCouponId,
+                        userCouponId = item.userCoupon?.id,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
@@ -103,19 +103,19 @@ class OrderController(
         }
     }
 
-    override fun getOrdersByAccountId(accountId: Long): ResponseEntity<List<OrderResponse.Response>> {
+    override fun getOrdersByAccountId(userId: Long): ResponseEntity<List<OrderResponse.Response>> {
         try {
             // 사용자의 주문 목록 조회
-            val orders = orderFacade.getOrdersByAccountId(accountId)
+            val orders = orderFacade.getOrdersByUserId(userId)
             
             // 각 주문별로 상세 정보 조회하여 응답 생성
             val response = orders.map { order -> 
-                val criteria = OrderCriteria.OrderPaymentCriteria(order.id!!, accountId)
+                val criteria = OrderCriteria.OrderPaymentCriteria(order.id!!, userId)
                 val result = orderFacade.getOrderWithItems(criteria)
                 OrderResponse.Response(
                     id = result.order.id!!,
-                    accountId = result.order.account.id!!,
-                    accountCouponId = result.order.accountCouponId,
+                    userId = result.order.user.id!!,
+                    userCouponId = result.order.userCoupon?.id,
                     totalPrice = result.order.totalPrice,
                     status = result.order.status,
                     orderDate = result.order.orderDate,
@@ -127,7 +127,7 @@ class OrderController(
                             orderId = item.order.id!!,
                             productId = item.product.id!!,
                             productOptionId = item.productOption.id!!,
-                            accountCouponId = item.accountCouponId,
+                            userCouponId = item.userCoupon?.id,
                             quantity = item.quantity,
                             price = item.price,
                             createdAt = item.createdAt,
@@ -152,8 +152,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                accountId = result.order.account.id!!,
-                accountCouponId = result.order.accountCouponId,
+                userId = result.order.user.id!!,
+                userCouponId = result.order.userCoupon?.id,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -165,7 +165,7 @@ class OrderController(
                         orderId = item.order.id!!,
                         productId = item.product.id!!,
                         productOptionId = item.productOption.id!!,
-                        accountCouponId = item.accountCouponId,
+                        userCouponId = item.userCoupon?.id,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
@@ -194,8 +194,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                accountId = result.order.account.id!!,
-                accountCouponId = result.order.accountCouponId,
+                userId = result.order.user.id!!,
+                userCouponId = result.order.userCoupon?.id,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -207,7 +207,7 @@ class OrderController(
                         orderId = item.order.id!!,
                         productId = item.product.id!!,
                         productOptionId = item.productOption.id!!,
-                        accountCouponId = item.accountCouponId,
+                        userCouponId = item.userCoupon?.id,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,

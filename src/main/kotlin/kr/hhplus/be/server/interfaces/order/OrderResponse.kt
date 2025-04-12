@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 class OrderResponse{
     data class Response(
         val id: Long,
-        val accountId: Long,
-        val accountCouponId: Long?,
+        val userId: Long,
+        val userCouponId: Long?,
         val totalPrice: Double,
         val status: OrderStatus,
         val orderDate: LocalDateTime,
@@ -20,7 +20,7 @@ class OrderResponse{
         val orderId: Long,
         val productId: Long,
         val productOptionId: Long,
-        val accountCouponId: Long?,
+        val userCouponId: Long?,
         val quantity: Int,
         val price: Double,
         val createdAt: LocalDateTime,

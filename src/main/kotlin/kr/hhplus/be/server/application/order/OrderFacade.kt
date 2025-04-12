@@ -6,6 +6,9 @@ import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.order.service.OrderService
 import kr.hhplus.be.server.domain.product.service.ProductService
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
+import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.domain.coupon.service.CouponService
+import kr.hhplus.be.server.domain.coupon.service.UserCouponService
 import kr.hhplus.be.server.domain.user.service.AccountService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,6 +19,9 @@ class OrderFacade(
     private val orderItemService: OrderItemService,
     private val productService: ProductService,
     private val productOptionService: ProductOptionService,
+    private val userService: UserService,
+    private val couponService: CouponService,
+    private val userCouponService: UserCouponService,
     private val accountService: AccountService
 ) {
     /**
@@ -24,8 +30,10 @@ class OrderFacade(
     @Transactional
     fun createOrder(criteria: OrderCriteria.OrderCreateCriteria): OrderResult.OrderWithItems {
         // 1. 주문 생성
-        val account = accountService.findById(criteria.accountId)
-        val order = orderService.createOrder(criteria.toOrderCommand(account))
+        val user = userService.findById(criteria.userId)
+        val userCoupon = criteria.userCouponId?.let { userCouponService.findById(it) }
+
+        val order = orderService.createOrder(criteria.toOrderCommand(user, userCoupon))
         
         // 2. 주문 상품 생성 및 총 가격 계산
         var totalPrice = 0.0
@@ -35,7 +43,7 @@ class OrderFacade(
             val productOption = productOptionService.get(item.productOptionId)
             
             // 주문 상품 생성
-            val orderItemCommand = item.toOrderItemCommand(order, product, productOption)
+            val orderItemCommand = item.toOrderItemCommand(order, product, productOption, userCoupon)
             val orderItem = orderItemService.create(orderItemCommand)
             
             totalPrice += orderItem.price
@@ -43,10 +51,19 @@ class OrderFacade(
         }
         
         // 3. 쿠폰 할인 적용 (전체 주문에 대한 할인)
-        val finalPrice = criteria.accountCouponId?.let { totalPrice * (1 - it / 100) } ?: totalPrice
+        val finalPrice = criteria.userCouponId?.let {
+            val appliedCoupon = userCoupon ?: throw IllegalStateException("쿠폰 정보를 찾을 수 없습니다")
+            val coupon = couponService.findById(appliedCoupon.coupon.id!!)
+            totalPrice * (1 - coupon.discountRate / 100)
+        } ?: totalPrice
         
         // 4. 주문 총 가격 업데이트
         orderService.updateOrderTotalPrice(criteria.toOrderTotalPriceUpdateCommand(order.id!!, finalPrice))
+        
+        // 5. 사용된 쿠폰 상태 업데이트
+        criteria.userCouponId?.let {
+            userCouponService.use(it)
+        }
         
         return OrderResult.OrderWithItems(order, orderItems)
     }
@@ -60,8 +77,8 @@ class OrderFacade(
         val order = orderService.getOrder(criteria.orderId)
         
         // 2. 계정 확인
-        val account = accountService.findById(criteria.accountId)
-        if (order.account.id != criteria.accountId) {
+        val account = userService.findById(criteria.userId)
+        if (order.user.id != account.id) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
@@ -71,7 +88,7 @@ class OrderFacade(
         if (paymentResult) {
             try {
                 // 4. 계좌에서 금액 차감
-                accountService.withdraw(criteria.toOrderPaymentCommand(order.totalPrice))
+                accountService.withdraw(criteria.toUpdateAccountCommand(order.totalPrice))
                 
                 // 5. 주문 상태 완료로 변경
                 return orderService.completeOrder(order.id!!)
@@ -112,8 +129,8 @@ class OrderFacade(
         val order = orderService.getOrder(criteria.orderId)
         
         // 2. 주문 소유자 확인
-        val account = accountService.findById(criteria.accountId)
-        if (order.account.id != criteria.accountId)  {
+        val account = userService.findById(criteria.userId)
+        if (order.user.id != account.id) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
@@ -125,7 +142,7 @@ class OrderFacade(
         // 4. 주문이 이미 결제 완료 상태라면 환불 처리
         if (order.status == OrderStatus.COMPLETED) {
             // 환불 처리 (외부 결제 API 호출 대신 계좌에 금액 환불)
-            accountService.charge(criteria.toOrderPaymentCommand(order.totalPrice))
+            accountService.charge(criteria.toUpdateAccountCommand(order.totalPrice))
         }
         
         // 5. 주문 상태 취소로 변경
@@ -141,8 +158,8 @@ class OrderFacade(
         val order = orderService.getOrder(criteria.orderId)
         
         // 2. 주문 소유자 확인
-        val account = accountService.findById(criteria.accountId)
-        if (order.account.id != criteria.accountId) {
+        val account = userService.findById(criteria.userId)
+        if (order.user.id != account.id) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
@@ -156,7 +173,7 @@ class OrderFacade(
      * 사용자의 주문 목록 조회
      */
     @Transactional(readOnly = true)
-    fun getOrdersByAccountId(accountId: Long): List<Order> {
-        return orderService.getOrdersByAccountId(accountId)
+    fun getOrdersByUserId(userId: Long): List<Order> {
+        return orderService.getOrdersByUserId(userId)
     }
 }

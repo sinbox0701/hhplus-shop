@@ -12,9 +12,9 @@ class OrderRequest {
     
     data class OrderCreateRequest(
         @field:NotNull(message = "계정 ID는 필수입니다.")
-        val accountId: Long,
+        val userId: Long,
         
-        val accountCouponId: Long? = null,
+        val userCouponId: Long? = null,
         
         val couponDiscountRate: Double? = null,
         
@@ -24,9 +24,9 @@ class OrderRequest {
     ) {
         fun toCriteria(): OrderCriteria.OrderCreateCriteria {
             return OrderCriteria.OrderCreateCriteria(
-                accountId = accountId,
+                userId = userId,
                 orderItems = orderItems.map { it.toCriteria() },
-                accountCouponId = accountCouponId
+                userCouponId = userCouponId
             )
         }
     }
@@ -53,12 +53,12 @@ class OrderRequest {
 
     data class OrderPaymentRequest(
         @field:NotNull(message = "계정 ID는 필수입니다.")
-        val accountId: Long
+        val userId: Long
     ) {
         fun toCriteria(orderId: Long): OrderCriteria.OrderPaymentCriteria {
             return OrderCriteria.OrderPaymentCriteria(
                 orderId = orderId,
-                accountId = accountId
+                userId = userId
             )
         }
     }

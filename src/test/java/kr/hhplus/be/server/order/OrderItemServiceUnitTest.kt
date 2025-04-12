@@ -10,7 +10,9 @@ import kr.hhplus.be.server.domain.order.service.OrderItemCommand
 import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
-import kr.hhplus.be.server.domain.user.model.Account
+import kr.hhplus.be.server.domain.user.model.User
+import kr.hhplus.be.server.domain.coupon.model.UserCoupon
+import kr.hhplus.be.server.domain.coupon.model.Coupon
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -19,17 +21,14 @@ import org.junit.jupiter.api.assertThrows
 
 class OrderItemServiceUnitTest {
 
-    @MockK
     private lateinit var orderItemRepository: OrderItemRepository
-
-    @InjectMockKs
     private lateinit var orderItemService: OrderItemService
 
     @BeforeEach
-    fun setUp() {
-        MockKAnnotations.init(this)
+    fun setup() {
+        orderItemRepository = mockk()
+        orderItemService = OrderItemService(orderItemRepository)
     }
-
     @Test
     @DisplayName("주문 상품을 성공적으로 생성한다")
     fun createOrderItemSuccess() {
@@ -45,6 +44,15 @@ class OrderItemServiceUnitTest {
             every { id } returns 3L
             every { additionalPrice } returns 0.0
         }
+        val coupon = mockk<Coupon> {
+            every { id } returns 4L
+            every { discountRate } returns 10.0
+        }
+        val userCoupon = mockk<UserCoupon> {
+            every { id } returns 5L
+            every { coupon.id } returns 4L
+            every { used } returns false
+        }
         val quantity = 2
         
         val command = OrderItemCommand.CreateOrderItemCommand(
@@ -52,8 +60,8 @@ class OrderItemServiceUnitTest {
             product = product,
             productOption = productOption,
             quantity = quantity,
-            accountCouponId = null,
-            discountRate = null
+            userCoupon = userCoupon,
+            discountRate = 10.0
         )
         
         val mockOrderItem = mockk<OrderItem>()
