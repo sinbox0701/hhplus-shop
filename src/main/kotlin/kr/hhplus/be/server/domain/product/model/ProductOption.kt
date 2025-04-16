@@ -1,40 +1,14 @@
 package kr.hhplus.be.server.domain.product.model
 
 import java.time.LocalDateTime
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 
-@Entity
-@Table(name = "product_options")
 data class ProductOption private constructor(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    val product: Product,
-    
-    @Column(nullable = false, length = MAX_NAME_LENGTH)
+    val productId: Long,
     var name: String,
-    
-    @Column(nullable = false)
     var availableQuantity: Int,
-    
-    @Column(nullable = false)
     var additionalPrice: Double,
-    
-    @Column(nullable = false)
     var createdAt: LocalDateTime,
-    
-    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
     companion object {
@@ -44,14 +18,14 @@ data class ProductOption private constructor(
         private const val MIN_AVAILABLE_QUANTITY = 0
         private const val MAX_AVAILABLE_QUANTITY = 1000
 
-        fun create(product: Product, name: String, availableQuantity: Int, additionalPrice: Double): ProductOption {
+        fun create(productId: Long, name: String, availableQuantity: Int, additionalPrice: Double): ProductOption {
             require(name.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
                 "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
             }
             require(availableQuantity in MIN_AVAILABLE_QUANTITY..MAX_AVAILABLE_QUANTITY) {
                 "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
             }
-            return ProductOption(product=product, name=name, availableQuantity=availableQuantity, additionalPrice=additionalPrice, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
+            return ProductOption(productId=productId, name=name, availableQuantity=availableQuantity, additionalPrice=additionalPrice, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
         }
     }
 

@@ -1,33 +1,13 @@
 package kr.hhplus.be.server.domain.product.model
 
 import java.time.LocalDateTime
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
 
-@Entity
-@Table(name = "products")
 data class Product private constructor(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
-    
-    @Column(nullable = false, length = MAX_NAME_LENGTH)
     var name: String,
-    
-    @Column(nullable = false, columnDefinition = "TEXT")
     var description: String,
-    
-    @Column(nullable = false)
     var price: Double,
-    
-    @Column(nullable = false)
     var createdAt: LocalDateTime,
-    
-    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ){
     companion object {
