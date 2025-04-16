@@ -6,10 +6,10 @@ data class UserCoupon private constructor(
     val id: Long? = null,
     val userId: Long,
     val couponId: Long,
-    var issueDate: LocalDateTime,
-    var issued: Boolean,
-    var used: Boolean,
-    var quantity: Int
+    val issueDate: LocalDateTime,
+    val issued: Boolean,
+    val used: Boolean,
+    val quantity: Int
 ) {
     companion object {
         fun create(
@@ -34,17 +34,30 @@ data class UserCoupon private constructor(
         val now = LocalDateTime.now()
         require(now.isAfter(couponStartDate) && now.isBefore(couponEndDate)) { "쿠폰 유효 기간이 아닙니다." }
         
-        this.issueDate = now
-        this.issued = true
-        return this
+        return UserCoupon(
+            id = this.id,
+            userId = this.userId,
+            couponId = this.couponId,
+            issueDate = now,
+            issued = true,
+            used = this.used,
+            quantity = this.quantity
+        )
     }
     
     fun use(): UserCoupon {
         require(issued) { "발행되지 않은 쿠폰은 사용할 수 없습니다." }
         require(!used) { "이미 사용된 쿠폰입니다." }
         
-        this.used = true
-        return this
+        return UserCoupon(
+            id = this.id,
+            userId = this.userId,
+            couponId = this.couponId,
+            issueDate = this.issueDate,
+            issued = this.issued,
+            used = true,
+            quantity = this.quantity
+        )
     }
     
     fun isIssued(): Boolean = issued

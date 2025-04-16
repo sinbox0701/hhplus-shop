@@ -5,9 +5,9 @@ import java.time.LocalDateTime
 data class Account private constructor(
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
     val userId: Long,
-    var amount: Double,
-    var createdAt: LocalDateTime,
-    var updatedAt: LocalDateTime
+    val amount: Double,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
 ) {
     companion object {
         const val MIN_BALANCE: Double = 0.0
@@ -31,9 +31,13 @@ data class Account private constructor(
         require(newAmount <= MAX_BALANCE) {
             "Resulting balance cannot exceed $MAX_BALANCE"
         }
-        this.amount = newAmount
-        this.updatedAt = LocalDateTime.now()
-        return this
+        return Account(
+            id = this.id,
+            userId = this.userId,
+            amount = newAmount,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
 
     fun withdraw(amount: Double): Account {
@@ -44,8 +48,12 @@ data class Account private constructor(
         require(this.amount >= amount) { "Insufficient funds" }
         val newAmount = this.amount - amount
         require(newAmount >= MIN_BALANCE) { "Resulting balance cannot be below MIN_BALANCE" }
-        this.amount = newAmount
-        this.updatedAt = LocalDateTime.now()
-        return this
+        return Account(
+            id = this.id,
+            userId = this.userId,
+            amount = newAmount,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
 }

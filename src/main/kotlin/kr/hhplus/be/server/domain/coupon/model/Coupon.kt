@@ -9,16 +9,16 @@ enum class CouponType {
 
 data class Coupon private constructor(
     val id: Long? = null,
-    var couponType: CouponType,
-    var code: String,
-    var discountRate: Double,
-    var description: String,
-    var startDate: LocalDateTime,
-    var endDate: LocalDateTime,
-    var quantity: Int,
-    var remainingQuantity: Int,
-    var createdAt: LocalDateTime,
-    var updatedAt: LocalDateTime
+    val couponType: CouponType,
+    val code: String,
+    val discountRate: Double,
+    val description: String,
+    val startDate: LocalDateTime,
+    val endDate: LocalDateTime,
+    val quantity: Int,
+    val remainingQuantity: Int,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
 ) {
     companion object {
         const val MIN_DISCOUNT_RATE = 1.0
@@ -71,44 +71,61 @@ data class Coupon private constructor(
         endDate: LocalDateTime? = null,
         quantity: Int? = null
     ): Coupon {
-        discountRate?.let {
+        val updatedDiscountRate = discountRate?.also {
             require(it in MIN_DISCOUNT_RATE..MAX_DISCOUNT_RATE) { "할인율은 $MIN_DISCOUNT_RATE 부터 $MAX_DISCOUNT_RATE 사이여야 합니다." }
-            this.discountRate = it
-        }
+        } ?: this.discountRate
         
-        description?.let {
+        val updatedDescription = description?.also {
             require(it.length in MIN_DESCRIPTION_LENGTH..MAX_DESCRIPTION_LENGTH) { "설명은 $MIN_DESCRIPTION_LENGTH 부터 $MAX_DESCRIPTION_LENGTH 사이여야 합니다." }
-            this.description = it
-        }
+        } ?: this.description
         
-        startDate?.let { newStartDate ->
-            this.startDate = newStartDate
-            require(this.startDate.isBefore(this.endDate)) { "시작일은 종료일보다 이전이어야 합니다." }
-        }
+        val updatedStartDate = startDate ?: this.startDate
+        val updatedEndDate = endDate ?: this.endDate
         
-        endDate?.let { newEndDate ->
-            this.endDate = newEndDate
-            require(this.startDate.isBefore(this.endDate)) { "시작일은 종료일보다 이전이어야 합니다." }
-        }
+        // 시작일과 종료일 검증
+        require(updatedStartDate.isBefore(updatedEndDate)) { "시작일은 종료일보다 이전이어야 합니다." }
         
-        quantity?.let { newQuantity ->
+        var updatedRemainingQuantity = this.remainingQuantity
+        val updatedQuantity = quantity?.let { newQuantity ->
             require(newQuantity in MIN_QUANTITY..MAX_QUANTITY) { "쿠폰 수량은 $MIN_QUANTITY 부터 $MAX_QUANTITY 사이여야 합니다." }
             val diff = newQuantity - this.quantity
-            this.quantity = newQuantity
-            this.remainingQuantity += diff
-            require(this.remainingQuantity >= 0) { "남은 쿠폰 수량은 0보다 작을 수 없습니다." }
-        }
+            updatedRemainingQuantity += diff
+            require(updatedRemainingQuantity >= 0) { "남은 쿠폰 수량은 0보다 작을 수 없습니다." }
+            newQuantity
+        } ?: this.quantity
         
-        this.updatedAt = LocalDateTime.now()
-        return this
+        return Coupon(
+            id = this.id,
+            couponType = this.couponType,
+            code = this.code,
+            discountRate = updatedDiscountRate,
+            description = updatedDescription,
+            startDate = updatedStartDate,
+            endDate = updatedEndDate,
+            quantity = updatedQuantity,
+            remainingQuantity = updatedRemainingQuantity,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
     
     fun decreaseQuantity(count: Int): Coupon {
         require(remainingQuantity > 0) { "남은 쿠폰이 없습니다." }
         require(count > 0) { "쿠폰 수량은 0보다 크게 감소할 수 없습니다." }
-        remainingQuantity -= count
-        this.updatedAt = LocalDateTime.now()
-        return this
+        
+        return Coupon(
+            id = this.id,
+            couponType = this.couponType,
+            code = this.code,
+            discountRate = this.discountRate,
+            description = this.description,
+            startDate = this.startDate,
+            endDate = this.endDate,
+            quantity = this.quantity,
+            remainingQuantity = this.remainingQuantity - count,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
     
     fun hasRemainingQuantity(): Boolean = remainingQuantity > 0

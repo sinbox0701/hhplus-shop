@@ -5,11 +5,11 @@ import java.time.LocalDateTime
 data class ProductOption private constructor(
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
     val productId: Long,
-    var name: String,
-    var availableQuantity: Int,
-    var additionalPrice: Double,
-    var createdAt: LocalDateTime,
-    var updatedAt: LocalDateTime
+    val name: String,
+    val availableQuantity: Int,
+    val additionalPrice: Double,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
 ) {
     companion object {
         private const val MIN_NAME_LENGTH = 1
@@ -30,18 +30,28 @@ data class ProductOption private constructor(
     }
 
     fun update(name: String? = null, additionalPrice: Double? = null): ProductOption {
-        name?.let {
+        // 변경할 필드가 없으면 현재 객체 그대로 반환
+        if (name == null && additionalPrice == null) {
+            return this
+        }
+
+        val updatedName = name?.also {
             require(it.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
                 "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
             }
-            this.name = it
-            this.updatedAt = LocalDateTime.now()
-        }
-        additionalPrice?.let {
-            this.additionalPrice = it
-            this.updatedAt = LocalDateTime.now()
-        }
-        return this
+        } ?: this.name
+
+        val updatedAdditionalPrice = additionalPrice ?: this.additionalPrice
+
+        return ProductOption(
+            id = this.id,
+            productId = this.productId,
+            name = updatedName,
+            availableQuantity = this.availableQuantity,
+            additionalPrice = updatedAdditionalPrice,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
 
     fun add(quantity: Int): ProductOption {
@@ -54,9 +64,15 @@ data class ProductOption private constructor(
             "Available quantity must be between $MIN_AVAILABLE_QUANTITY and $MAX_AVAILABLE_QUANTITY"
         }
         
-        this.availableQuantity = newQuantity
-        this.updatedAt = LocalDateTime.now()
-        return this
+        return ProductOption(
+            id = this.id,
+            productId = this.productId,
+            name = this.name,
+            availableQuantity = newQuantity,
+            additionalPrice = this.additionalPrice,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
 
     fun subtract(quantity: Int): ProductOption {
@@ -68,8 +84,14 @@ data class ProductOption private constructor(
             throw IllegalStateException("Not enough stock available")
         }
         
-        this.availableQuantity -= quantity
-        this.updatedAt = LocalDateTime.now()
-        return this
+        return ProductOption(
+            id = this.id,
+            productId = this.productId,
+            name = this.name,
+            availableQuantity = this.availableQuantity - quantity,
+            additionalPrice = this.additionalPrice,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
 }
