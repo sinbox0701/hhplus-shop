@@ -29,8 +29,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                userId = result.order.user.id!!,
-                userCouponId = result.order.userCoupon?.id,
+                userId = result.order.userId!!,
+                userCouponId = result.order.userCouponId,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -39,10 +39,10 @@ class OrderController(
                 items = result.items.map { item ->
                     OrderResponse.OrderItemResponse(
                         id = item.id!!,
-                        orderId = item.order.id!!,
-                        productId = item.product.id!!,
-                        productOptionId = item.productOption.id!!,
-                        userCouponId = item.userCoupon?.id,
+                        orderId = item.orderId!!,
+                        productId = item.productId!!,
+                        productOptionId = item.productOptionId!!,
+                        userCouponId = item.userCouponId,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
@@ -71,8 +71,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                userId = result.order.user.id!!,
-                userCouponId = result.order.userCoupon?.id,
+                userId = result.order.userId!!,
+                userCouponId = result.order.userCouponId,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -80,11 +80,11 @@ class OrderController(
                 updatedAt = result.order.updatedAt,
                 items = result.items.map { item ->
                     OrderResponse.OrderItemResponse(
-                        id = item.id!!,,
-                        orderId = item.order.id!!,
-                        productId = item.product.id!!,
-                        productOptionId = item.productOption.id!!,
-                        userCouponId = item.userCoupon?.id,
+                        id = item.id!!,
+                        orderId = item.orderId!!,
+                        productId = item.productId!!,
+                        productOptionId = item.productOptionId!!,
+                        userCouponId = item.userCouponId,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
@@ -114,8 +114,8 @@ class OrderController(
                 val result = orderFacade.getOrderWithItems(criteria)
                 OrderResponse.Response(
                     id = result.order.id!!,
-                    userId = result.order.user.id!!,
-                    userCouponId = result.order.userCoupon?.id,
+                    userId = result.order.userId!!,
+                    userCouponId = result.order.userCouponId,
                     totalPrice = result.order.totalPrice,
                     status = result.order.status,
                     orderDate = result.order.orderDate,
@@ -124,10 +124,10 @@ class OrderController(
                     items = result.items.map { item ->
                         OrderResponse.OrderItemResponse(
                             id = item.id!!,
-                            orderId = item.order.id!!,
-                            productId = item.product.id!!,
-                            productOptionId = item.productOption.id!!,
-                            userCouponId = item.userCoupon?.id,
+                            orderId = item.orderId!!,
+                            productId = item.productId!!,
+                            productOptionId = item.productOptionId!!,
+                            userCouponId = item.userCouponId,
                             quantity = item.quantity,
                             price = item.price,
                             createdAt = item.createdAt,
@@ -152,8 +152,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                userId = result.order.user.id!!,
-                userCouponId = result.order.userCoupon?.id,
+                userId = result.order.userId!!,
+                userCouponId = result.order.userCouponId,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -162,10 +162,10 @@ class OrderController(
                 items = result.items.map { item ->
                     OrderResponse.OrderItemResponse(
                         id = item.id!!,
-                        orderId = item.order.id!!,
-                        productId = item.product.id!!,
-                        productOptionId = item.productOption.id!!,
-                        userCouponId = item.userCoupon?.id,
+                        orderId = item.orderId!!,
+                        productId = item.productId!!,
+                        productOptionId = item.productOptionId!!,
+                        userCouponId = item.userCouponId,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
@@ -194,8 +194,8 @@ class OrderController(
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
                 id = result.order.id!!,
-                userId = result.order.user.id!!,
-                userCouponId = result.order.userCoupon?.id,
+                userId = result.order.userId!!,
+                userCouponId = result.order.userCouponId,
                 totalPrice = result.order.totalPrice,
                 status = result.order.status,
                 orderDate = result.order.orderDate,
@@ -204,10 +204,10 @@ class OrderController(
                 items = result.items.map { item ->
                     OrderResponse.OrderItemResponse(
                         id = item.id!!,
-                        orderId = item.order.id!!,
-                        productId = item.product.id!!,
-                        productOptionId = item.productOption.id!!,
-                        userCouponId = item.userCoupon?.id,
+                        orderId = item.orderId!!,
+                        productId = item.productId!!,
+                        productOptionId = item.productOptionId!!,
+                        userCouponId = item.userCouponId,
                         quantity = item.quantity,
                         price = item.price,
                         createdAt = item.createdAt,
