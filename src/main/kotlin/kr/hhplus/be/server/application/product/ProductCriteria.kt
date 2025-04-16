@@ -83,7 +83,6 @@ class ProductCriteria {
                 ProductOptionCommand.UpdateProductOptionCommand(
                     id = option.id,
                     name = option.name,
-                    availableQuantity = option.availableQuantity,
                     additionalPrice = option.additionalPrice
                 )
             } ?: emptyList()

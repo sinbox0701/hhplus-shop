@@ -81,7 +81,7 @@ class ProductFacade(
             // 모든 옵션이 현재 상품에 속하는지 확인
             criteria.optionsToUpdate.forEach { option ->
                 val productOption = productOptionService.get(option.id)
-                if (productOption.product.id != updatedProduct.id) {
+                if (productOption.productId != updatedProduct.id) {
                     throw IllegalArgumentException("Option with id ${option.id} does not belong to product with id ${updatedProduct.id}")
                 }
             }
@@ -99,7 +99,7 @@ class ProductFacade(
             // 모든 옵션이 현재 상품에 속하는지 확인
             val optionsToDelete = criteria.optionsToRemove.map { optionId ->
                 val option = productOptionService.get(optionId)
-                if (option.product.id != updatedProduct.id) {
+                if (option.productId != updatedProduct.id) {
                     throw IllegalArgumentException("Option with id $optionId does not belong to product with id ${updatedProduct.id}")
                 }
                 optionId
@@ -138,7 +138,7 @@ class ProductFacade(
         // 2. 각 옵션이 해당 상품의 것인지 확인 후 삭제
         criteria.optionsToRemove?.forEach { optionId ->
             val option = productOptionService.get(optionId)
-            if (option.product.id != product.id) {
+            if (option.productId != product.id) {
                 throw IllegalArgumentException("Option with id $optionId does not belong to product with id ${product.id}")
             }
             productOptionService.delete(optionId)
