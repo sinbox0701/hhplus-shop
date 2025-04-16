@@ -11,7 +11,6 @@ class ProductOptionCommand {
     data class UpdateProductOptionCommand(
         val id: Long,
         val name: String? = null,
-        val availableQuantity: Int? = null,
         val additionalPrice: Double? = null
     )
 
