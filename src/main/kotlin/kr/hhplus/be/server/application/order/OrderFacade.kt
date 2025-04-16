@@ -33,7 +33,7 @@ class OrderFacade(
         val user = userService.findById(criteria.userId)
         val userCoupon = criteria.userCouponId?.let { userCouponService.findById(it) }
 
-        val order = orderService.createOrder(criteria.toOrderCommand(user, userCoupon))
+        val order = orderService.createOrder(criteria.toOrderCommand(user.id!!, userCoupon?.id))
         
         // 2. 주문 상품 생성 및 총 가격 계산
         var totalPrice = 0.0
@@ -43,7 +43,15 @@ class OrderFacade(
             val productOption = productOptionService.get(item.productOptionId)
             
             // 주문 상품 생성
-            val orderItemCommand = item.toOrderItemCommand(order, product, productOption, userCoupon)
+            val couponDiscountRate = userCoupon?.coupon?.discountRate ?: 0.0
+            val orderItemCommand = item.toOrderItemCommand(
+                orderId = order.id!!, 
+                productId = product.id!!, 
+                productOptionId = productOption.id!!, 
+                quantity = item.quantity,
+                userCouponId = userCoupon?.id, 
+                discountRate = couponDiscountRate
+            )
             val orderItem = orderItemService.create(orderItemCommand)
             
             totalPrice += orderItem.price
@@ -78,7 +86,7 @@ class OrderFacade(
         
         // 2. 계정 확인
         val account = userService.findById(criteria.userId)
-        if (order.user.id != account.id) {
+        if (order.userId != account.id) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
@@ -130,7 +138,7 @@ class OrderFacade(
         
         // 2. 주문 소유자 확인
         val account = userService.findById(criteria.userId)
-        if (order.user.id != account.id) {
+        if (order.userId != account.id) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
@@ -159,7 +167,7 @@ class OrderFacade(
         
         // 2. 주문 소유자 확인
         val account = userService.findById(criteria.userId)
-        if (order.user.id != account.id) {
+        if (order.userId != account.id) {
             throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
         }
         
