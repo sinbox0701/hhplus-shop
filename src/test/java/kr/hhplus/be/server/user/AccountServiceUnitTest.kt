@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.AccountCommand
 import org.junit.jupiter.api.extension.ExtendWith
 
@@ -39,23 +38,19 @@ class AccountServiceUnitTest {
     @DisplayName("새로운 계좌 생성 성공")
     fun createAccountSuccess() {
         // given
-        val user = mockk<User> {
-            every { id } returns TEST_USER_ID
-        }
-        
         val account = mockk<Account> {
             every { amount } returns TEST_INITIAL_AMOUNT
-            every { user.id } returns TEST_USER_ID
+            every { userId } returns TEST_USER_ID
         }
-        every { account.user.id } returns TEST_USER_ID
+        every { account.userId } returns TEST_USER_ID
         
         every { accountRepository.save(any()) } returns account
         
         // when
-        val createdAccount = accountService.create(AccountCommand.CreateAccountCommand(user, TEST_INITIAL_AMOUNT))
+        val createdAccount = accountService.create(AccountCommand.CreateAccountCommand(TEST_USER_ID, TEST_INITIAL_AMOUNT))
         
         // then
-        assertEquals(user.id, createdAccount.user.id)
+        assertEquals(TEST_USER_ID, createdAccount.userId)
         assertEquals(TEST_INITIAL_AMOUNT, createdAccount.amount)
         
         verify(exactly = 1) { accountRepository.save(any()) }
@@ -65,16 +60,12 @@ class AccountServiceUnitTest {
     @DisplayName("사용자 ID로 계좌 조회 성공")
     fun findAccountByUserIdSuccess() {
         // given
-        val user = mockk<User> {
-            every { id } returns TEST_USER_ID
-        }
-        
         val account = mockk<Account> {
             every { id } returns TEST_ID
             every { amount } returns TEST_INITIAL_AMOUNT
-            every { user.id } returns TEST_USER_ID
+            every { userId } returns TEST_USER_ID
         }
-        every { account.user.id } returns TEST_USER_ID
+        every { account.userId } returns TEST_USER_ID
         
         every { accountRepository.findByUserId(TEST_USER_ID) } returns account
         
@@ -83,7 +74,7 @@ class AccountServiceUnitTest {
         
         // then
         assertEquals(TEST_ID, foundAccount.id)
-        assertEquals(user.id, foundAccount.user.id)
+        assertEquals(TEST_USER_ID, foundAccount.userId)
         assertEquals(TEST_INITIAL_AMOUNT, foundAccount.amount)
         
         verify(exactly = 1) { accountRepository.findByUserId(TEST_USER_ID) }
@@ -109,16 +100,12 @@ class AccountServiceUnitTest {
     @DisplayName("계좌 ID로 계좌 조회 성공")
     fun findAccountByIdSuccess() {
         // given
-        val user = mockk<User> {
-            every { id } returns TEST_USER_ID
-        }
-        
         val account = mockk<Account> {
             every { id } returns TEST_ID
             every { amount } returns TEST_INITIAL_AMOUNT
-            every { user.id } returns TEST_USER_ID
+            every { userId } returns TEST_USER_ID
         }
-        every { account.user.id } returns TEST_USER_ID
+        every { account.userId } returns TEST_USER_ID
         
         every { accountRepository.findById(TEST_ID) } returns account
         
@@ -128,7 +115,7 @@ class AccountServiceUnitTest {
         // then
         assertNotNull(foundAccount)
         assertEquals(TEST_ID, foundAccount.id)
-        assertEquals(user.id, foundAccount.user.id)
+        assertEquals(TEST_USER_ID, foundAccount.userId)
         assertEquals(TEST_INITIAL_AMOUNT, foundAccount.amount)
         
         verify(exactly = 1) { accountRepository.findById(TEST_ID) }
@@ -237,10 +224,9 @@ class AccountServiceUnitTest {
     @DisplayName("계좌 삭제 성공")
     fun deleteAccountSuccess() {
         // given
-        val mockUser = mockk<User>()
         val account = mockk<Account> {
             every { id } returns TEST_ID
-            every { user } returns mockUser
+            every { userId } returns TEST_USER_ID
         }
         
         every { accountRepository.findById(TEST_ID) } returns account

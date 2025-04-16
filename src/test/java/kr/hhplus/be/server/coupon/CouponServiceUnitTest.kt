@@ -364,7 +364,7 @@ class CouponServiceUnitTest {
         every { userCouponRepository.findByUserId(1L) } returns userCoupons
 
         // when
-        val result = couponService.findUserCouponByUserId(1L)
+        val result = couponService.findUserCouponsByUserId(1L)
 
         // then
         assertEquals(2, result.size)
