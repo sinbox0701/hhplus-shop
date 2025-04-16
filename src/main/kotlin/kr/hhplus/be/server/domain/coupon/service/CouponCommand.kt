@@ -31,8 +31,8 @@ class CouponCommand {
     )
 
     data class CreateUserCouponCommand(
-        val user: User,
-        val coupon: Coupon,
+        val userId: Long,
+        val couponId: Long,
         val quantity: Int
     )
     

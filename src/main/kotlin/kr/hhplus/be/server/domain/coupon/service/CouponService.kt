@@ -6,7 +6,6 @@ import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.repository.CouponRepository
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.repository.UserCouponRepository
-import kr.hhplus.be.server.domain.coupon.service.UserCouponCommand
 import org.springframework.stereotype.Service
 
 @Service
@@ -75,8 +74,8 @@ class CouponService(
         }
     }
 
-    fun createUserCoupon(command: UserCouponCommand.CreateUserCouponCommand): UserCoupon {
-        val userCoupon = UserCoupon.create(command.user, command.coupon, command.quantity)
+    fun createUserCoupon(command: CouponCommand.CreateUserCouponCommand): UserCoupon {
+        val userCoupon = UserCoupon.create(command.userId, command.couponId, command.quantity)
         return userCouponRepository.save(userCoupon)
     }
 
@@ -85,7 +84,7 @@ class CouponService(
             ?: throw IllegalArgumentException("UserCoupon not found with id: $id")
     }
 
-    fun findUserCouponUserCouponByUserId(userId: Long): List<UserCoupon> {
+    fun findUserCouponByUserId(userId: Long): List<UserCoupon> {
         return userCouponRepository.findByUserId(userId)
     }
 
@@ -98,7 +97,7 @@ class CouponService(
             ?: throw IllegalArgumentException("UserCoupon not found with userId: $userId and couponId: $couponId")
     }
 
-    fun issueUserCoupon(command: UserCouponCommand.IssueCouponCommand) {
+    fun issueUserCoupon(command: CouponCommand.IssueCouponCommand) {
         val userCoupon = findUserCouponById(command.id)
         userCoupon.issue(command.couponStartDate, command.couponEndDate)
         userCouponRepository.save(userCoupon)
