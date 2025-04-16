@@ -84,7 +84,7 @@ class CouponService(
             ?: throw IllegalArgumentException("UserCoupon not found with id: $id")
     }
 
-    fun findUserCouponByUserId(userId: Long): List<UserCoupon> {
+    fun findUserCouponsByUserId(userId: Long): List<UserCoupon> {
         return userCouponRepository.findByUserId(userId)
     }
 
