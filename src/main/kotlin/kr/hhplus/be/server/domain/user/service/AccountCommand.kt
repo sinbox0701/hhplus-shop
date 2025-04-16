@@ -1,10 +1,8 @@
 package kr.hhplus.be.server.domain.user.service
 
-import kr.hhplus.be.server.domain.user.model.User
-
 class AccountCommand {
     data class CreateAccountCommand(
-        val user: User,
+        val userId: Long,
         val amount: Double
     )
 
