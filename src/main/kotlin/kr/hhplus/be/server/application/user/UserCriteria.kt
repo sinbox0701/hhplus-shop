@@ -21,9 +21,9 @@ class UserCriteria {
             )
         }
 
-        fun toAccountCommand(user: User): AccountCommand.CreateAccountCommand {
+        fun toAccountCommand(userId: Long): AccountCommand.CreateAccountCommand {
             return AccountCommand.CreateAccountCommand(
-                user = user,
+                userId = userId,
                 amount = Account.MIN_BALANCE
             )
         }

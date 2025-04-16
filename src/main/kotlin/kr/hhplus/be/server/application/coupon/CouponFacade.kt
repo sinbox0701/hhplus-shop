@@ -30,16 +30,15 @@ class CouponFacade(
         val coupons = couponService.findAllByIds(couponIds)
         return userCoupons.mapNotNull { userCoupon ->
             val coupon = coupons.find { coupon -> coupon.id == userCoupon.couponId }
-            coupon?.let { CouponResult.UserCouponResult.from(userCoupon, user, it) }
+            coupon?.let { CouponResult.UserCouponResult.from(userCoupon, it) }
         }
     }
 
     @Transactional(readOnly = true)
     fun findByUserIdAndCouponId(userId: Long, couponId: Long): CouponResult.UserCouponResult{
-        val user = userService.findById(userId)
         val coupon = couponService.findById(couponId)
         val userCoupon = couponService.findUserCouponByUserIdAndCouponId(userId, couponId)
-        return CouponResult.UserCouponResult.from(userCoupon, user, coupon)
+        return CouponResult.UserCouponResult.from(userCoupon, coupon)
     }
 
     @Transactional()

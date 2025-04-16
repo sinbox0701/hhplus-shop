@@ -8,7 +8,6 @@ import kr.hhplus.be.server.domain.product.service.ProductService
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.user.service.UserService
 import kr.hhplus.be.server.domain.coupon.service.CouponService
-import kr.hhplus.be.server.domain.coupon.service.UserCouponService
 import kr.hhplus.be.server.domain.user.service.AccountService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +20,6 @@ class OrderFacade(
     private val productOptionService: ProductOptionService,
     private val userService: UserService,
     private val couponService: CouponService,
-    private val userCouponService: UserCouponService,
     private val accountService: AccountService
 ) {
     /**
@@ -31,7 +29,7 @@ class OrderFacade(
     fun createOrder(criteria: OrderCriteria.OrderCreateCriteria): OrderResult.OrderWithItems {
         // 1. 주문 생성
         val user = userService.findById(criteria.userId)
-        val userCoupon = criteria.userCouponId?.let { userCouponService.findById(it) }
+        val userCoupon = criteria.userCouponId?.let { couponService.findUserCouponById(it) }
 
         val order = orderService.createOrder(criteria.toOrderCommand(user.id!!, userCoupon?.id))
         
@@ -43,7 +41,11 @@ class OrderFacade(
             val productOption = productOptionService.get(item.productOptionId)
             
             // 주문 상품 생성
-            val couponDiscountRate = userCoupon?.coupon?.discountRate ?: 0.0
+            val couponDiscountRate = userCoupon?.let { 
+                val coupon = couponService.findById(it.couponId)
+                coupon.discountRate 
+            } ?: 0.0
+            
             val orderItemCommand = item.toOrderItemCommand(
                 orderId = order.id!!, 
                 productId = product.id!!, 
@@ -61,7 +63,7 @@ class OrderFacade(
         // 3. 쿠폰 할인 적용 (전체 주문에 대한 할인)
         val finalPrice = criteria.userCouponId?.let {
             val appliedCoupon = userCoupon ?: throw IllegalStateException("쿠폰 정보를 찾을 수 없습니다")
-            val coupon = couponService.findById(appliedCoupon.coupon.id!!)
+            val coupon = couponService.findById(appliedCoupon.couponId)
             totalPrice * (1 - coupon.discountRate / 100)
         } ?: totalPrice
         
@@ -70,7 +72,7 @@ class OrderFacade(
         
         // 5. 사용된 쿠폰 상태 업데이트
         criteria.userCouponId?.let {
-            userCouponService.use(it)
+            couponService.useUserCoupon(it)
         }
         
         return OrderResult.OrderWithItems(order, orderItems)

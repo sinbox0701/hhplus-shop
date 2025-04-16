@@ -70,7 +70,7 @@ class CouponResponse{
             fun from(userCoupon: UserCoupon, coupon: Coupon): AccountCouponResponse {
                 return AccountCouponResponse(
                     id = userCoupon.id ?: 0,
-                    accountId = userCoupon.user.id ?: 0,
+                    accountId = userCoupon.userId,
                     couponId = coupon.id ?: 0,
                     issueDate = userCoupon.issueDate,
                     issued = userCoupon.issued,
