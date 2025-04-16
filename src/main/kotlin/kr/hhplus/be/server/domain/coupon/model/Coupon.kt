@@ -1,56 +1,23 @@
 package kr.hhplus.be.server.domain.coupon.model
 
 import java.time.LocalDateTime
-import jakarta.persistence.Entity
-import jakarta.persistence.Table
-import jakarta.persistence.Id
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Column
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 
 enum class CouponType {
     DISCOUNT_PRODUCT, // 상품 할인
     DISCOUNT_ORDER, // 주문 할인
 }
 
-@Entity
-@Table(name = "coupons")
 data class Coupon private constructor(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     var couponType: CouponType,
-
-    @Column(nullable = false)
     var code: String,
-    
-    @Column(nullable = false)
     var discountRate: Double,
-
-    @Column(nullable = false)
     var description: String,
-
-    @Column(nullable = false)
     var startDate: LocalDateTime,
-
-    @Column(nullable = false)
     var endDate: LocalDateTime,
-
-    @Column(nullable = false)
     var quantity: Int,
-
-    @Column(nullable = false)
     var remainingQuantity: Int,
-
-    @Column(nullable = false)
     var createdAt: LocalDateTime,
-
-    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
     companion object {
