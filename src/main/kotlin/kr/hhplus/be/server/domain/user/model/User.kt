@@ -1,36 +1,14 @@
 package kr.hhplus.be.server.domain.user.model
 
 import java.time.LocalDateTime
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 
-@Entity
-@Table(name = "users")
 data class User private constructor(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
-
-    @Column(nullable = false)
     var name: String,
-
-    @Column(nullable = false, unique = true)
     var email: String,
-
-    @Column(nullable = false, unique = true, length = MAX_LOGIN_ID_LENGTH)
     var loginId: String,
-
-    @Column(nullable = false, length = MAX_PASSWORD_LENGTH)
     var password: String,
-
-    @Column(nullable = false)
     var createdAt: LocalDateTime,
-
-    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
     companion object {

@@ -1,34 +1,12 @@
 package kr.hhplus.be.server.domain.user.model
 
 import java.time.LocalDateTime
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 
-@Entity
-@Table(name = "accounts")
 data class Account private constructor(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    val user: User,
-    
-    @Column(nullable = false)
+    val userId: Long,
     var amount: Double,
-    
-    @Column(nullable = false)
     var createdAt: LocalDateTime,
-    
-    @Column(nullable = false)
     var updatedAt: LocalDateTime
 ) {
     companion object {
@@ -36,11 +14,11 @@ data class Account private constructor(
         const val MAX_BALANCE: Double = 100000000.0 // 100,000,000 원
         const val MAX_TRANSACTION_AMOUNT: Double = 10000000.0 // 10,000,000 원
 
-        fun create(user: User, initialAmount: Double = MIN_BALANCE): Account {
+        fun create(userId: Long, initialAmount: Double = MIN_BALANCE): Account {
             require(initialAmount >= MIN_BALANCE && initialAmount <= MAX_BALANCE) {
                 "Initial amount must be between $MIN_BALANCE and $MAX_BALANCE"
             }
-            return Account(user=user, amount=initialAmount, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
+            return Account(userId=userId, amount=initialAmount, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
         }
     }
 
