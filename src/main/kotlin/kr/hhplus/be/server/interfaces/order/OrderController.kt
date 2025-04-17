@@ -63,22 +63,22 @@ class OrderController(
             val criteria = orderPaymentRequest.toCriteria(orderId)
             
             // 결제 처리
-            val order = orderFacade.processPayment(criteria)
+            val result = orderFacade.processPayment(criteria)
             
             // 주문 상세 정보 조회
-            val result = orderFacade.getOrderWithItems(criteria)
+            val orderWithItems = orderFacade.getOrderWithItems(orderId, criteria.userId)
             
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
-                id = result.order.id!!,
-                userId = result.order.userId!!,
-                userCouponId = result.order.userCouponId,
-                totalPrice = result.order.totalPrice,
-                status = result.order.status,
-                orderDate = result.order.orderDate,
-                createdAt = result.order.createdAt,
-                updatedAt = result.order.updatedAt,
-                items = result.items.map { item ->
+                id = orderWithItems.order.id!!,
+                userId = orderWithItems.order.userId!!,
+                userCouponId = orderWithItems.order.userCouponId,
+                totalPrice = orderWithItems.order.totalPrice,
+                status = orderWithItems.order.status,
+                orderDate = orderWithItems.order.orderDate,
+                createdAt = orderWithItems.order.createdAt,
+                updatedAt = orderWithItems.order.updatedAt,
+                items = orderWithItems.items.map { item ->
                     OrderResponse.OrderItemResponse(
                         id = item.id!!,
                         orderId = item.orderId!!,
@@ -106,22 +106,20 @@ class OrderController(
     override fun getOrdersByAccountId(userId: Long): ResponseEntity<List<OrderResponse.Response>> {
         try {
             // 사용자의 주문 목록 조회
-            val orders = orderFacade.getOrdersByUserId(userId)
+            val ordersWithItems = orderFacade.getAllOrdersByUserId(userId)
             
             // 각 주문별로 상세 정보 조회하여 응답 생성
-            val response = orders.map { order -> 
-                val criteria = OrderCriteria.OrderPaymentCriteria(order.id!!, userId)
-                val result = orderFacade.getOrderWithItems(criteria)
+            val response = ordersWithItems.map { orderWithItems -> 
                 OrderResponse.Response(
-                    id = result.order.id!!,
-                    userId = result.order.userId!!,
-                    userCouponId = result.order.userCouponId,
-                    totalPrice = result.order.totalPrice,
-                    status = result.order.status,
-                    orderDate = result.order.orderDate,
-                    createdAt = result.order.createdAt,
-                    updatedAt = result.order.updatedAt,
-                    items = result.items.map { item ->
+                    id = orderWithItems.order.id!!,
+                    userId = orderWithItems.order.userId!!,
+                    userCouponId = orderWithItems.order.userCouponId,
+                    totalPrice = orderWithItems.order.totalPrice,
+                    status = orderWithItems.order.status,
+                    orderDate = orderWithItems.order.orderDate,
+                    createdAt = orderWithItems.order.createdAt,
+                    updatedAt = orderWithItems.order.updatedAt,
+                    items = orderWithItems.items.map { item ->
                         OrderResponse.OrderItemResponse(
                             id = item.id!!,
                             orderId = item.orderId!!,
@@ -146,20 +144,19 @@ class OrderController(
     override fun getOrder(orderId: Long, accountId: Long): ResponseEntity<OrderResponse.Response> {
         try {
             // 주문 상세 정보 조회
-            val criteria = OrderCriteria.OrderPaymentCriteria(orderId, accountId)
-            val result = orderFacade.getOrderWithItems(criteria)
+            val orderWithItems = orderFacade.getOrderWithItems(orderId, accountId)
             
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
-                id = result.order.id!!,
-                userId = result.order.userId!!,
-                userCouponId = result.order.userCouponId,
-                totalPrice = result.order.totalPrice,
-                status = result.order.status,
-                orderDate = result.order.orderDate,
-                createdAt = result.order.createdAt,
-                updatedAt = result.order.updatedAt,
-                items = result.items.map { item ->
+                id = orderWithItems.order.id!!,
+                userId = orderWithItems.order.userId!!,
+                userCouponId = orderWithItems.order.userCouponId,
+                totalPrice = orderWithItems.order.totalPrice,
+                status = orderWithItems.order.status,
+                orderDate = orderWithItems.order.orderDate,
+                createdAt = orderWithItems.order.createdAt,
+                updatedAt = orderWithItems.order.updatedAt,
+                items = orderWithItems.items.map { item ->
                     OrderResponse.OrderItemResponse(
                         id = item.id!!,
                         orderId = item.orderId!!,
@@ -185,23 +182,19 @@ class OrderController(
     override fun cancelOrder(orderId: Long, accountId: Long): ResponseEntity<OrderResponse.Response> {
         try {
             // 주문 취소
-            val criteria = OrderCriteria.OrderPaymentCriteria(orderId, accountId)
-            val order = orderFacade.cancelOrder(criteria)
-            
-            // 주문 상세 정보 조회
-            val result = orderFacade.getOrderWithItems(criteria)
+            val orderWithItems = orderFacade.cancelOrder(orderId, accountId)
             
             // OrderResponse.Response 객체 생성
             val response = OrderResponse.Response(
-                id = result.order.id!!,
-                userId = result.order.userId!!,
-                userCouponId = result.order.userCouponId,
-                totalPrice = result.order.totalPrice,
-                status = result.order.status,
-                orderDate = result.order.orderDate,
-                createdAt = result.order.createdAt,
-                updatedAt = result.order.updatedAt,
-                items = result.items.map { item ->
+                id = orderWithItems.order.id!!,
+                userId = orderWithItems.order.userId!!,
+                userCouponId = orderWithItems.order.userCouponId,
+                totalPrice = orderWithItems.order.totalPrice,
+                status = orderWithItems.order.status,
+                orderDate = orderWithItems.order.orderDate,
+                createdAt = orderWithItems.order.createdAt,
+                updatedAt = orderWithItems.order.updatedAt,
+                items = orderWithItems.items.map { item ->
                     OrderResponse.OrderItemResponse(
                         id = item.id!!,
                         orderId = item.orderId!!,
