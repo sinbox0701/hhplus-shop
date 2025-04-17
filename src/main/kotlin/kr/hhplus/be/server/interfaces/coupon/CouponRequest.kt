@@ -3,7 +3,6 @@ package kr.hhplus.be.server.interfaces.coupon
 import java.time.LocalDateTime
 import jakarta.validation.constraints.*
 import kr.hhplus.be.server.domain.coupon.service.CouponCommand
-import kr.hhplus.be.server.domain.coupon.service.UserCouponCommand
 import kr.hhplus.be.server.application.coupon.CouponCriteria
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import java.util.UUID

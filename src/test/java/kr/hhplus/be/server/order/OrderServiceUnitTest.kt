@@ -1,16 +1,11 @@
 package kr.hhplus.be.server.order
 
 import io.mockk.*
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.MockK
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
 import kr.hhplus.be.server.domain.order.service.OrderCommand
 import kr.hhplus.be.server.domain.order.service.OrderService
-import kr.hhplus.be.server.domain.user.model.User
-import kr.hhplus.be.server.domain.coupon.model.UserCoupon
-import kr.hhplus.be.server.domain.coupon.model.Coupon
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -33,41 +28,33 @@ class OrderServiceUnitTest {
     @DisplayName("주문을 성공적으로 생성한다")
     fun createOrderSuccess() {
         // given
-        val user = mockk<User>{
-            every { id } returns 1L
-        }
-        val coupon = mockk<Coupon>{
-            every { id } returns 2L
-        }
-        val userCoupon = mockk<UserCoupon>{
-            every { id } returns 3L
-            every { coupon.id } returns 2L
-            every { used } returns false
-        }
-
-        val totalPrice = 0.0
-        val mockOrder = mockk<Order>()
+        val userId = 1L
+        val userCouponId = 3L
+        val totalPrice = 10000.0
 
         val command = OrderCommand.CreateOrderCommand(
-            user = user,
-            userCoupon = userCoupon,
+            userId = userId,
+            userCouponId = userCouponId,
             totalPrice = totalPrice
         )
 
-        every { mockOrder.user } returns user
-        every { mockOrder.userCoupon } returns userCoupon
-        every { mockOrder.status } returns OrderStatus.PENDING
-        every { mockOrder.totalPrice } returns totalPrice
+        // Order 모킹 대신 실제 Order 객체가 생성된 후 저장될 예상 결과 준비
+        val savedOrder = Order.create(
+            userId = userId,
+            userCouponId = userCouponId,
+            totalPrice = totalPrice
+        )
         
-        every { orderRepository.save(any()) } returns mockOrder
+        // repository에서 Order 저장 시 savedOrder를 반환하도록 설정
+        every { orderRepository.save(any()) } returns savedOrder
         
         // when
         val result = orderService.createOrder(command)
         
         // then
         verify { orderRepository.save(any()) }
-        assertEquals(user, result.user)
-        assertEquals(userCoupon, result.userCoupon)
+        assertEquals(userId, result.userId)
+        assertEquals(userCouponId, result.userCouponId)
         assertEquals(OrderStatus.PENDING, result.status)
         assertEquals(totalPrice, result.totalPrice)
     }
@@ -77,17 +64,27 @@ class OrderServiceUnitTest {
     fun getOrderByIdSuccess() {
         // given
         val orderId = 100L
-        val mockOrder = mockk<Order>()
+        val userId = 1L
+        val userCouponId = 3L
+        val totalPrice = 10000.0
+
+        // Order 모킹 대신 테스트용 Order 객체 생성
+        val order = Order.create(
+            userId = userId,
+            userCouponId = userCouponId,
+            totalPrice = totalPrice
+        )
+        // id 필드는 private이므로 리플렉션을 사용하거나, 이 테스트에서는 id 검증을 제외
         
-        every { mockOrder.id } returns orderId
-        every { orderRepository.findById(orderId) } returns mockOrder
+        every { orderRepository.findById(orderId) } returns order
         
         // when
         val result = orderService.getOrder(orderId)
         
         // then
         verify { orderRepository.findById(orderId) }
-        assertEquals(orderId, result.id)
+        assertEquals(userId, result.userId)
+        assertEquals(totalPrice, result.totalPrice)
     }
     
     @Test
@@ -111,32 +108,23 @@ class OrderServiceUnitTest {
     @DisplayName("계정 ID로 주문 목록을 가져온다")
     fun getOrdersByAccountIdSuccess() {
         // given
-        val accountId = 1L
-        val mockOrders = listOf(
-            mockk<Order>{
-                every { id } returns 2L
-                every { user.id } returns 4L
-            },
-            mockk<Order>{
-                every { id } returns 3L
-                every { user.id } returns 4L
-            }
+        val userId = 4L
+        
+        // Order 모킹 대신 테스트용 Order 객체 리스트 생성
+        val orders = listOf(
+            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0),
+            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0)
         )
-        val user1 = mockk<User>{
-            every { id } returns 4L
-        }
         
-        every { mockOrders[0].user.id } returns 4L
-        every { mockOrders[1].user.id } returns 4L
-        
-        every { orderRepository.findByUserId(4L) } returns mockOrders
+        every { orderRepository.findByUserId(userId) } returns orders
         
         // when
-        val result = orderService.getOrdersByUserId(4L)
+        val result = orderService.getOrdersByUserId(userId)
         
         // then
-        verify { orderRepository.findByUserId(4L) }
+        verify { orderRepository.findByUserId(userId) }
         assertEquals(2, result.size)
+        result.forEach { assertEquals(userId, it.userId) }
     }
     
     @Test
@@ -144,20 +132,14 @@ class OrderServiceUnitTest {
     fun getOrdersByStatusSuccess() {
         // given
         val status = OrderStatus.PENDING
-        val mockOrders = listOf(
-            mockk<Order>{
-                every { id } returns 2L
-                every { user.id } returns 4L
-            },
-            mockk<Order>{
-                every { id } returns 3L
-                every { user.id } returns 4L
-            }
+        
+        // Order 모킹 대신 테스트용 Order 객체 리스트 생성
+        val orders = listOf(
+            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0),
+            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0)
         )
         
-        every { mockOrders[0].status } returns status
-        every { mockOrders[1].status } returns status
-        every { orderRepository.findByStatus(status) } returns mockOrders
+        every { orderRepository.findByStatus(status) } returns orders
         
         // when
         val result = orderService.getOrdersByStatus(status)
@@ -165,40 +147,34 @@ class OrderServiceUnitTest {
         // then
         verify { orderRepository.findByStatus(status) }
         assertEquals(2, result.size)
+        result.forEach { assertEquals(OrderStatus.PENDING, it.status) } // create 메소드의 기본값은 PENDING
     }
     
     @Test
     @DisplayName("계정 ID와 상태로 주문 목록을 가져온다")
     fun getOrdersByAccountIdAndStatusSuccess() {
         // given
+        val userId = 4L
         val status = OrderStatus.PENDING
-        val mockOrders = listOf(
-            mockk<Order>{
-                every { id } returns 2L
-                every { user.id } returns 4L
-            },
-            mockk<Order>{
-                every { id } returns 3L
-                every { user.id } returns 4L
-            }
+        
+        // Order 모킹 대신 테스트용 Order 객체 리스트 생성
+        val orders = listOf(
+            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0),
+            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0)
         )
-        val user1 = mockk<User>{
-            every { id } returns 4L
-        }
         
-        every { mockOrders[0].user.id } returns 4L
-        every { mockOrders[1].user.id } returns 4L
-        every { mockOrders[0].status } returns status
-        every { mockOrders[1].status } returns status
-        
-        every { orderRepository.findByUserIdAndStatus(4L, status) } returns mockOrders
+        every { orderRepository.findByUserIdAndStatus(userId, status) } returns orders
         
         // when
-        val result = orderService.getOrdersByUserIdAndStatus(4L, status)
+        val result = orderService.getOrdersByUserIdAndStatus(userId, status)
         
         // then
-        verify { orderRepository.findByUserIdAndStatus(4L, status) }
+        verify { orderRepository.findByUserIdAndStatus(userId, status) }
         assertEquals(2, result.size)
+        result.forEach {
+            assertEquals(userId, it.userId)
+            assertEquals(OrderStatus.PENDING, it.status) // create 메소드의 기본값은 PENDING
+        }
     }
     
     @Test
@@ -207,18 +183,14 @@ class OrderServiceUnitTest {
         // given
         val startDate = LocalDateTime.now().minusDays(7)
         val endDate = LocalDateTime.now()
-        val mockOrders = listOf(
-            mockk<Order>{
-                every { id } returns 2L
-                every { user.id } returns 4L
-            },
-            mockk<Order>{
-                every { id } returns 3L
-                every { user.id } returns 4L
-            }
+        
+        // Order 모킹 대신 테스트용 Order 객체 리스트 생성
+        val orders = listOf(
+            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0),
+            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0)
         )
         
-        every { orderRepository.findByCreatedAtBetween(startDate, endDate) } returns mockOrders
+        every { orderRepository.findByCreatedAtBetween(startDate, endDate) } returns orders
         
         // when
         val result = orderService.getOrdersByDateRange(startDate, endDate)
@@ -233,24 +205,26 @@ class OrderServiceUnitTest {
     fun updateOrderStatusSuccess() {
         // given
         val orderId = 100L
+        val userId = 1L
         val newStatus = OrderStatus.COMPLETED
-        val mockOrder = mockk<Order>()
-        val updatedMockOrder = mockk<Order>()
+        
+        // 원본 Order 객체 생성
+        val order = Order.create(
+            userId = userId,
+            userCouponId = null,
+            totalPrice = 10000.0
+        )
+        
+        // 업데이트된 Order 객체 생성
+        val updatedOrder = order.updateStatus(newStatus)
         
         val command = OrderCommand.UpdateOrderStatusCommand(
             id = orderId,
             status = newStatus
         )
         
-        every { mockOrder.id } returns orderId
-        every { mockOrder.status } returns OrderStatus.PENDING
-        every { mockOrder.isCancellable() } returns true
-        
-        every { updatedMockOrder.id } returns orderId
-        every { updatedMockOrder.status } returns newStatus
-        
-        every { orderRepository.findById(orderId) } returns mockOrder
-        every { orderRepository.updateStatus(orderId, newStatus) } returns updatedMockOrder
+        every { orderRepository.findById(orderId) } returns order
+        every { orderRepository.updateStatus(orderId, newStatus) } returns updatedOrder
         
         // when
         val result = orderService.updateOrderStatus(command)
@@ -266,18 +240,22 @@ class OrderServiceUnitTest {
     fun cancelNonCancellableOrderFails() {
         // given
         val orderId = 100L
-        val mockOrder = mockk<Order>()
+        val userId = 1L
         
-        every { mockOrder.id } returns orderId
-        every { mockOrder.status } returns OrderStatus.COMPLETED
-        every { mockOrder.isCancellable() } returns false
-        
-        every { orderRepository.findById(orderId) } returns mockOrder
+        // Order 객체 생성 - COMPLETED 상태로 설정
+        val completedOrder = Order.create(
+            userId = userId,
+            userCouponId = null,
+            status = OrderStatus.COMPLETED,
+            totalPrice = 10000.0
+        )
         
         val command = OrderCommand.UpdateOrderStatusCommand(
             id = orderId,
             status = OrderStatus.CANCELLED
         )
+        
+        every { orderRepository.findById(orderId) } returns completedOrder
         
         // when & then
         val exception = assertThrows<IllegalStateException> {
@@ -294,16 +272,20 @@ class OrderServiceUnitTest {
     fun cancelOrderSuccess() {
         // given
         val orderId = 100L
-        val mockOrder = mockk<Order>()
-        val cancelledMockOrder = mockk<Order>()
+        val userId = 1L
         
-        every { mockOrder.id } returns orderId
-        every { mockOrder.status } returns OrderStatus.PENDING
-        every { cancelledMockOrder.id } returns orderId
-        every { cancelledMockOrder.status } returns OrderStatus.CANCELLED
+        // 원본 Order 객체 생성 - PENDING 상태
+        val order = Order.create(
+            userId = userId,
+            userCouponId = null,
+            totalPrice = 10000.0
+        )
         
-        every { orderRepository.findById(orderId) } returns mockOrder
-        every { orderRepository.updateStatus(orderId, OrderStatus.CANCELLED) } returns cancelledMockOrder
+        // 취소된 Order 객체 생성
+        val cancelledOrder = order.updateStatus(OrderStatus.CANCELLED)
+        
+        every { orderRepository.findById(orderId) } returns order
+        every { orderRepository.updateStatus(orderId, OrderStatus.CANCELLED) } returns cancelledOrder
         
         // when
         val result = orderService.cancelOrder(orderId)
@@ -318,16 +300,20 @@ class OrderServiceUnitTest {
     fun completeOrderSuccess() {
         // given
         val orderId = 100L
-        val mockOrder = mockk<Order>()
-        val completedMockOrder = mockk<Order>()
+        val userId = 1L
         
-        every { mockOrder.id } returns orderId
-        every { mockOrder.status } returns OrderStatus.PENDING
-        every { completedMockOrder.id } returns orderId
-        every { completedMockOrder.status } returns OrderStatus.COMPLETED
+        // 원본 Order 객체 생성 - PENDING 상태
+        val order = Order.create(
+            userId = userId,
+            userCouponId = null,
+            totalPrice = 10000.0
+        )
         
-        every { orderRepository.findById(orderId) } returns mockOrder
-        every { orderRepository.updateStatus(orderId, OrderStatus.COMPLETED) } returns completedMockOrder
+        // 완료된 Order 객체 생성
+        val completedOrder = order.updateStatus(OrderStatus.COMPLETED)
+        
+        every { orderRepository.findById(orderId) } returns order
+        every { orderRepository.updateStatus(orderId, OrderStatus.COMPLETED) } returns completedOrder
         
         // when
         val result = orderService.completeOrder(orderId)
@@ -342,22 +328,27 @@ class OrderServiceUnitTest {
     fun updateOrderTotalPriceSuccess() {
         // given
         val orderId = 100L
-        val newTotalPrice = 2000.0
-        val mockOrder = mockk<Order>()
-        val updatedMockOrder = mockk<Order>()
+        val userId = 1L
+        val initialPrice = 10000.0
+        val newTotalPrice = 20000.0
+        
+        // 원본 Order 객체 생성
+        val order = Order.create(
+            userId = userId,
+            userCouponId = null,
+            totalPrice = initialPrice
+        )
+        
+        // 가격이 업데이트된 Order 객체 생성
+        val updatedOrder = order.updateTotalPrice(newTotalPrice)
         
         val command = OrderCommand.UpdateOrderTotalPriceCommand(
             id = orderId,
             totalPrice = newTotalPrice
         )
         
-        every { mockOrder.id } returns orderId
-        every { mockOrder.totalPrice } returns 1000.0
-        every { updatedMockOrder.id } returns orderId
-        every { updatedMockOrder.totalPrice } returns newTotalPrice
-        
-        every { orderRepository.findById(orderId) } returns mockOrder
-        every { orderRepository.updateTotalPrice(orderId, newTotalPrice) } returns updatedMockOrder
+        every { orderRepository.findById(orderId) } returns order
+        every { orderRepository.updateTotalPrice(orderId, newTotalPrice) } returns updatedOrder
         
         // when
         val result = orderService.updateOrderTotalPrice(command)

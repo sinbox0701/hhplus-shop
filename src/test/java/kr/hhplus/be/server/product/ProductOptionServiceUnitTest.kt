@@ -1,10 +1,8 @@
 package kr.hhplus.be.server.product
 
 import io.mockk.*
-import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.repository.ProductOptionRepository
-import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import org.junit.jupiter.api.Assertions.*
@@ -20,11 +18,11 @@ import org.junit.jupiter.api.extension.ExtendWith
 class ProductOptionServiceUnitTest {
 
     private lateinit var productOptionRepository: ProductOptionRepository
-    private lateinit var productRepository: ProductRepository
     private lateinit var productOptionService: ProductOptionService
     
     // 테스트 상수 정의
     companion object {
+        private const val PRODUCT_ID = 1L
         private const val PRODUCT_NAME = "테스트 상품"
         private const val PRODUCT_DESCRIPTION = "테스트 상품 설명"
         private const val PRODUCT_PRICE = 10000.0
@@ -42,29 +40,24 @@ class ProductOptionServiceUnitTest {
     @BeforeEach
     fun setup() {
         productOptionRepository = mockk()
-        productRepository = mockk()
-        productOptionService = ProductOptionService(productOptionRepository, productRepository)
+        productOptionService = ProductOptionService(productOptionRepository)
     }
 
     @Test
     @DisplayName("유효한 데이터로 상품 옵션 생성 성공")
     fun createProductOptionSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val productOption = mockk<ProductOption> {
             every { name } returns OPTION_NAME
             every { availableQuantity } returns AVAILABLE_QUANTITY
             every { additionalPrice } returns ADDITIONAL_PRICE
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
         }
         
-        every { productRepository.findById(1L) } returns product
         every { productOptionRepository.save(any()) } returns productOption
         
         val command = ProductOptionCommand.CreateProductOptionCommand(
-            product.id!!,
+            PRODUCT_ID,
             OPTION_NAME, 
             AVAILABLE_QUANTITY, 
             ADDITIONAL_PRICE
@@ -78,18 +71,15 @@ class ProductOptionServiceUnitTest {
         assertEquals(AVAILABLE_QUANTITY, createdOption.availableQuantity)
         assertEquals(ADDITIONAL_PRICE, createdOption.additionalPrice)
         
-        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 1) { productOptionRepository.save(any()) }
     }
     
     @Test
     @DisplayName("존재하지 않는 상품에 옵션 생성 시 예외 발생")
     fun createProductOptionWithNonExistentProduct() {
-        // given
-        every { productRepository.findById(1L) } returns null
-        
+        // given  
         val command = ProductOptionCommand.CreateProductOptionCommand(
-            1L, 
+            PRODUCT_ID, 
             OPTION_NAME, 
             AVAILABLE_QUANTITY, 
             ADDITIONAL_PRICE
@@ -102,7 +92,6 @@ class ProductOptionServiceUnitTest {
         
         assertTrue(exception.message!!.contains("Product not found"))
         
-        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 0) { productOptionRepository.save(any()) }
     }
     
@@ -110,29 +99,24 @@ class ProductOptionServiceUnitTest {
     @DisplayName("여러 옵션 한번에 생성 성공")
     fun createAllOptionsSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
-        
         val option1 = mockk<ProductOption> {
             every { name } returns "옵션1"
             every { availableQuantity } returns 100
             every { additionalPrice } returns 1000.0
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
         }
         val option2 = mockk<ProductOption> {
             every { name } returns "옵션2"
             every { availableQuantity } returns 200
             every { additionalPrice } returns 2000.0
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
         }
         
-        every { productRepository.findById(1L) } returns product
         every { productOptionRepository.save(any()) } returnsMany listOf(option1, option2)
         
         val commands = listOf(
-            ProductOptionCommand.CreateProductOptionCommand(1L, "옵션1", 100, 1000.0),
-            ProductOptionCommand.CreateProductOptionCommand(1L, "옵션2", 200, 2000.0)
+            ProductOptionCommand.CreateProductOptionCommand(PRODUCT_ID, "옵션1", 100, 1000.0),
+            ProductOptionCommand.CreateProductOptionCommand(PRODUCT_ID, "옵션2", 200, 2000.0)
         )
         
         // when
@@ -143,55 +127,29 @@ class ProductOptionServiceUnitTest {
         assertEquals("옵션1", createdOptions[0].name)
         assertEquals("옵션2", createdOptions[1].name)
         
-        verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 2) { productOptionRepository.save(any()) }
-    }
-    
-    @Test
-    @DisplayName("존재하지 않는 상품에 여러 옵션 생성 시 예외 발생")
-    fun createAllOptionsWithNonExistentProduct() {
-        // given
-        every { productRepository.findById(1L) } returns null
-        
-        val commands = listOf(
-            ProductOptionCommand.CreateProductOptionCommand(1L, "옵션1", 100, 1000.0),
-            ProductOptionCommand.CreateProductOptionCommand(1L, "옵션2", 200, 2000.0)
-        )
-        
-        // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            productOptionService.createAll(commands)
-        }
-        
-        assertTrue(exception.message!!.contains("Product not found"))
-        
-        verify(exactly = 1) { productRepository.findById(1L) }
-        verify(exactly = 0) { productOptionRepository.save(any()) }
     }
     
     @Test
     @DisplayName("ID로 옵션 조회 성공")
     fun getProductOptionByIdSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val productOption = mockk<ProductOption> {
-            every { id } returns 1L
+            every { id } returns 2L
             every { name } returns OPTION_NAME
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
         }
         
-        every { productOptionRepository.findById(1L) } returns productOption
+        every { productOptionRepository.findById(2L) } returns productOption
         
         // when
-        val foundOption = productOptionService.get(1L)
+        val foundOption = productOptionService.get(2L)
         
         // then
-        assertEquals(1L, foundOption.id)
+        assertEquals(2L, foundOption.id)
         assertEquals(OPTION_NAME, foundOption.name)
         
-        verify(exactly = 1) { productOptionRepository.findById(1L) }
+        verify(exactly = 1) { productOptionRepository.findById(2L) }
     }
     
     @Test
@@ -230,63 +188,38 @@ class ProductOptionServiceUnitTest {
     @DisplayName("상품 ID로 옵션 목록 조회 성공")
     fun getProductOptionsByProductIdSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val option1 = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 2L
             every { name } returns "옵션1"
         }
         val option2 = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 3L
             every { name } returns "옵션2"
         }
         val options = listOf(option1, option2)
 
-        every { productRepository.findById(1L) } returns product
-        every { productOptionRepository.findByProductId(1L) } returns options
+        every { productOptionRepository.findByProductId(PRODUCT_ID) } returns options
         
         // when
-        val foundOptions = productOptionService.getAllByProductId(1L)
+        val foundOptions = productOptionService.getAllByProductId(PRODUCT_ID)
         
         // then
         assertEquals(2, foundOptions.size)
         assertEquals("옵션1", foundOptions[0].name)
         assertEquals("옵션2", foundOptions[1].name)
-        
-        verify(exactly = 1) { productRepository.findById(1L) }
-        verify(exactly = 1) { productOptionRepository.findByProductId(1L) }
-    }
-    
-    @Test
-    @DisplayName("존재하지 않는 상품 ID로 옵션 목록 조회 시 예외 발생")
-    fun getProductOptionsByNonExistentProductId() {
-        // given
-        every { productRepository.findById(1L) } returns null
-        
-        // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            productOptionService.getAllByProductId(1L)
-        }
-        
-        assertTrue(exception.message!!.contains("Product not found"))
-        
-        verify(exactly = 1) { productRepository.findById(1L) }
-        verify(exactly = 0) { productOptionRepository.findByProductId(1L) }
+
+        verify(exactly = 1) { productOptionRepository.findByProductId(PRODUCT_ID) }
     }
     
     @Test
     @DisplayName("옵션 업데이트 성공")
     fun updateProductOptionSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val productOption = mockk<ProductOption> {
             every { id } returns 2L
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { update(any(), any()) } returns mockk {
                 every { name } returns NEW_OPTION_NAME
                 every { additionalPrice } returns NEW_ADDITIONAL_PRICE
@@ -348,11 +281,8 @@ class ProductOptionServiceUnitTest {
     @DisplayName("수량 추가 성공")
     fun addQuantitySuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val productOption = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 2L
             every { add(any()) } returns mockk {
                 every { availableQuantity } returns AVAILABLE_QUANTITY + QUANTITY_CHANGE
@@ -410,11 +340,8 @@ class ProductOptionServiceUnitTest {
     @DisplayName("수량 차감 성공")
     fun subtractQuantitySuccess() {
         // given    
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val productOption = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 2L
             every { subtract(any()) } returns mockk {
                 every { availableQuantity } returns AVAILABLE_QUANTITY - QUANTITY_CHANGE
@@ -472,11 +399,8 @@ class ProductOptionServiceUnitTest {
     @DisplayName("옵션 삭제 성공")
     fun deleteProductOptionSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val productOption = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 2L
         }
         
@@ -513,21 +437,17 @@ class ProductOptionServiceUnitTest {
     @DisplayName("상품 ID로 모든 옵션 삭제 성공")
     fun deleteAllOptionsSuccess() {
         // given
-        val product = mockk<Product> {
-            every { id } returns 1L
-        }
         val option1 = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 2L
         }
         val option2 = mockk<ProductOption> {
-            every { product.id } returns 1L
+            every { productId } returns PRODUCT_ID
             every { id } returns 3L
         }
         val options = listOf(option1, option2)
         
-        every { productRepository.findById(1L) } returns product
-        every { productOptionRepository.findByProductId(1L) } returns options
+        every { productOptionRepository.findByProductId(PRODUCT_ID) } returns options
         every { productOptionRepository.delete(any()) } returns Unit
         
         // when & then
@@ -535,26 +455,8 @@ class ProductOptionServiceUnitTest {
             productOptionService.deleteAll(1L)
         }
         
-        verify(exactly = 1) { productRepository.findById(1L) }
-        verify(exactly = 1) { productOptionRepository.findByProductId(1L) }
+        verify(exactly = 1) { productOptionRepository.findByProductId(PRODUCT_ID) }
         verify(exactly = 2) { productOptionRepository.delete(any()) }
     }
     
-    @Test
-    @DisplayName("존재하지 않는 상품 ID로 모든 옵션 삭제 시 예외 발생")
-    fun deleteAllOptionsFromNonExistentProduct() {
-        // given
-        every { productRepository.findById(1L) } returns null
-        
-        // when & then
-        val exception = assertThrows<IllegalArgumentException> {
-            productOptionService.deleteAll(1L)
-        }
-        
-        assertTrue(exception.message!!.contains("Product not found"))
-        
-        verify(exactly = 1) { productRepository.findById(1L) }
-        verify(exactly = 0) { productOptionRepository.findByProductId(1L) }
-        verify(exactly = 0) { productOptionRepository.delete(any()) }
-    }
 }

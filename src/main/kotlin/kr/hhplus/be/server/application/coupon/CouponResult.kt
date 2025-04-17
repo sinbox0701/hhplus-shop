@@ -23,10 +23,10 @@ class CouponResult {
        
     ) {
         companion object {
-            fun from(userCoupon: UserCoupon, user: User, coupon: Coupon): UserCouponResult {
+            fun from(userCoupon: UserCoupon, coupon: Coupon): UserCouponResult {
                 return UserCouponResult(
                     id = userCoupon.id,
-                    userId = user.id,
+                    userId = userCoupon.userId,
                     couponId = coupon.id,
                     code = coupon.code,
                     type = coupon.couponType,

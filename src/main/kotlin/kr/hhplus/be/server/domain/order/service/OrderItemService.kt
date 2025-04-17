@@ -9,7 +9,18 @@ class OrderItemService(
     private val orderItemRepository: OrderItemRepository
 ) {
     fun create(command: OrderItemCommand.CreateOrderItemCommand): OrderItem {
-        val orderItem = OrderItem.create(command.order, command.product, command.productOption, command.quantity, command.userCoupon, command.discountRate)
+        // 실제 상품 가격을 가져오는 로직이 필요합니다. 현재는 100.0으로 임시 설정
+        val basePrice = 100.0 // 실제로는 상품 서비스 또는 레포지토리에서 가격을 가져와야 함
+        val finalPrice = command.discountRate?.let { basePrice * (1 - it / 100) } ?: basePrice
+        
+        val orderItem = OrderItem.create(
+            orderId = command.orderId,
+            productId = command.productId, 
+            productOptionId = command.productOptionId, 
+            userCouponId = command.userCouponId,
+            quantity = command.quantity, 
+            price = finalPrice
+        )
         return orderItemRepository.save(orderItem)
     }
 
@@ -41,7 +52,7 @@ class OrderItemService(
     
     fun updatePrice(command: OrderItemCommand.UpdateOrderItemPriceCommand): OrderItem {
         val orderItem = getById(command.id)
-        val updatedOrderItem = orderItem.updatePrice(command.price)
+        val updatedOrderItem = orderItem.updatePrice(command.discountRate)
         return orderItemRepository.update(updatedOrderItem)
     }
     

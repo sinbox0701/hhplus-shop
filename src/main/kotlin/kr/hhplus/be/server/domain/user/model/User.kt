@@ -1,37 +1,15 @@
 package kr.hhplus.be.server.domain.user.model
 
 import java.time.LocalDateTime
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 
-@Entity
-@Table(name = "users")
 data class User private constructor(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
-
-    @Column(nullable = false)
-    var name: String,
-
-    @Column(nullable = false, unique = true)
-    var email: String,
-
-    @Column(nullable = false, unique = true, length = MAX_LOGIN_ID_LENGTH)
-    var loginId: String,
-
-    @Column(nullable = false, length = MAX_PASSWORD_LENGTH)
-    var password: String,
-
-    @Column(nullable = false)
-    var createdAt: LocalDateTime,
-
-    @Column(nullable = false)
-    var updatedAt: LocalDateTime
+    val name: String,
+    val email: String,
+    val loginId: String,
+    val password: String,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime
 ) {
     companion object {
         const val MIN_LOGIN_ID_LENGTH = 4
@@ -72,20 +50,31 @@ data class User private constructor(
         newLoginId: String? = null,
         newPassword: String? = null
     ): User {
-        newLoginId?.let {
+         // 변경할 필드가 없으면 현재 객체 그대로 반환
+         if (newLoginId == null && newPassword == null) {
+            return this
+        }
+
+        val updatedLoginId = newLoginId?.also {
             require(it.length in MIN_LOGIN_ID_LENGTH..MAX_LOGIN_ID_LENGTH) {
                 "Login ID must be between $MIN_LOGIN_ID_LENGTH and $MAX_LOGIN_ID_LENGTH characters"
             }
-            this.loginId = it
-            this.updatedAt = LocalDateTime.now()
-        }
-        newPassword?.let {
+        } ?: this.loginId
+
+        val updatedPassword = newPassword?.also {
             require(PASSWORD_REGEX.matches(it)) {
                 "Password must be a combination of letters and numbers and between $MIN_PASSWORD_LENGTH and $MAX_PASSWORD_LENGTH characters"
             }
-            this.password = it
-            this.updatedAt = LocalDateTime.now()
-        }
-        return this
+        } ?: this.password
+
+        return User(
+            id = this.id,
+            name = this.name,
+            email = this.email,
+            loginId = updatedLoginId,
+            password = updatedPassword,
+            createdAt = this.createdAt,
+            updatedAt = LocalDateTime.now()
+        )
     }
 }

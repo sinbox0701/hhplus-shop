@@ -2,6 +2,8 @@ package kr.hhplus.be.server.domain.coupon.service
 
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import java.time.LocalDateTime
+import kr.hhplus.be.server.domain.coupon.model.Coupon
+import kr.hhplus.be.server.domain.user.model.User
 
 class CouponCommand {
     data class CreateCouponCommand(
@@ -26,5 +28,17 @@ class CouponCommand {
     data class UpdateCouponRemainingQuantityCommand(
         val id: Long,
         val quantity: Int,
+    )
+
+    data class CreateUserCouponCommand(
+        val userId: Long,
+        val couponId: Long,
+        val quantity: Int
+    )
+    
+    data class IssueCouponCommand(
+        val id: Long,
+        val couponStartDate: LocalDateTime,
+        val couponEndDate: LocalDateTime
     )
 }

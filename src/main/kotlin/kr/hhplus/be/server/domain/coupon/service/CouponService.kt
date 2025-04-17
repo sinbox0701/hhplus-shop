@@ -4,11 +4,14 @@ import kr.hhplus.be.server.domain.coupon.service.CouponCommand
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.repository.CouponRepository
+import kr.hhplus.be.server.domain.coupon.model.UserCoupon
+import kr.hhplus.be.server.domain.coupon.repository.UserCouponRepository
 import org.springframework.stereotype.Service
 
 @Service
 class CouponService(
-    private val couponRepository: CouponRepository
+    private val couponRepository: CouponRepository,
+    private val userCouponRepository: UserCouponRepository
 ) {
     fun create(command: CouponCommand.CreateCouponCommand): Coupon {
         val coupon = Coupon.create(
@@ -68,6 +71,63 @@ class CouponService(
     fun deleteAll(ids: List<Long>) {
         ids.forEach { id ->
             delete(id)
+        }
+    }
+
+    fun createUserCoupon(command: CouponCommand.CreateUserCouponCommand): UserCoupon {
+        val userCoupon = UserCoupon.create(command.userId, command.couponId, command.quantity)
+        return userCouponRepository.save(userCoupon)
+    }
+
+    fun findUserCouponById(id: Long): UserCoupon {
+        return userCouponRepository.findById(id)
+            ?: throw IllegalArgumentException("UserCoupon not found with id: $id")
+    }
+
+    fun findUserCouponsByUserId(userId: Long): List<UserCoupon> {
+        return userCouponRepository.findByUserId(userId)
+    }
+
+    fun findUserCouponByCouponId(couponId: Long): List<UserCoupon> {
+        return userCouponRepository.findByCouponId(couponId)
+    }
+
+    fun findUserCouponByUserIdAndCouponId(userId: Long, couponId: Long): UserCoupon {
+        return userCouponRepository.findByUserIdAndCouponId(userId, couponId)
+            ?: throw IllegalArgumentException("UserCoupon not found with userId: $userId and couponId: $couponId")
+    }
+
+    fun issueUserCoupon(command: CouponCommand.IssueCouponCommand) {
+        val userCoupon = findUserCouponById(command.id)
+        userCoupon.issue(command.couponStartDate, command.couponEndDate)
+        userCouponRepository.save(userCoupon)
+    }
+
+    fun useUserCoupon(id: Long) {
+        val userCoupon = findUserCouponById(id)
+        userCoupon.use()
+        userCouponRepository.save(userCoupon)
+    }
+
+    fun deleteUserCoupon(id: Long) {
+        userCouponRepository.delete(id)
+    }
+
+    fun deleteUserCouponByUserIdAndCouponId(userId: Long, couponId: Long) {
+        userCouponRepository.deleteByUserIdAndCouponId(userId, couponId)
+    }
+
+    fun deleteAllUserCouponByUserId(userId: Long) {
+        val userCoupons = userCouponRepository.findByUserId(userId)
+        userCoupons.forEach { userCoupon ->
+            userCouponRepository.delete(userCoupon.id!!)
+        }
+    }
+
+    fun deleteAllUserCouponByCouponId(couponId: Long) {
+        val userCoupons = userCouponRepository.findByCouponId(couponId)
+        userCoupons.forEach { userCoupon ->
+            userCouponRepository.delete(userCoupon.id!!)
         }
     }
 }

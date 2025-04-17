@@ -22,7 +22,7 @@ class UserAccountFacade(
         val user = userService.create(criteria.toUserCommand())
         
         // 계좌 생성
-        accountService.create(criteria.toAccountCommand(user))
+        accountService.create(criteria.toAccountCommand(user.id!!))
         
         return user
     }

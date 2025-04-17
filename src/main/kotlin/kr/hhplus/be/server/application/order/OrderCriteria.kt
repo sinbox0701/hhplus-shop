@@ -21,8 +21,8 @@ class OrderCriteria{
         val userCouponId: Long? = null,
         val discountRate: Double? = null
     ){
-        fun toOrderItemCommand(order: Order, product: Product, productOption: ProductOption, userCoupon: UserCoupon?): OrderItemCommand.CreateOrderItemCommand {
-            return OrderItemCommand.CreateOrderItemCommand(order, product, productOption, quantity, userCoupon, discountRate)
+        fun toOrderItemCommand(orderId: Long, productId: Long, productOptionId: Long, quantity: Int, userCouponId: Long?, discountRate: Double?): OrderItemCommand.CreateOrderItemCommand {
+            return OrderItemCommand.CreateOrderItemCommand(orderId, productId, productOptionId, quantity, userCouponId, discountRate)
         }
     }
 
@@ -31,10 +31,10 @@ class OrderCriteria{
         val orderItems: List<OrderItemCreateCriteria>,
         val userCouponId: Long? = null
     ){
-        fun toOrderCommand(user: User, userCoupon: UserCoupon?): OrderCommand.CreateOrderCommand {
+        fun toOrderCommand(userId: Long, userCouponId: Long?): OrderCommand.CreateOrderCommand {
             return OrderCommand.CreateOrderCommand(
-                user,
-                userCoupon,
+                userId,
+                userCouponId,
                 totalPrice = 0.0
             )
         }

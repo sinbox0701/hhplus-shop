@@ -11,7 +11,11 @@ class OrderService(
     private val orderRepository: OrderRepository,
 ) {
     fun createOrder(command: OrderCommand.CreateOrderCommand): Order {
-        val order = Order.create(user = command.user, userCoupon = command.userCoupon, totalPrice = command.totalPrice)
+        val order = Order.create(
+            userId = command.userId, 
+            userCouponId = command.userCouponId, 
+            totalPrice = command.totalPrice
+        )
         return orderRepository.save(order)
     }
     
@@ -37,22 +41,49 @@ class OrderService(
     
     fun updateOrderStatus(command: OrderCommand.UpdateOrderStatusCommand): Order {
         val order = getOrder(command.id)
-        if (command.status == OrderStatus.CANCELLED && !order.isCancellable()) {
-            throw IllegalStateException("주문을 취소할 수 없습니다. 현재 상태: ${order.status}")
+        
+        when (command.status) {
+            OrderStatus.CANCELLED -> {
+                if (!order.isCancellable()) {
+                    throw IllegalStateException("주문을 취소할 수 없습니다. 현재 상태: ${order.status}")
+                }
+            }
+            OrderStatus.COMPLETED -> {
+                if (order.status != OrderStatus.PENDING) {
+                    throw IllegalStateException("주문을 완료할 수 없습니다. 현재 상태: ${order.status}")
+                }
+            }
+            OrderStatus.PENDING -> {
+                if (order.status != OrderStatus.PENDING) {
+                    throw IllegalStateException("이미 처리된 주문은 대기 상태로 변경할 수 없습니다. 현재 상태: ${order.status}")
+                }
+            }
         }
+        
         return orderRepository.updateStatus(command.id, command.status)
     }
     
     fun cancelOrder(id: Long): Order {
+        val order = getOrder(id)
+        if (!order.isCancellable()) {
+            throw IllegalStateException("주문을 취소할 수 없습니다. 현재 상태: ${order.status}")
+        }
         return orderRepository.updateStatus(id, OrderStatus.CANCELLED)
     }
     
     fun completeOrder(id: Long): Order {
+        val order = getOrder(id)
+        if (order.status != OrderStatus.PENDING) {
+            throw IllegalStateException("주문을 완료할 수 없습니다. 현재 상태: ${order.status}")
+        }
         return orderRepository.updateStatus(id, OrderStatus.COMPLETED)
     }
     
     fun updateOrderTotalPrice(command: OrderCommand.UpdateOrderTotalPriceCommand): Order {
-        getOrder(command.id)
+        val order = getOrder(command.id)
+        if (command.totalPrice <= 0) {
+            throw IllegalArgumentException("총 가격은 0보다 커야 합니다.")
+        }
         return orderRepository.updateTotalPrice(command.id, command.totalPrice)
     }
 }

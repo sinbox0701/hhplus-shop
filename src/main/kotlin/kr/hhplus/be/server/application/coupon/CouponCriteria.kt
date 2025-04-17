@@ -3,7 +3,6 @@ package kr.hhplus.be.server.application.coupon
 import java.time.LocalDateTime
 import kr.hhplus.be.server.domain.coupon.service.CouponCommand
 import kr.hhplus.be.server.domain.coupon.model.CouponType
-import kr.hhplus.be.server.domain.coupon.service.UserCouponCommand
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 
@@ -39,10 +38,10 @@ class CouponCriteria{
             )
         }
 
-        fun toCreateUserCouponCommand(user: User, coupon: Coupon): UserCouponCommand.CreateUserCouponCommand{
-            return UserCouponCommand.CreateUserCouponCommand(
-                user = user,
-                coupon = coupon,
+        fun toCreateUserCouponCommand(userId: Long, couponId: Long): CouponCommand.CreateUserCouponCommand{
+            return CouponCommand.CreateUserCouponCommand(
+                userId = userId,
+                couponId = couponId,
                 quantity = userCouponQuantity,
             )
         }
@@ -52,8 +51,8 @@ class CouponCriteria{
         val userId: Long,
         val couponId: Long,
     ){
-        fun toIssueCouponCommand(id: Long, couponStartDate: LocalDateTime, couponEndDate: LocalDateTime): UserCouponCommand.IssueCouponCommand{
-            return UserCouponCommand.IssueCouponCommand(
+        fun toIssueCouponCommand(id: Long, couponStartDate: LocalDateTime, couponEndDate: LocalDateTime): CouponCommand.IssueCouponCommand{
+            return CouponCommand.IssueCouponCommand(
                 id = id,
                 couponStartDate = couponStartDate,
                 couponEndDate = couponEndDate,

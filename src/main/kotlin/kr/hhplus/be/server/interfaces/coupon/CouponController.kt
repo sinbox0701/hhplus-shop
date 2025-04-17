@@ -8,7 +8,6 @@ import kr.hhplus.be.server.interfaces.coupon.CouponRequest
 import kr.hhplus.be.server.interfaces.coupon.CouponResponse
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.service.CouponService
-import kr.hhplus.be.server.domain.coupon.service.UserCouponService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -23,7 +22,6 @@ import jakarta.validation.Valid
 class CouponController(
     private val couponFacade: CouponFacade,
     private val couponService: CouponService,
-    private val userCouponService: UserCouponService
 ) : CouponApi {
 
     @GetMapping
@@ -94,7 +92,7 @@ class CouponController(
         @PathVariable couponId: Long
     ): ResponseEntity<Void> {
         // 해당 쿠폰이 발급된 적이 있는지 확인
-        val userCoupons = userCouponService.findByCouponId(couponId)
+        val userCoupons = couponService.findUserCouponByCouponId(couponId)
         
         if (userCoupons.isNotEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
@@ -135,9 +133,8 @@ class CouponController(
             
             val userCoupon = couponFacade.create(criteria)
             val coupon = couponService.findById(couponId)
-            val user = userCoupon.user
             
-            CouponResult.UserCouponResult.from(userCoupon, user, coupon)
+            CouponResult.UserCouponResult.from(userCoupon, coupon)
         }
         
         // 쿠폰 발급 처리
@@ -153,25 +150,29 @@ class CouponController(
         @PathVariable accountId: Long,
         @PathVariable accountCouponId: Long
     ): ResponseEntity<CouponResponse.AccountCouponResponse> {
-        val userCoupon = userCouponService.findById(accountCouponId)
+        val userCoupon = couponService.findUserCouponById(accountCouponId)
         
         // 이미 사용된 쿠폰인지 확인
-        if (userCoupon.used) {
+        if (userCoupon.isUsed()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
         
         // 쿠폰이 해당 유저의 것인지 확인
-        if (userCoupon.user.id != accountId) {
+        if (userCoupon.userId != accountId) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
         
         // 쿠폰 사용 처리
-        userCouponService.use(accountCouponId)
+        couponService.useUserCoupon(accountCouponId)
         
-        val updatedUserCoupon = userCouponService.findById(accountCouponId)
-        val coupon = couponService.findById(updatedUserCoupon.coupon.id ?: 0)
+        // 업데이트된 쿠폰 정보 조회
+        val updatedUserCoupon = couponService.findUserCouponById(accountCouponId)
+        val coupon = couponService.findById(updatedUserCoupon.couponId)
         
-        val response = CouponResponse.AccountCouponResponse.from(updatedUserCoupon, coupon)
+        // CouponFacade를 통해 UserCouponResult 획득
+        val userCouponResult = couponFacade.findByUserIdAndCouponId(accountId, coupon.id!!)
+        
+        val response = CouponResponse.AccountCouponResponse.from(userCouponResult)
         
         return ResponseEntity.ok(response)
     }

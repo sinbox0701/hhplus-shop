@@ -347,4 +347,344 @@ class CouponUnitTest {
         coupon.decreaseQuantity(5)
         assertFalse(coupon.hasRemainingQuantity())
     }
+
+    @Test
+    @DisplayName("할인율 최소값(1.0%) 테스트")
+    fun createCouponWithMinDiscountRate() {
+        // given
+        val code = "ABCDEF"
+        val minDiscountRate = Coupon.MIN_DISCOUNT_RATE // 1.0
+        val description = "테스트 쿠폰"
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val quantity = 50
+        val couponType = CouponType.DISCOUNT_PRODUCT
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = minDiscountRate,
+            description = description,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = quantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(minDiscountRate, coupon.discountRate)
+    }
+    
+    @Test
+    @DisplayName("할인율 최대값(100.0%) 테스트")
+    fun createCouponWithMaxDiscountRate() {
+        // given
+        val code = "ABCDEF"
+        val maxDiscountRate = Coupon.MAX_DISCOUNT_RATE // 100.0
+        val description = "테스트 쿠폰"
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val quantity = 50
+        val couponType = CouponType.DISCOUNT_PRODUCT
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = maxDiscountRate,
+            description = description,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = quantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(maxDiscountRate, coupon.discountRate)
+    }
+    
+    @Test
+    @DisplayName("설명 최소 길이(2자) 테스트")
+    fun createCouponWithMinDescriptionLength() {
+        // given
+        val code = "ABCDEF"
+        val discountRate = 10.0
+        val minLengthDescription = "테스" // 최소 2자
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val quantity = 50
+        val couponType = CouponType.DISCOUNT_PRODUCT
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = discountRate,
+            description = minLengthDescription,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = quantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(minLengthDescription, coupon.description)
+        assertEquals(Coupon.MIN_DESCRIPTION_LENGTH, coupon.description.length)
+    }
+    
+    @Test
+    @DisplayName("설명 최대 길이(30자) 테스트")
+    fun createCouponWithMaxDescriptionLength() {
+        // given
+        val code = "ABCDEF"
+        val discountRate = 10.0
+        val maxLengthDescription = "이것은최대길이서른자테스트입니다일이삼사오육칠팔구십" // 정확히 30자
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val quantity = 50
+        val couponType = CouponType.DISCOUNT_PRODUCT
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = discountRate,
+            description = maxLengthDescription,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = quantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(maxLengthDescription, coupon.description)
+        assertEquals(Coupon.MAX_DESCRIPTION_LENGTH, coupon.description.length)
+    }
+    
+    @Test
+    @DisplayName("쿠폰 최소 수량(1개) 테스트")
+    fun createCouponWithMinQuantity() {
+        // given
+        val code = "ABCDEF"
+        val discountRate = 10.0
+        val description = "테스트 쿠폰"
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val minQuantity = Coupon.MIN_QUANTITY // 1
+        val couponType = CouponType.DISCOUNT_PRODUCT
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = discountRate,
+            description = description,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = minQuantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(minQuantity, coupon.quantity)
+        assertEquals(minQuantity, coupon.remainingQuantity)
+    }
+    
+    @Test
+    @DisplayName("쿠폰 최대 수량(100개) 테스트")
+    fun createCouponWithMaxQuantity() {
+        // given
+        val code = "ABCDEF"
+        val discountRate = 10.0
+        val description = "테스트 쿠폰"
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val maxQuantity = Coupon.MAX_QUANTITY // 100
+        val couponType = CouponType.DISCOUNT_PRODUCT
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = discountRate,
+            description = description,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = maxQuantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(maxQuantity, coupon.quantity)
+        assertEquals(maxQuantity, coupon.remainingQuantity)
+    }
+
+    @Test
+    @DisplayName("감소량이 0일 때 예외 발생")
+    fun decreaseQuantityWithZeroCount() {
+        // given
+        val coupon = Coupon.create(
+            code = "ABCDEF",
+            discountRate = 10.0,
+            description = "테스트 쿠폰",
+            startDate = LocalDateTime.now().minusDays(1),
+            endDate = LocalDateTime.now().plusDays(10),
+            quantity = 5,
+            couponType = CouponType.DISCOUNT_PRODUCT
+        )
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            coupon.decreaseQuantity(0)
+        }
+        
+        assertTrue(exception.message!!.contains("쿠폰 수량은 0보다 크게 감소할 수 없습니다"))
+    }
+    
+    @Test
+    @DisplayName("감소량이 음수일 때 예외 발생")
+    fun decreaseQuantityWithNegativeCount() {
+        // given
+        val coupon = Coupon.create(
+            code = "ABCDEF",
+            discountRate = 10.0,
+            description = "테스트 쿠폰",
+            startDate = LocalDateTime.now().minusDays(1),
+            endDate = LocalDateTime.now().plusDays(10),
+            quantity = 5,
+            couponType = CouponType.DISCOUNT_PRODUCT
+        )
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            coupon.decreaseQuantity(-1)
+        }
+        
+        assertTrue(exception.message!!.contains("쿠폰 수량은 0보다 크게 감소할 수 없습니다"))
+    }
+
+    @Test
+    @DisplayName("모든 필드가 null인 업데이트 테스트")
+    fun updateCouponWithAllNullFields() {
+        // given
+        val originalCoupon = Coupon.create(
+            code = "ABCDEF",
+            discountRate = 10.0,
+            description = "테스트 쿠폰",
+            startDate = LocalDateTime.now().minusDays(1),
+            endDate = LocalDateTime.now().plusDays(10),
+            quantity = 50,
+            couponType = CouponType.DISCOUNT_PRODUCT
+        )
+        
+        // when
+        val updatedCoupon = originalCoupon.update(
+            discountRate = null,
+            description = null,
+            startDate = null,
+            endDate = null,
+            quantity = null
+        )
+        
+        // then
+        assertEquals(originalCoupon.discountRate, updatedCoupon.discountRate)
+        assertEquals(originalCoupon.description, updatedCoupon.description)
+        assertEquals(originalCoupon.startDate, updatedCoupon.startDate)
+        assertEquals(originalCoupon.endDate, updatedCoupon.endDate)
+        assertEquals(originalCoupon.quantity, updatedCoupon.quantity)
+        assertEquals(originalCoupon.remainingQuantity, updatedCoupon.remainingQuantity)
+        assertNotEquals(originalCoupon.updatedAt, updatedCoupon.updatedAt)
+    }
+    
+    @Test
+    @DisplayName("수량 감소로 남은 쿠폰 수량이 음수가 될 때 예외 발생")
+    fun updateCouponQuantityToNegativeRemaining() {
+        // given
+        val coupon = Coupon.create(
+            code = "ABCDEF",
+            discountRate = 10.0,
+            description = "테스트 쿠폰",
+            startDate = LocalDateTime.now().minusDays(1),
+            endDate = LocalDateTime.now().plusDays(10),
+            quantity = 50,
+            couponType = CouponType.DISCOUNT_PRODUCT
+        )
+        
+        // 쿠폰 45개 사용
+        val updatedCoupon = coupon.decreaseQuantity(45)
+        
+        // when & then
+        val exception = assertThrows<IllegalArgumentException> {
+            updatedCoupon.update(quantity = 4) // 남은 수량은 5개인데 4개로 줄이려고 함
+        }
+        
+        assertTrue(exception.message!!.contains("남은 쿠폰 수량은 0보다 작을 수 없습니다"))
+    }
+
+    @Test
+    @DisplayName("주문 할인(DISCOUNT_ORDER) 타입 쿠폰 생성 테스트")
+    fun createDiscountOrderTypeCoupon() {
+        // given
+        val code = "ABCDEF"
+        val discountRate = 10.0
+        val description = "주문 할인 쿠폰"
+        val startDate = LocalDateTime.now().minusDays(1)
+        val endDate = LocalDateTime.now().plusDays(10)
+        val quantity = 50
+        val couponType = CouponType.DISCOUNT_ORDER
+        
+        // when
+        val coupon = Coupon.create(
+            code = code,
+            discountRate = discountRate,
+            description = description,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = quantity,
+            couponType = couponType
+        )
+        
+        // then
+        assertEquals(couponType, coupon.couponType)
+    }
+
+    @Test
+    @DisplayName("시작일 직전에는 쿠폰이 유효하지 않음")
+    fun couponIsNotValidJustBeforeStartDate() {
+        // given
+        val now = LocalDateTime.now()
+        val startDate = now.plusMinutes(1) // 1분 후 시작
+        val endDate = now.plusDays(10)
+        
+        val coupon = Coupon.create(
+            code = "ABCDEF",
+            discountRate = 10.0,
+            description = "테스트 쿠폰",
+            startDate = startDate,
+            endDate = endDate,
+            quantity = 5,
+            couponType = CouponType.DISCOUNT_PRODUCT
+        )
+        
+        // when & then
+        assertFalse(coupon.isValid())
+    }
+
+    @Test
+    @DisplayName("종료일 직후에는 쿠폰이 유효하지 않음")
+    fun couponIsNotValidJustAfterEndDate() {
+        // given
+        val now = LocalDateTime.now()
+        val startDate = now.minusDays(10)
+        val endDate = now.minusMinutes(1) // 1분 전 종료
+        
+        val coupon = Coupon.create(
+            code = "ABCDEF",
+            discountRate = 10.0,
+            description = "테스트 쿠폰",
+            startDate = startDate,
+            endDate = endDate,
+            quantity = 5,
+            couponType = CouponType.DISCOUNT_PRODUCT
+        )
+        
+        // when & then
+        assertFalse(coupon.isValid())
+    }
+
 }
