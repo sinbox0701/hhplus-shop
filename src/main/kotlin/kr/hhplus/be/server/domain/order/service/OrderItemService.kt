@@ -3,7 +3,7 @@ package kr.hhplus.be.server.domain.order.service
 import kr.hhplus.be.server.domain.order.model.OrderItem
 import kr.hhplus.be.server.domain.order.repository.OrderItemRepository
 import org.springframework.stereotype.Service
-
+import java.time.LocalDateTime
 @Service
 class OrderItemService(
     private val orderItemRepository: OrderItemRepository
@@ -42,6 +42,18 @@ class OrderItemService(
     
     fun getByOrderIdAndProductOptionId(orderId: Long, productOptionId: Long): OrderItem? {
         return orderItemRepository.findByOrderIdAndProductOptionId(orderId, productOptionId)
+    }
+
+    /**
+     * 특정 기간 동안 가장 많이 팔린 상품 ID를 판매량 순으로 조회
+     * 
+     * @param startDate 조회 시작 일시
+     * @param endDate 조회 종료 일시
+     * @param limit 조회할 상품 수
+     * @return 판매량 내림차순으로 정렬된 상품 ID 목록
+     */
+    fun getTopSellingProductIds(startDate: LocalDateTime, endDate: LocalDateTime, limit: Int): List<Long> {
+        return orderItemRepository.findTopSellingProductIds(startDate, endDate, limit)
     }
     
     fun update(command: OrderItemCommand.UpdateOrderItemCommand): OrderItem {

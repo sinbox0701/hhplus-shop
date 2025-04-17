@@ -6,9 +6,11 @@ import io.mockk.verify
 import kr.hhplus.be.server.application.product.ProductCriteria
 import kr.hhplus.be.server.application.product.ProductFacade
 import kr.hhplus.be.server.application.product.ProductResult
+import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
+import kr.hhplus.be.server.domain.product.service.ProductSalesService
 import kr.hhplus.be.server.domain.product.service.ProductService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -16,12 +18,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ProductFacadeIntegrationTest {
 
     private lateinit var productService: ProductService
     private lateinit var productOptionService: ProductOptionService
+    private lateinit var orderItemService: OrderItemService
+    private lateinit var productSalesService: ProductSalesService
     private lateinit var productFacade: ProductFacade
 
     companion object {
@@ -39,7 +44,14 @@ class ProductFacadeIntegrationTest {
     fun setup() {
         productService = mockk()
         productOptionService = mockk()
-        productFacade = ProductFacade(productService, productOptionService)
+        orderItemService = mockk()
+        productSalesService = mockk()
+        productFacade = ProductFacade(
+            productService = productService,
+            productOptionService = productOptionService,
+            orderItemService = orderItemService,
+            productSalesService = productSalesService
+        )
     }
 
     @Test
@@ -196,12 +208,61 @@ class ProductFacadeIntegrationTest {
     @DisplayName("인기 상품 조회 성공")
     fun getTopSellingProductsSuccess() {
         // given
+        val startDate = LocalDate.now().minusDays(3)
+        val topProductIds = listOf(1L, 2L, 3L)
+
+        val product1 = mockk<Product>()
+        every { product1.id } returns 1L
+        every { product1.name } returns "인기 상품 1"
+        every { product1.description } returns "인기 상품 설명 1"
+        every { product1.price } returns 10000.0
+
+        val product2 = mockk<Product>()
+        every { product2.id } returns 2L
+        every { product2.name } returns "인기 상품 2"
+        every { product2.description } returns "인기 상품 설명 2"
+        every { product2.price } returns 20000.0
+
+        val product3 = mockk<Product>()
+        every { product3.id } returns 3L
+        every { product3.name } returns "인기 상품 3"
+        every { product3.description } returns "인기 상품 설명 3"
+        every { product3.price } returns 30000.0
+
+        every { productSalesService.getTopSellingProductIds(startDate, 5) } returns topProductIds
+        every { productService.getByIds(topProductIds) } returns listOf(product1, product2, product3)
+
+        // when
+        val results = productFacade.getTopSellingProducts()
+
+        // then
+        assertNotNull(results)
+        assertEquals(3, results.size)
+        assertEquals(1L, results[0].id)
+        assertEquals("인기 상품 1", results[0].name)
+        assertEquals(2L, results[1].id)
+        assertEquals("인기 상품 2", results[1].name)
+        assertEquals(3L, results[2].id)
+        assertEquals("인기 상품 3", results[2].name)
+
+        verify(exactly = 1) { productSalesService.getTopSellingProductIds(any(), 5) }
+        verify(exactly = 1) { productService.getByIds(topProductIds) }
+    }
+
+    @Test
+    @DisplayName("판매 데이터가 없을 때 인기 상품 조회 성공")
+    fun getTopSellingProductsWithNoSalesDataSuccess() {
+        // given
+        val startDate = LocalDate.now().minusDays(3)
+        val topProductIds = emptyList<Long>()
+        
         val product = mockk<Product>()
         every { product.id } returns TEST_PRODUCT_ID
         every { product.name } returns TEST_PRODUCT_NAME
         every { product.description } returns TEST_PRODUCT_DESCRIPTION
         every { product.price } returns TEST_PRODUCT_PRICE
 
+        every { productSalesService.getTopSellingProductIds(startDate, 5) } returns topProductIds
         every { productService.getAll() } returns listOf(product)
 
         // when
@@ -215,6 +276,7 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_PRODUCT_DESCRIPTION, results[0].description)
         assertEquals(TEST_PRODUCT_PRICE, results[0].price)
 
+        verify(exactly = 1) { productSalesService.getTopSellingProductIds(any(), 5) }
         verify(exactly = 1) { productService.getAll() }
     }
 

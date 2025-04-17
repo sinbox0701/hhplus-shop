@@ -1,17 +1,23 @@
 package kr.hhplus.be.server.application.product
 
+import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
+import kr.hhplus.be.server.domain.product.repository.ProductDailySalesRepository
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
+import kr.hhplus.be.server.domain.product.service.ProductSalesService
 import kr.hhplus.be.server.domain.product.service.ProductService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
 class ProductFacade(
     private val productService: ProductService,
-    private val productOptionService: ProductOptionService
+    private val productOptionService: ProductOptionService,
+    private val orderItemService: OrderItemService,
+    private val productSalesService: ProductSalesService
 ) {
     /**
      * 모든 상품 목록과 옵션을 조회하는 메서드
@@ -55,17 +61,30 @@ class ProductFacade(
 
     /**
      * 최근 3일 동안 가장 많이 팔린 상품 5개를 조회하는 메서드
+     * - 집계 테이블을 활용하여 성능 최적화
      */
     @Transactional(readOnly = true)
-    fun getTopSellingProducts(): List<Product> {
-        // 현재 시간 기준 최근 3일 계산
-        val now = LocalDateTime.now()
-        val threeDaysAgo = now.minusDays(3)
+    fun getTopSellingProducts(days: Int = 3, limit: Int = 5): List<Product> {
+        // 현재 날짜 기준 조회 기간 계산
+        val startDate = LocalDate.now().minusDays(days.toLong())
         
-        // 실제로는 OrderRepository에서 판매량 기준으로 데이터를 조회해야 함
-        // 여기서는 임시로 전체 상품 중 최대 5개를 반환
-        val allProducts = productService.getAll()
-        return allProducts.take(5)
+        // 집계 테이블에서 상위 상품 ID 조회
+        val topSellingProductIds = productSalesService.getTopSellingProductIds(startDate, limit)
+        
+        // ID로 상품 정보 조회
+        if (topSellingProductIds.isEmpty()) {
+            // 판매 데이터가 없는 경우 일반 상품 목록 반환
+            return productService.getAll().take(limit)
+        }
+        
+        // 모든 상품 ID를 한 번에 조회
+        val products = productService.getByIds(topSellingProductIds)
+        
+        // 상품 ID로 매핑하여 O(1) 조회 가능하게 함
+        val productsMap = products.associateBy { it.id }
+        
+        // 판매량 순서대로 상품 정보 정렬하여 반환 (O(n) 시간 복잡도)
+        return topSellingProductIds.mapNotNull { productsMap[it] }
     }
 
      /**

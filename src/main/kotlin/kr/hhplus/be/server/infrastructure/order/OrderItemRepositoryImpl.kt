@@ -5,6 +5,7 @@ import kr.hhplus.be.server.domain.order.repository.OrderItemRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Repository
 class OrderItemRepositoryImpl(
@@ -46,5 +47,9 @@ class OrderItemRepositoryImpl(
     @Transactional
     override fun deleteByOrderId(orderId: Long) {
         jpaOrderItemRepository.deleteByOrderId(orderId)
+    }
+    
+    override fun findTopSellingProductIds(startDate: LocalDateTime, endDate: LocalDateTime, limit: Int): List<Long> {
+        return jpaOrderItemRepository.findTopSellingProductIds(startDate, endDate, limit)
     }
 } 
