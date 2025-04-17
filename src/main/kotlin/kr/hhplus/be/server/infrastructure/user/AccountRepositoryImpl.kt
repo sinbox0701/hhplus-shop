@@ -26,7 +26,6 @@ class AccountRepositoryImpl(
         return jpaAccountRepository.findByIdOrNull(id)?.toAccount()
     }
     
-    @Transactional
     override fun update(id: Long, amount: Double): Account {
         val accountEntity = jpaAccountRepository.findByIdOrNull(id)
             ?: throw IllegalArgumentException("계좌를 찾을 수 없습니다: $id")
