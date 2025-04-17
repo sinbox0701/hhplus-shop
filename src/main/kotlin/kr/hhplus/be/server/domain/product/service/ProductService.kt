@@ -3,6 +3,7 @@ package kr.hhplus.be.server.domain.product.service
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ProductService(
@@ -30,5 +31,13 @@ class ProductService(
     fun delete(id: Long) {
         get(id) // 제품이 존재하는지 확인
         productRepository.delete(id)
+    }
+
+    /**
+     * 여러 상품 ID로 상품 정보를 한 번에 조회
+     */
+    @Transactional(readOnly = true)
+    fun getByIds(ids: List<Long>): List<Product> {
+        return productRepository.findByIds(ids)
     }
 } 

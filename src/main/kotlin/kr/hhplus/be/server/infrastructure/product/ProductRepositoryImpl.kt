@@ -24,6 +24,11 @@ class ProductRepositoryImpl(
         return jpaProductRepository.findAll().map { it.toProduct() }
     }
     
+    override fun findByIds(ids: List<Long>): List<Product> {
+        if (ids.isEmpty()) return emptyList()
+        return jpaProductRepository.findAllByIdIn(ids).map { it.toProduct() }
+    }
+    
     override fun update(product: Product): Product {
         // 엔티티를 저장할 때 이미 있는 ID라면 JPA는 업데이트를 수행함
         val productEntity = ProductEntity.fromProduct(product)

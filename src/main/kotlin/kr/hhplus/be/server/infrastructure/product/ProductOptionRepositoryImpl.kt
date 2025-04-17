@@ -29,6 +29,12 @@ class ProductOptionRepositoryImpl(
     override fun findByProductIdAndId(productId: Long, id: Long): ProductOption? {
         return jpaProductOptionRepository.findByProductIdAndId(productId, id)?.toProductOption()
     }
+
+    override fun findAllByProductIds(productIds: List<Long>): List<ProductOption> {
+        if (productIds.isEmpty()) return emptyList()
+        return jpaProductOptionRepository.findByProductIdIn(productIds)
+            .map { it.toProductOption() }
+    }
     
     override fun update(productOption: ProductOption): ProductOption {
         val productOptionEntity = ProductOptionEntity.fromProductOption(productOption)
