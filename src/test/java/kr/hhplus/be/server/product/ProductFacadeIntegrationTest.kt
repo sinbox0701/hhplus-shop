@@ -72,7 +72,7 @@ class ProductFacadeIntegrationTest {
         every { option.availableQuantity } returns TEST_OPTION_QUANTITY
 
         every { productService.getAll() } returns listOf(product)
-        every { productOptionService.getAllByProductId(TEST_PRODUCT_ID) } returns listOf(option)
+        every { productOptionService.getAllByProductIds(listOf(TEST_PRODUCT_ID)) } returns listOf(option)
 
         // when
         val results = productFacade.getAllProductsWithOptions()
@@ -91,7 +91,8 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_OPTION_QUANTITY, results[0].options[0].availableQuantity)
 
         verify(exactly = 1) { productService.getAll() }
-        verify(exactly = 1) { productOptionService.getAllByProductId(TEST_PRODUCT_ID) }
+        verify(exactly = 1) { productOptionService.getAllByProductIds(listOf(TEST_PRODUCT_ID)) }
+        verify(exactly = 0) { productOptionService.getAllByProductId(any()) }
     }
 
     @Test

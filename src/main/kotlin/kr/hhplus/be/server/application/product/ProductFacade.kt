@@ -24,8 +24,27 @@ class ProductFacade(
      */
     @Transactional(readOnly = true)
     fun getAllProductsWithOptions(): List<ProductResult.ProductWithOptions> {
-        return productService.getAll().map { product ->
-            ProductResult.ProductWithOptions(product, productOptionService.getAllByProductId(product.id!!))
+        // 1. 모든 상품 조회
+        val products = productService.getAll()
+        
+        // 2. 상품이 없으면 빈 리스트 반환
+        if (products.isEmpty()) return emptyList()
+        
+        // 3. 모든 상품 ID 추출
+        val productIds = products.mapNotNull { it.id }
+        
+        // 4. 한 번의 쿼리로 모든 상품의 옵션 조회
+        val allOptions = productOptionService.getAllByProductIds(productIds)
+        
+        // 5. 옵션을 상품별로 그룹화 (메모리에서 처리)
+        val optionsByProductId = allOptions.groupBy { it.productId }
+        
+        // 6. 결과 조합
+        return products.map { product ->
+            ProductResult.ProductWithOptions(
+                product, 
+                optionsByProductId[product.id] ?: emptyList()
+            )
         }
     }
     

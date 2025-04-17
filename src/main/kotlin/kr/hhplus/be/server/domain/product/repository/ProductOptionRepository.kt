@@ -7,6 +7,7 @@ interface ProductOptionRepository {
     fun findById(id: Long): ProductOption?
     fun findByProductId(productId: Long): List<ProductOption>
     fun findByProductIdAndId(productId: Long, id: Long): ProductOption?
+    fun findAllByProductIds(productIds: List<Long>): List<ProductOption>
     fun update(productOption: ProductOption): ProductOption
     fun updateQuantity(id: Long, quantity: Int): ProductOption
     fun delete(id: Long)

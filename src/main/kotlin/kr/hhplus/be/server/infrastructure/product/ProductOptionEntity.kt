@@ -5,7 +5,12 @@ import java.time.LocalDateTime
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "product_options")
+@Table(
+    name = "product_options",
+    indexes = [
+        Index(name = "idx_product_option_product_id", columnList = "product_id")
+    ]
+)
 class ProductOptionEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
