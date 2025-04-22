@@ -5,7 +5,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import kr.hhplus.be.server.application.order.OrderCriteria
 import kr.hhplus.be.server.application.order.OrderFacade
-import kr.hhplus.be.server.application.order.OrderResult
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
@@ -27,6 +26,16 @@ import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.AccountCommand
 import kr.hhplus.be.server.domain.user.service.AccountService
 import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.order.TestFixtures.DISCOUNT_RATE
+import kr.hhplus.be.server.order.TestFixtures.OPTION_PRICE
+import kr.hhplus.be.server.order.TestFixtures.ORDER_ID
+import kr.hhplus.be.server.order.TestFixtures.ORDER_ITEM_ID
+import kr.hhplus.be.server.order.TestFixtures.PRODUCT_ID
+import kr.hhplus.be.server.order.TestFixtures.PRODUCT_OPTION_ID
+import kr.hhplus.be.server.order.TestFixtures.PRODUCT_PRICE
+import kr.hhplus.be.server.order.TestFixtures.QUANTITY
+import kr.hhplus.be.server.order.TestFixtures.USER_COUPON_ID
+import kr.hhplus.be.server.order.TestFixtures.USER_ID
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -44,21 +53,6 @@ class OrderFacadeIntegrationTest {
     private lateinit var couponService: CouponService
     private lateinit var accountService: AccountService
     private lateinit var orderFacade: OrderFacade
-
-    companion object {
-        private const val USER_ID = 1L
-        private const val PRODUCT_ID = 1L
-        private const val PRODUCT_OPTION_ID = 1L
-        private const val ORDER_ID = 1L
-        private const val ORDER_ITEM_ID = 1L
-        private const val COUPON_ID = 1L
-        private const val USER_COUPON_ID = 1L
-        private const val ACCOUNT_ID = 1L
-        private const val PRODUCT_PRICE = 10000.0
-        private const val OPTION_PRICE = 1000.0
-        private const val QUANTITY = 2
-        private const val DISCOUNT_RATE = 10.0
-    }
 
     @BeforeEach
     fun setup() {
@@ -82,7 +76,7 @@ class OrderFacadeIntegrationTest {
 
     private fun createMockUser(): User {
         val user = mockk<User>()
-        every { user.id } returns USER_ID
+        every { user.id } returns TestFixtures.USER_ID
         every { user.name } returns "테스트 유저"
         every { user.email } returns "test@example.com"
         return user
@@ -90,29 +84,29 @@ class OrderFacadeIntegrationTest {
 
     private fun createMockProduct(): Product {
         val product = mockk<Product>()
-        every { product.id } returns PRODUCT_ID
+        every { product.id } returns TestFixtures.PRODUCT_ID
         every { product.name } returns "테스트 상품"
-        every { product.price } returns PRODUCT_PRICE
+        every { product.price } returns TestFixtures.PRODUCT_PRICE
         every { product.description } returns "테스트 상품 설명"
         return product
     }
 
     private fun createMockProductOption(): ProductOption {
         val option = mockk<ProductOption>()
-        every { option.id } returns PRODUCT_OPTION_ID
-        every { option.productId } returns PRODUCT_ID
+        every { option.id } returns TestFixtures.PRODUCT_OPTION_ID
+        every { option.productId } returns TestFixtures.PRODUCT_ID
         every { option.name } returns "테스트 옵션"
-        every { option.additionalPrice } returns OPTION_PRICE
+        every { option.additionalPrice } returns TestFixtures.OPTION_PRICE
         every { option.availableQuantity } returns 10
         return option
     }
 
     private fun createMockOrder(status: OrderStatus = OrderStatus.PENDING): Order {
         val order = mockk<Order>()
-        every { order.id } returns ORDER_ID
-        every { order.userId } returns USER_ID
+        every { order.id } returns TestFixtures.ORDER_ID
+        every { order.userId } returns TestFixtures.USER_ID
         every { order.userCouponId } returns null
-        every { order.totalPrice } returns (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY
+        every { order.totalPrice } returns (TestFixtures.PRODUCT_PRICE + TestFixtures.OPTION_PRICE) * TestFixtures.QUANTITY
         every { order.status } returns status
         every { order.isCancellable() } returns (status == OrderStatus.PENDING)
         return order
@@ -120,20 +114,20 @@ class OrderFacadeIntegrationTest {
 
     private fun createMockOrderItem(): OrderItem {
         val orderItem = mockk<OrderItem>()
-        every { orderItem.id } returns ORDER_ITEM_ID
-        every { orderItem.orderId } returns ORDER_ID
-        every { orderItem.productId } returns PRODUCT_ID
-        every { orderItem.productOptionId } returns PRODUCT_OPTION_ID
-        every { orderItem.quantity } returns QUANTITY
-        every { orderItem.price } returns (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY
+        every { orderItem.id } returns TestFixtures.ORDER_ITEM_ID
+        every { orderItem.orderId } returns TestFixtures.ORDER_ID
+        every { orderItem.productId } returns TestFixtures.PRODUCT_ID
+        every { orderItem.productOptionId } returns TestFixtures.PRODUCT_OPTION_ID
+        every { orderItem.quantity } returns TestFixtures.QUANTITY
+        every { orderItem.price } returns (TestFixtures.PRODUCT_PRICE + TestFixtures.OPTION_PRICE) * TestFixtures.QUANTITY
         return orderItem
     }
 
     private fun createMockCoupon(): Coupon {
         val coupon = mockk<Coupon>()
-        every { coupon.id } returns COUPON_ID
+        every { coupon.id } returns TestFixtures.COUPON_ID
         every { coupon.couponType } returns CouponType.DISCOUNT_ORDER
-        every { coupon.discountRate } returns DISCOUNT_RATE
+        every { coupon.discountRate } returns TestFixtures.DISCOUNT_RATE
         every { coupon.startDate } returns LocalDateTime.now().minusDays(1)
         every { coupon.endDate } returns LocalDateTime.now().plusDays(1)
         every { coupon.isValid() } returns true
@@ -142,9 +136,9 @@ class OrderFacadeIntegrationTest {
 
     private fun createMockUserCoupon(): UserCoupon {
         val userCoupon = mockk<UserCoupon>()
-        every { userCoupon.id } returns USER_COUPON_ID
-        every { userCoupon.userId } returns USER_ID
-        every { userCoupon.couponId } returns COUPON_ID
+        every { userCoupon.id } returns TestFixtures.USER_COUPON_ID
+        every { userCoupon.userId } returns TestFixtures.USER_ID
+        every { userCoupon.couponId } returns TestFixtures.COUPON_ID
         every { userCoupon.isIssued() } returns true
         every { userCoupon.isUsed() } returns false
         return userCoupon
@@ -152,8 +146,8 @@ class OrderFacadeIntegrationTest {
 
     private fun createMockAccount(amount: Double = 100000.0): Account {
         val account = mockk<Account>()
-        every { account.id } returns ACCOUNT_ID
-        every { account.userId } returns USER_ID
+        every { account.id } returns TestFixtures.ACCOUNT_ID
+        every { account.userId } returns TestFixtures.USER_ID
         every { account.amount } returns amount
         return account
     }
@@ -162,11 +156,11 @@ class OrderFacadeIntegrationTest {
     @DisplayName("주문 생성 성공")
     fun createOrderSuccess() {
         // given
-        val user = createMockUser()
-        val product = createMockProduct()
-        val option = createMockProductOption()
-        val order = createMockOrder()
-        val orderItem = createMockOrderItem()
+        val user = TestFixtures.createUser()
+        val product = TestFixtures.createProduct()
+        val option = TestFixtures.createProductOption()
+        val order = TestFixtures.createOrder()
+        val orderItem = TestFixtures.createOrderItem()
 
         val itemCriteria = OrderCriteria.OrderItemCreateCriteria(
             productId = PRODUCT_ID,
@@ -209,20 +203,19 @@ class OrderFacadeIntegrationTest {
     @DisplayName("쿠폰 적용 주문 생성 성공")
     fun createOrderWithCouponSuccess() {
         // given
-        val user = createMockUser()
-        val product = createMockProduct()
-        val option = createMockProductOption()
-        val coupon = createMockCoupon()
-        val userCoupon = createMockUserCoupon()
+        val user = TestFixtures.createUser()
+        val product = TestFixtures.createProduct()
+        val option = TestFixtures.createProductOption()
+        val coupon = TestFixtures.createCoupon()
+        val userCoupon = TestFixtures.createUserCoupon()
         
-        val order = mockk<Order>()
-        every { order.id } returns ORDER_ID
-        every { order.userId } returns USER_ID
-        every { order.userCouponId } returns USER_COUPON_ID
-        every { order.totalPrice } returns ((PRODUCT_PRICE + OPTION_PRICE) * QUANTITY) * (1 - DISCOUNT_RATE / 100)
-        every { order.status } returns OrderStatus.PENDING
+        val discountedTotalPrice = ((PRODUCT_PRICE + OPTION_PRICE) * QUANTITY) * (1 - DISCOUNT_RATE / 100)
+        val order = TestFixtures.createOrder(
+            userCouponId = USER_COUPON_ID,
+            totalPrice = discountedTotalPrice
+        )
         
-        val orderItem = createMockOrderItem()
+        val orderItem = TestFixtures.createOrderItem()
 
         val itemCriteria = OrderCriteria.OrderItemCreateCriteria(
             productId = PRODUCT_ID,
@@ -238,7 +231,7 @@ class OrderFacadeIntegrationTest {
 
         every { userService.findById(USER_ID) } returns user
         every { couponService.findUserCouponById(USER_COUPON_ID) } returns userCoupon
-        every { couponService.findById(COUPON_ID) } returns coupon
+        every { couponService.findById(TestFixtures.COUPON_ID) } returns coupon
         every { productService.get(PRODUCT_ID) } returns product
         every { productOptionService.get(PRODUCT_OPTION_ID) } returns option
         every { orderService.createOrder(any()) } returns order
@@ -254,11 +247,11 @@ class OrderFacadeIntegrationTest {
         assertEquals(order, result.order)
         assertEquals(1, result.items.size)
         assertEquals(orderItem, result.items[0])
-        assertEquals(((PRODUCT_PRICE + OPTION_PRICE) * QUANTITY) * (1 - DISCOUNT_RATE / 100), result.order.totalPrice)
+        assertEquals(discountedTotalPrice, result.order.totalPrice)
 
         verify(exactly = 1) { userService.findById(USER_ID) }
         verify(exactly = 1) { couponService.findUserCouponById(USER_COUPON_ID) }
-        verify(exactly = 1) { couponService.findById(COUPON_ID) }
+        verify(exactly = 1) { couponService.findById(TestFixtures.COUPON_ID) }
         verify(exactly = 1) { productService.get(PRODUCT_ID) }
         verify(exactly = 1) { productOptionService.get(PRODUCT_OPTION_ID) }
         verify(exactly = 1) { orderService.createOrder(any()) }
@@ -271,15 +264,9 @@ class OrderFacadeIntegrationTest {
     @DisplayName("재고 부족으로 주문 생성 실패")
     fun createOrderFailDueToInsufficientStock() {
         // given
-        val user = createMockUser()
-        val product = createMockProduct()
-        
-        val option = mockk<ProductOption>()
-        every { option.id } returns PRODUCT_OPTION_ID
-        every { option.productId } returns PRODUCT_ID
-        every { option.name } returns "테스트 옵션"
-        every { option.additionalPrice } returns OPTION_PRICE
-        every { option.availableQuantity } returns 1  // 재고가 1개밖에 없음
+        val user = TestFixtures.createUser()
+        val product = TestFixtures.createProduct()
+        val option = TestFixtures.createProductOption(availableQuantity = 1) // 재고가 1개뿐
         
         val itemCriteria = OrderCriteria.OrderItemCreateCriteria(
             productId = PRODUCT_ID,
@@ -313,10 +300,10 @@ class OrderFacadeIntegrationTest {
     @DisplayName("결제 처리 성공")
     fun processPaymentSuccess() {
         // given
-        val user = createMockUser()
-        val order = createMockOrder()
-        val account = createMockAccount()
-        val orderItem = createMockOrderItem()
+        val user = TestFixtures.createUser()
+        val order = TestFixtures.createOrder()
+        val account = TestFixtures.createAccount()
+        val orderItem = TestFixtures.createOrderItem()
 
         val criteria = OrderCriteria.OrderPaymentCriteria(
             orderId = ORDER_ID,
@@ -351,12 +338,12 @@ class OrderFacadeIntegrationTest {
     @DisplayName("잔액 부족으로 결제 처리 실패")
     fun processPaymentFailDueToInsufficientBalance() {
         // given
-        val user = createMockUser()
-        val order = createMockOrder()
+        val user = TestFixtures.createUser()
+        val order = TestFixtures.createOrder()
         
         // 잔액이 주문 금액보다 적게 설정
         val insufficientAmount = (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY - 1000.0
-        val account = createMockAccount(insufficientAmount)
+        val account = TestFixtures.createAccount(insufficientAmount)
 
         val criteria = OrderCriteria.OrderPaymentCriteria(
             orderId = ORDER_ID,
@@ -385,14 +372,14 @@ class OrderFacadeIntegrationTest {
     @DisplayName("주문 취소 성공")
     fun cancelOrderSuccess() {
         // given
-        val user = createMockUser()
-        val order = createMockOrder()
-        val orderItem = createMockOrderItem()
+        val user = TestFixtures.createUser()
+        val order = TestFixtures.createOrder()
+        val orderItem = TestFixtures.createOrderItem()
 
         every { orderService.getOrder(ORDER_ID) } returns order
         every { userService.findById(USER_ID) } returns user
         every { orderItemService.getByOrderId(ORDER_ID) } returns listOf(orderItem)
-        every { productOptionService.updateQuantity(any()) } returns createMockProductOption()
+        every { productOptionService.updateQuantity(any()) } returns TestFixtures.createProductOption()
         every { orderService.cancelOrder(ORDER_ID) } returns order
 
         // when
@@ -415,10 +402,10 @@ class OrderFacadeIntegrationTest {
     @DisplayName("취소 불가능한 주문 상태로 인한 취소 실패")
     fun cancelOrderFailDueToNonCancellableStatus() {
         // given
-        val user = createMockUser()
+        val user = TestFixtures.createUser()
         
         // 완료된 주문은 취소 불가능으로 설정
-        val completedOrder = createMockOrder(OrderStatus.COMPLETED)
+        val completedOrder = TestFixtures.createOrder(status = OrderStatus.COMPLETED)
         
         every { orderService.getOrder(ORDER_ID) } returns completedOrder
         every { userService.findById(USER_ID) } returns user
@@ -441,15 +428,15 @@ class OrderFacadeIntegrationTest {
     @DisplayName("부분 주문 취소 성공")
     fun cancelOrderItemSuccess() {
         // given
-        val user = createMockUser()
-        val order = createMockOrder()
-        val orderItem = createMockOrderItem()
-        val remainingItems = listOf(createMockOrderItem())
+        val user = TestFixtures.createUser()
+        val order = TestFixtures.createOrder()
+        val orderItem = TestFixtures.createOrderItem()
+        val remainingItems = listOf(TestFixtures.createOrderItem())
 
         every { orderService.getOrder(ORDER_ID) } returns order
         every { userService.findById(USER_ID) } returns user
         every { orderItemService.getById(ORDER_ITEM_ID) } returns orderItem
-        every { productOptionService.updateQuantity(any()) } returns createMockProductOption()
+        every { productOptionService.updateQuantity(any()) } returns TestFixtures.createProductOption()
         every { orderItemService.deleteById(ORDER_ITEM_ID) } returns Unit
         every { orderItemService.getByOrderId(ORDER_ID) } returns remainingItems
         every { orderItemService.calculateTotalPrice(any()) } returns (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY
@@ -477,9 +464,9 @@ class OrderFacadeIntegrationTest {
     @DisplayName("주문과 상품 정보 조회 성공")
     fun getOrderWithItemsSuccess() {
         // given
-        val user = createMockUser()
-        val order = createMockOrder()
-        val orderItems = listOf(createMockOrderItem())
+        val user = TestFixtures.createUser()
+        val order = TestFixtures.createOrder()
+        val orderItems = listOf(TestFixtures.createOrderItem())
 
         every { orderService.getOrder(ORDER_ID) } returns order
         every { userService.findById(USER_ID) } returns user
@@ -503,9 +490,9 @@ class OrderFacadeIntegrationTest {
     @DisplayName("사용자의 주문 목록 조회 성공")
     fun getAllOrdersByUserIdSuccess() {
         // given
-        val user = createMockUser()
-        val orders = listOf(createMockOrder(), createMockOrder())
-        val orderItems = listOf(createMockOrderItem())
+        val user = TestFixtures.createUser()
+        val orders = listOf(TestFixtures.createOrder(), TestFixtures.createOrder())
+        val orderItems = listOf(TestFixtures.createOrderItem())
 
         every { userService.findById(USER_ID) } returns user
         every { orderService.getOrdersByUserId(USER_ID) } returns orders
@@ -529,9 +516,9 @@ class OrderFacadeIntegrationTest {
     @DisplayName("특정 상태의 주문 목록 조회 성공")
     fun getOrdersByUserIdAndStatusSuccess() {
         // given
-        val user = createMockUser()
-        val pendingOrders = listOf(createMockOrder(OrderStatus.PENDING))
-        val orderItems = listOf(createMockOrderItem())
+        val user = TestFixtures.createUser()
+        val pendingOrders = listOf(TestFixtures.createOrder(status = OrderStatus.PENDING))
+        val orderItems = listOf(TestFixtures.createOrderItem())
 
         every { userService.findById(USER_ID) } returns user
         every { orderService.getOrdersByUserIdAndStatus(USER_ID, OrderStatus.PENDING) } returns pendingOrders
