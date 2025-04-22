@@ -33,6 +33,8 @@ userCouponId = criteria.userCouponId
 }
 ```
 
+## 2. 시간에 대한 테스트 로직.
+
 - 테스트하기 어려운 부분은 의존성을 주입해보세요. 가령, 시간에 의존적인 코드는 테스트하기 어려우므로 아래와 같이 구성해볼 수도 있을거에요.
 
 ```kotlin
@@ -54,6 +56,8 @@ class FixedTimeProvider(
     override fun today(): LocalDate = fixedDateTime.toLocalDate()
 }
 ```
+
+## 3. 리플렉션을 대신한 명시적 변환.
 
 - 리플렉션을 사용한 매핑보다는 명시적으로 변환하면 되지 않을까요..?
 
@@ -78,7 +82,7 @@ fun withId(id: Long?, userId: Long, ...): Order {
 }
 ```
 
-## 2. 인덱스도 고려해보세요.
+## 4. 인덱스도 고려해보세요.
 
 ```sql
 -- 인기 판매 상품 조회를 위한 인덱스

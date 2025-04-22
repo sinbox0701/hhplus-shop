@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.domain.coupon.service
 
+import kr.hhplus.be.server.domain.common.TimeProvider
 import kr.hhplus.be.server.domain.coupon.service.CouponCommand
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
@@ -11,7 +12,8 @@ import org.springframework.stereotype.Service
 @Service
 class CouponService(
     private val couponRepository: CouponRepository,
-    private val userCouponRepository: UserCouponRepository
+    private val userCouponRepository: UserCouponRepository,
+    private val timeProvider: TimeProvider
 ) {
     fun create(command: CouponCommand.CreateCouponCommand): Coupon {
         val coupon = Coupon.create(
@@ -22,6 +24,7 @@ class CouponService(
             startDate = command.startDate,
             endDate = command.endDate,
             quantity = command.quantity,
+            timeProvider = timeProvider
         )
         return couponRepository.save(coupon)
     }
@@ -54,14 +57,21 @@ class CouponService(
 
     fun update(command: CouponCommand.UpdateCouponCommand): Coupon {
         val coupon = findById(command.id)
-        coupon.update(command.discountRate, command.description, command.startDate, command.endDate, command.quantity)
-        return couponRepository.save(coupon)
+        val updatedCoupon = coupon.update(
+            command.discountRate, 
+            command.description, 
+            command.startDate, 
+            command.endDate, 
+            command.quantity,
+            timeProvider
+        )
+        return couponRepository.save(updatedCoupon)
     }
 
     fun updateRemainingQuantity(command: CouponCommand.UpdateCouponRemainingQuantityCommand): Coupon {
         val coupon = findById(command.id)
-        coupon.decreaseQuantity(command.quantity)
-        return couponRepository.save(coupon)
+        val updatedCoupon = coupon.decreaseQuantity(command.quantity, timeProvider)
+        return couponRepository.save(updatedCoupon)
     }
 
     fun delete(id: Long) {
@@ -99,14 +109,14 @@ class CouponService(
 
     fun issueUserCoupon(command: CouponCommand.IssueCouponCommand) {
         val userCoupon = findUserCouponById(command.id)
-        userCoupon.issue(command.couponStartDate, command.couponEndDate)
-        userCouponRepository.save(userCoupon)
+        val updatedUserCoupon = userCoupon.issue(command.couponStartDate, command.couponEndDate, timeProvider)
+        userCouponRepository.save(updatedUserCoupon)
     }
 
     fun useUserCoupon(id: Long) {
         val userCoupon = findUserCouponById(id)
-        userCoupon.use()
-        userCouponRepository.save(userCoupon)
+        val updatedUserCoupon = userCoupon.use()
+        userCouponRepository.save(updatedUserCoupon)
     }
 
     fun deleteUserCoupon(id: Long) {
@@ -129,5 +139,10 @@ class CouponService(
         userCoupons.forEach { userCoupon ->
             userCouponRepository.delete(userCoupon.id!!)
         }
+    }
+    
+    fun isValidCoupon(couponId: Long): Boolean {
+        val coupon = findById(couponId)
+        return coupon.isValid(timeProvider)
     }
 }

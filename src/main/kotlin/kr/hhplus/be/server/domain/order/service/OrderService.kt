@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.domain.order.service
 
+import kr.hhplus.be.server.domain.common.TimeProvider
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
@@ -9,12 +10,14 @@ import java.time.LocalDateTime
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
+    private val timeProvider: TimeProvider
 ) {
     fun createOrder(command: OrderCommand.CreateOrderCommand): Order {
         val order = Order.create(
             userId = command.userId, 
             userCouponId = command.userCouponId, 
-            totalPrice = command.totalPrice
+            totalPrice = command.totalPrice,
+            timeProvider = timeProvider
         )
         return orderRepository.save(order)
     }
@@ -60,7 +63,8 @@ class OrderService(
             }
         }
         
-        return orderRepository.updateStatus(command.id, command.status)
+        val updatedOrder = order.updateStatus(command.status, timeProvider)
+        return orderRepository.save(updatedOrder)
     }
     
     fun cancelOrder(id: Long): Order {
@@ -68,7 +72,8 @@ class OrderService(
         if (!order.isCancellable()) {
             throw IllegalStateException("주문을 취소할 수 없습니다. 현재 상태: ${order.status}")
         }
-        return orderRepository.updateStatus(id, OrderStatus.CANCELLED)
+        val updatedOrder = order.updateStatus(OrderStatus.CANCELLED, timeProvider)
+        return orderRepository.save(updatedOrder)
     }
     
     fun completeOrder(id: Long): Order {
@@ -76,7 +81,8 @@ class OrderService(
         if (order.status != OrderStatus.PENDING) {
             throw IllegalStateException("주문을 완료할 수 없습니다. 현재 상태: ${order.status}")
         }
-        return orderRepository.updateStatus(id, OrderStatus.COMPLETED)
+        val updatedOrder = order.updateStatus(OrderStatus.COMPLETED, timeProvider)
+        return orderRepository.save(updatedOrder)
     }
     
     fun updateOrderTotalPrice(command: OrderCommand.UpdateOrderTotalPriceCommand): Order {
@@ -84,6 +90,7 @@ class OrderService(
         if (command.totalPrice <= 0) {
             throw IllegalArgumentException("총 가격은 0보다 커야 합니다.")
         }
-        return orderRepository.updateTotalPrice(command.id, command.totalPrice)
+        val updatedOrder = order.updateTotalPrice(command.totalPrice, timeProvider)
+        return orderRepository.save(updatedOrder)
     }
 }

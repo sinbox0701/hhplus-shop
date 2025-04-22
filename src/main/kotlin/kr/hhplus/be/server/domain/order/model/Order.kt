@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.domain.order.model
 
+import kr.hhplus.be.server.domain.common.TimeProvider
 import java.time.LocalDateTime
 
 enum class OrderStatus {
@@ -19,13 +20,15 @@ data class Order private constructor(
     val updatedAt: LocalDateTime
 ){
     companion object {
-        fun create(userId: Long, userCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double): Order {
-            return Order(userId=userId, userCouponId=userCouponId, totalPrice=totalPrice, status=status, orderDate=LocalDateTime.now(), createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now())
+        fun create(userId: Long, userCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double, timeProvider: TimeProvider): Order {
+            val now = timeProvider.now()
+            return Order(userId=userId, userCouponId=userCouponId, totalPrice=totalPrice, status=status, orderDate=now, createdAt=now, updatedAt=now)
         }
     }
 
-    fun updateStatus(status: OrderStatus): Order {
-        val newOrderDate = if (status == OrderStatus.COMPLETED) LocalDateTime.now() else this.orderDate
+    fun updateStatus(status: OrderStatus, timeProvider: TimeProvider): Order {
+        val now = timeProvider.now()
+        val newOrderDate = if (status == OrderStatus.COMPLETED) now else this.orderDate
         
         return Order(
             id = this.id,
@@ -35,11 +38,11 @@ data class Order private constructor(
             status = status,
             orderDate = newOrderDate,
             createdAt = this.createdAt,
-            updatedAt = LocalDateTime.now()
+            updatedAt = now
         )
     }
 
-    fun updateTotalPrice(totalPrice: Double): Order {
+    fun updateTotalPrice(totalPrice: Double, timeProvider: TimeProvider): Order {
         return Order(
             id = this.id,
             userId = this.userId,
@@ -48,7 +51,7 @@ data class Order private constructor(
             status = this.status,
             orderDate = this.orderDate,
             createdAt = this.createdAt,
-            updatedAt = LocalDateTime.now()
+            updatedAt = timeProvider.now()
         )
     }
     

@@ -1,7 +1,10 @@
 package kr.hhplus.be.server.coupon
 
+import kr.hhplus.be.server.domain.common.TimeProvider
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
+import kr.hhplus.be.server.domain.coupon.repository.CouponRepository
+import kr.hhplus.be.server.domain.coupon.repository.UserCouponRepository
 import kr.hhplus.be.server.domain.coupon.service.CouponCommand
 import kr.hhplus.be.server.domain.coupon.service.CouponService
 import kr.hhplus.be.server.domain.user.model.User
@@ -16,15 +19,19 @@ import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 @SpringBootTest
 @ActiveProfiles("test")
-class ConcurrencyCouponServiceTest {
+class ConcurrencyCouponServiceTest @Autowired constructor(
+    private val couponRepository: CouponRepository,
+    private val userCouponRepository: UserCouponRepository,
+    private val timeProvider: TimeProvider
+) {
 
-    @Autowired
     private lateinit var couponService: CouponService
-
+    
     @Autowired
     private lateinit var userService: UserService
 
@@ -32,7 +39,23 @@ class ConcurrencyCouponServiceTest {
     private lateinit var testUser: User
 
     @BeforeEach
-    fun setup() {
+    fun setUp() {
+        // 개별 쿠폰과 사용자 쿠폰을 모두 삭제합니다
+        try {
+            // 기존 데이터 정리
+            couponService.findAll().forEach { coupon ->
+                coupon.id?.let { couponRepository.delete(it) }
+            }
+            
+            couponService.findUserCouponsByUserId(1L).forEach { userCoupon ->
+                userCoupon.id?.let { userCouponRepository.delete(it) }
+            }
+        } catch (e: Exception) {
+            // 첫 실행 시에는 서비스가 초기화되지 않았을 수 있으므로 예외 무시
+        }
+        
+        couponService = CouponService(couponRepository, userCouponRepository, timeProvider)
+
         // 테스트용 사용자 생성
         val userCommand = UserCommand.CreateUserCommand(
             name = "테스트 사용자",
@@ -43,13 +66,14 @@ class ConcurrencyCouponServiceTest {
         testUser = userService.create(userCommand)
 
         // 테스트용 쿠폰 생성 (총 50개 수량)
+        val now = timeProvider.now()
         val couponCommand = CouponCommand.CreateCouponCommand(
             code = "TEST${System.currentTimeMillis()}",
             couponType = CouponType.DISCOUNT_ORDER,
             discountRate = 10.0,
             description = "동시성 테스트용 쿠폰",
-            startDate = LocalDateTime.now(),
-            endDate = LocalDateTime.now().plusDays(7),
+            startDate = now,
+            endDate = now.plusDays(7),
             quantity = 50
         )
         testCoupon = couponService.create(couponCommand)
@@ -105,7 +129,7 @@ class ConcurrencyCouponServiceTest {
         // then
         val updatedCoupon = couponService.findById(testCoupon.id!!)
         val expectedRemainingQuantity = testCoupon.quantity - successCount.get()
-        assertEquals(expectedRemainingQuantity, updatedCoupon.quantity,
+        assertEquals(expectedRemainingQuantity, updatedCoupon.remainingQuantity,
             "동시 쿠폰 발급 후 남은 쿠폰 수량이 예상값과 일치해야 함")
     }
 
@@ -125,10 +149,11 @@ class ConcurrencyCouponServiceTest {
         val userCoupon = couponService.createUserCoupon(createUserCouponCommand)
         
         // 쿠폰 발급 처리
+        val now = timeProvider.now()
         val issueCouponCommand = CouponCommand.IssueCouponCommand(
             id = userCoupon.id!!,
-            couponStartDate = LocalDateTime.now(),
-            couponEndDate = LocalDateTime.now().plusDays(7)
+            couponStartDate = now,
+            couponEndDate = now.plusDays(7)
         )
         couponService.issueUserCoupon(issueCouponCommand)
         
