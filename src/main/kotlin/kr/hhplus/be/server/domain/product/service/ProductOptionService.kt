@@ -4,7 +4,7 @@ import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.repository.ProductOptionRepository
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import org.springframework.stereotype.Service
-
+import org.springframework.transaction.annotation.Transactional
 @Service
 class ProductOptionService(
     private val productOptionRepository: ProductOptionRepository,
@@ -40,6 +40,11 @@ class ProductOptionService(
 
     fun getAllByProductId(productId: Long): List<ProductOption> {
         return productOptionRepository.findByProductId(productId)
+    }
+
+    @Transactional(readOnly = true)
+    fun getAllByProductIds(productIds: List<Long>): List<ProductOption> {
+        return productOptionRepository.findAllByProductIds(productIds)
     }
 
     fun update(command: ProductOptionCommand.UpdateProductOptionCommand): ProductOption {

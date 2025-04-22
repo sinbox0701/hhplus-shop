@@ -10,6 +10,9 @@ import org.springframework.stereotype.Repository
 interface JpaProductOptionRepository : JpaRepository<ProductOptionEntity, Long> {
     fun findByProductId(productId: Long): List<ProductOptionEntity>
     fun findByProductIdAndId(productId: Long, id: Long): ProductOptionEntity?
+    // 여러 상품의 옵션을 한 번에 조회하는 메소드 추가
+    fun findByProductIdIn(productIds: List<Long>): List<ProductOptionEntity>
+
     
     @Modifying
     @Query("UPDATE ProductOptionEntity p SET p.availableQuantity = :quantity, p.updatedAt = CURRENT_TIMESTAMP WHERE p.id = :id")
