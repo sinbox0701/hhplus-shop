@@ -219,4 +219,77 @@ class ConcurrencyOrderFacadeTest {
         assertEquals(expectedQuantity, updatedOption.availableQuantity, 
             "주문 취소 후 재고가 정확히 복구되어야 함")
     }
+    
+    /**
+     * 재고가 부족한 상황에서 동시에 여러 요청이 들어올 때 적절히 처리되는지 테스트
+     */
+    @Test
+    fun `재고가 부족한 상황에서 동시에 여러 요청이 들어올 때 적절히 처리되어야 한다`() {
+        // given
+        // 재고를 5개로 제한
+        val limitedQuantity = 5
+        val updatedOption = testProductOption.copy(availableQuantity = limitedQuantity)
+        productOptionService.update(ProductOptionCommand.UpdateProductOptionCommand(
+            id = testProductOption.id!!,
+            name = testProductOption.name,
+            additionalPrice = testProductOption.additionalPrice
+        ))
+        productOptionService.updateQuantity(ProductOptionCommand.UpdateQuantityCommand(
+            id = testProductOption.id!!,
+            quantity = limitedQuantity - testProductOption.availableQuantity
+        ))
+        
+        val threadCount = 10 // 재고보다 많은 요청
+        val orderQuantity = 1
+        val successCount = AtomicInteger(0)
+        
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val latch = CountDownLatch(threadCount)
+        
+        // when
+        for (i in 0 until threadCount) {
+            executor.submit {
+                try {
+                    val orderItem = OrderCriteria.OrderItemCreateCriteria(
+                        productId = testProduct.id!!,
+                        productOptionId = testProductOption.id!!,
+                        quantity = orderQuantity
+                    )
+                    
+                    val createOrderCriteria = OrderCriteria.OrderCreateCriteria(
+                        userId = testUser.id!!,
+                        orderItems = listOf(orderItem),
+                        userCouponId = null
+                    )
+                    
+                    val orderResult = orderFacade.createOrder(createOrderCriteria)
+                    
+                    val paymentCriteria = OrderCriteria.OrderPaymentCriteria(
+                        userId = testUser.id!!,
+                        orderId = orderResult.order.id!!
+                    )
+                    
+                    orderFacade.processPayment(paymentCriteria)
+                    successCount.incrementAndGet()
+                } catch (e: Exception) {
+                    // 재고 부족 예외는 정상적으로 처리됨
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+        
+        // 모든 스레드 완료 대기
+        latch.await()
+        executor.shutdown()
+        
+        // then
+        // 성공한 주문 수는 초기 재고량을 초과할 수 없음
+        val finalOption = productOptionService.get(testProductOption.id!!)
+        
+        assertEquals(limitedQuantity, successCount.get(), 
+            "성공한 주문 수는 초기 재고량과 일치해야 함")
+        assertEquals(0, finalOption.availableQuantity, 
+            "모든 재고가 소진되어야 함")
+    }
 } 

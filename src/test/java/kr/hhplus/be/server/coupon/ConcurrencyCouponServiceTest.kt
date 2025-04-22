@@ -190,4 +190,87 @@ class ConcurrencyCouponServiceTest @Autowired constructor(
         val updatedUserCoupon = couponService.findUserCouponById(userCoupon.id!!)
         assertEquals(true, updatedUserCoupon.isUsed(), "쿠폰이 사용됨 상태여야 함")
     }
+
+    /**
+     * 쿠폰 수량이 한정된 상황에서 동시에 여러 요청이 쿠폰을 발급받는 테스트
+     * 동시성 문제가 없다면 쿠폰 수량 이상의 발급은 발생하지 않아야 함
+     */
+    @Test
+    fun `쿠폰 수량이 한정된 상황에서 동시에 여러 요청이 쿠폰을 발급받을 때 정확한 수량이 유지되어야 한다`() {
+        // given
+        // 한정된 쿠폰 수량 설정 (5개)
+        val limitedQuantity = 5
+        val now = timeProvider.now()
+        val couponCommand = CouponCommand.CreateCouponCommand(
+            code = "LIMITED${System.currentTimeMillis()}",
+            couponType = CouponType.DISCOUNT_ORDER,
+            discountRate = 10.0,
+            description = "수량 제한 테스트용 쿠폰",
+            startDate = now,
+            endDate = now.plusDays(7),
+            quantity = limitedQuantity
+        )
+        val limitedCoupon = couponService.create(couponCommand)
+        
+        // 쿠폰 수량보다 많은 스레드 수 설정
+        val threadCount = 20
+        val successCount = AtomicInteger(0)
+        
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val latch = CountDownLatch(threadCount)
+        
+        // when
+        for (i in 0 until threadCount) {
+            executor.submit {
+                try {
+                    // 새로운 사용자 생성 (각 스레드마다 다른 사용자)
+                    val userCommand = UserCommand.CreateUserCommand(
+                        name = "테스트 사용자 $i",
+                        email = "test$i${System.currentTimeMillis()}@example.com",
+                        loginId = "testuser$i${System.currentTimeMillis()}",
+                        password = "password123"
+                    )
+                    val threadUser = userService.create(userCommand)
+                    
+                    // 사용자 쿠폰 생성
+                    val createUserCouponCommand = CouponCommand.CreateUserCouponCommand(
+                        userId = threadUser.id!!,
+                        couponId = limitedCoupon.id!!,
+                        quantity = 1
+                    )
+                    
+                    // 쿠폰 발급
+                    couponService.createUserCoupon(createUserCouponCommand)
+                    
+                    // 쿠폰 수량 감소
+                    val updateQuantityCommand = CouponCommand.UpdateCouponRemainingQuantityCommand(
+                        id = limitedCoupon.id!!,
+                        quantity = 1
+                    )
+                    couponService.updateRemainingQuantity(updateQuantityCommand)
+                    
+                    successCount.incrementAndGet()
+                } catch (e: Exception) {
+                    println("Error in thread $i: ${e.message}")
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+        
+        // 모든 스레드 완료 대기
+        latch.await()
+        executor.shutdown()
+        
+        // then
+        val updatedCoupon = couponService.findById(limitedCoupon.id!!)
+        
+        // 성공한 발급 수는 초기 쿠폰 수량을 초과할 수 없음
+        assertEquals(limitedQuantity, successCount.get(), 
+            "성공한 쿠폰 발급 수는 초기 쿠폰 수량과 일치해야 함")
+        
+        // 남은 쿠폰 수량은 0이어야 함
+        assertEquals(0, updatedCoupon.remainingQuantity, 
+            "모든 쿠폰이 발급되어 남은 쿠폰 수량은 0이어야 함")
+    }
 } 

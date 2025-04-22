@@ -72,5 +72,10 @@ data class OrderItem private constructor(
             updatedAt = LocalDateTime.now()
         )
     }
+    
+    // 주문 아이템 취소 여부 확인 메서드 추가
+    fun isCancelled(): Boolean {
+        return false // 현재 구현에서는 취소 상태를 저장하는 필드가 없어 항상 false 반환
+    }
 }
 

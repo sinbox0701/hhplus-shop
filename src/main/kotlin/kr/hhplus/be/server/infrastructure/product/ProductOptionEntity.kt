@@ -16,7 +16,7 @@ class ProductOptionEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     
-    @Column(nullable = false)
+    @Column(name = "product_id", nullable = false)
     val productId: Long,
     
     @Column(nullable = false, length = 10)

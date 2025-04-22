@@ -11,8 +11,7 @@ interface JpaProductDailySalesRepository : JpaRepository<ProductDailySalesEntity
     @Query("""
         SELECT pds.productId FROM ProductDailySalesEntity pds 
         WHERE pds.saleDate >= :startDate 
-        GROUP BY pds.productId 
-        ORDER BY SUM(pds.quantitySold) DESC 
+        ORDER BY pds.saleDate DESC, pds.quantitySold DESC 
         LIMIT :limit
     """)
     fun findTopSellingProducts(startDate: LocalDate, limit: Int): List<Long>

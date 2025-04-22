@@ -6,13 +6,18 @@ import java.time.LocalDateTime
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "orders")
+@Table(
+    name = "orders",
+    indexes = [
+        Index(name = "idx_orders_user_id_order_date", columnList = "user_id, order_date DESC")
+    ]
+)
 class OrderEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     val userId: Long,
     
     @Column(nullable = true)

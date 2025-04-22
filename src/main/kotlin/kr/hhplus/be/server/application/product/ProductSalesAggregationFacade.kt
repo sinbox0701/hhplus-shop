@@ -32,18 +32,8 @@ class ProductSalesAggregationFacade(
         val startDateTime = yesterday.atStartOfDay()
         val endDateTime = yesterday.plusDays(1).atStartOfDay().minusNanos(1)
         
-        // 어제 판매된 상품별 판매량 집계
-        val productIds = orderItemService.getTopSellingProductIds(startDateTime, endDateTime, Int.MAX_VALUE)
-        
-        // ProductId 별로 주문량 계산 (임시 방법)
-        val productSalesMap = mutableMapOf<Long, Int>()
-        
-        // 실제로는 이 로직이 더 효율적으로 구현되어야 함
-        // 예: ORDER BY와 GROUP BY를 사용한 쿼리로 한 번에 가져오기
-        productIds.forEach { productId ->
-            val count = productSalesMap.getOrDefault(productId, 0) + 1
-            productSalesMap[productId] = count
-        }
+        // 어제 판매된 상품별 판매량 집계 - 인덱스를 활용한 효율적인 조회를 위해 직접 쿼리 결과 사용
+        val productQuantityMap = orderItemService.getProductQuantityMap(startDateTime, endDateTime)
         
         // 기존 집계 데이터 찾기 (중복 방지)
         val existingSales = productSalesService.getSalesByDate(yesterday)
@@ -51,7 +41,7 @@ class ProductSalesAggregationFacade(
             
         // 새로운 집계 데이터 생성
         val now = LocalDateTime.now()
-        val salesEntities = productSalesMap.map { (productId, quantity) ->
+        val salesEntities = productQuantityMap.map { (productId, quantity) ->
             // 기존 데이터가 있으면 업데이트, 없으면 신규 생성
             existingSales[productId]?.let { existing ->
                 ProductDailySales(

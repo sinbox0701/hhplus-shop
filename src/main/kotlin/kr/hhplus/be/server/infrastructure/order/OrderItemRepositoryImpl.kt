@@ -52,4 +52,13 @@ class OrderItemRepositoryImpl(
     override fun findTopSellingProductIds(startDate: LocalDateTime, endDate: LocalDateTime, limit: Int): List<Long> {
         return jpaOrderItemRepository.findTopSellingProductIds(startDate, endDate, limit)
     }
+    
+    override fun findProductQuantityMap(startDate: LocalDateTime, endDate: LocalDateTime): Map<Long, Int> {
+        val results = jpaOrderItemRepository.findProductQuantityMap(startDate, endDate)
+        return results.associate { 
+            val productId = (it[0] as Long)
+            val quantity = (it[1] as Number).toInt()
+            productId to quantity 
+        }
+    }
 } 

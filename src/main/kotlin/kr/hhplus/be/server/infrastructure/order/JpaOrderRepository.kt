@@ -10,9 +10,22 @@ import java.time.LocalDateTime
 
 @Repository
 interface JpaOrderRepository : JpaRepository<OrderEntity, Long> {
-    fun findByUserId(userId: Long): List<OrderEntity>
+    @Query("""
+        SELECT o FROM OrderEntity o 
+        WHERE o.userId = :userId 
+        ORDER BY o.orderDate DESC
+    """)
+    fun findByUserId(@Param("userId") userId: Long): List<OrderEntity>
+    
     fun findByStatus(status: OrderStatus): List<OrderEntity>
-    fun findByUserIdAndStatus(userId: Long, status: OrderStatus): List<OrderEntity>
+    
+    @Query("""
+        SELECT o FROM OrderEntity o 
+        WHERE o.userId = :userId AND o.status = :status 
+        ORDER BY o.orderDate DESC
+    """)
+    fun findByUserIdAndStatus(@Param("userId") userId: Long, @Param("status") status: OrderStatus): List<OrderEntity>
+    
     fun findByCreatedAtBetween(startDate: LocalDateTime, endDate: LocalDateTime): List<OrderEntity>
     
     @Modifying
