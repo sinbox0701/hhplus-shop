@@ -139,13 +139,6 @@ class UserServiceUnitTest {
     @DisplayName("존재하지 않는 ID로 사용자 조회 시 예외 발생")
     fun findUserByIdNotFound() {
         // given
-        val user = mockk<User> {
-            every { id } returns 1L
-            every { name } returns testName
-            every { email } returns testEmail
-            every { loginId } returns testLoginId
-            every { password } returns testPassword
-        }
         every { userRepository.findById(1L) } returns null
         
         // when & then
@@ -181,8 +174,8 @@ class UserServiceUnitTest {
         val updatedUser = user.update(newLoginId, newPassword)
         
         every { userRepository.findById(1L) } returns user
-        every { userRepository.update(newLoginId, newPassword) } returns updatedUser
-        
+        every { userRepository.update(updatedUser) } returns updatedUser
+
         // when
         val result = userService.update(UserCommand.UpdateUserCommand(1L, newLoginId, newPassword))
         
@@ -191,20 +184,13 @@ class UserServiceUnitTest {
         assertEquals(newPassword, result.password)
         
         verify(exactly = 1) { userRepository.findById(1L) }
-        verify(exactly = 1) { userRepository.update(newLoginId, newPassword) }
+        verify(exactly = 1) { userRepository.update(updatedUser) }
     }
     
     @Test
     @DisplayName("존재하지 않는 사용자 업데이트 시 예외 발생")
     fun updateNonExistentUser() {
         // given
-        val user = mockk<User> {
-            every { id } returns 1L
-            every { name } returns testName
-            every { email } returns testEmail
-            every { loginId } returns testLoginId
-            every { password } returns testPassword
-        }
         val newLoginId = "newuser"
         val newPassword = "newpass1"
         
@@ -218,7 +204,7 @@ class UserServiceUnitTest {
         assertTrue(exception.message!!.contains("사용자를 찾을 수 없습니다"))
         
         verify(exactly = 1) { userRepository.findById(1L) }
-        verify(exactly = 0) { userRepository.update(any(), any()) }
+        verify(exactly = 0) { userRepository.update(any()) }
     }
     
     @Test

@@ -13,20 +13,20 @@ import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 
 class UserCouponUnitTest {
+    val userId = 1L
+    val couponId = 2L
     
     @Test
     @DisplayName("계정 쿠폰 생성 성공")
     fun createAccountCoupon() {
         // given
-        val user = mockk<User>()
-        val coupon = mockk<Coupon>()
-        
+
         // when
-        val userCoupon = UserCoupon.create(user, coupon, 1)
+        val userCoupon = UserCoupon.create(userId, couponId, 1)
         
         // then
-        assertEquals(user, userCoupon.user)
-        assertEquals(coupon, userCoupon.coupon)
+        assertEquals(userId, userCoupon.userId)
+        assertEquals(couponId, userCoupon.couponId)
         assertEquals(LocalDateTime.MIN, userCoupon.issueDate)
         assertFalse(userCoupon.issued)
         assertFalse(userCoupon.used)
@@ -36,12 +36,12 @@ class UserCouponUnitTest {
     @DisplayName("쿠폰 발행 성공")
     fun issueCouponSuccess() {
         // given
-        val user = mockk<User>()
         val coupon = mockk<Coupon> {
+            every { id } returns couponId
             every { startDate } returns LocalDateTime.now().minusDays(1)
             every { endDate } returns LocalDateTime.now().plusDays(10)
         }
-        val userCoupon = UserCoupon.create(user, coupon, 1)
+        val userCoupon = UserCoupon.create(userId, couponId, 1)
         
         // when
         val issuedCoupon = userCoupon.issue(coupon.startDate, coupon.endDate)
@@ -56,12 +56,12 @@ class UserCouponUnitTest {
     @DisplayName("이미 발행된 쿠폰 재발행 시도 시 예외 발생")
     fun issueAlreadyIssuedCoupon() {
         // given
-        val user = mockk<User>()
         val coupon = mockk<Coupon> {
+            every { id } returns couponId
             every { startDate } returns LocalDateTime.now().minusDays(1)
             every { endDate } returns LocalDateTime.now().plusDays(10)
         }
-        val userCoupon = UserCoupon.create(user, coupon, 1)
+        val userCoupon = UserCoupon.create(userId, couponId, 1)
         
         // 쿠폰 발행
         userCoupon.issue(coupon.startDate, coupon.endDate)
@@ -78,12 +78,12 @@ class UserCouponUnitTest {
     @DisplayName("쿠폰 유효기간 외 발행 시도 시 예외 발생")
     fun issueCouponOutOfValidPeriod() {
         // given
-        val user = mockk<User>()
         val futureCoupon = mockk<Coupon> {
+            every { id } returns couponId
             every { startDate } returns LocalDateTime.now().plusDays(10)
             every { endDate } returns LocalDateTime.now().plusDays(20)
         }
-        val userCoupon = UserCoupon.create(user, futureCoupon, 1)
+        val userCoupon = UserCoupon.create(userId, futureCoupon.id!!, 1)
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -97,12 +97,12 @@ class UserCouponUnitTest {
     @DisplayName("쿠폰 사용 성공")
     fun useCouponSuccess() {
         // given
-        val user = mockk<User>()
         val coupon = mockk<Coupon> {
+            every { id } returns couponId
             every { startDate } returns LocalDateTime.now().minusDays(1)
             every { endDate } returns LocalDateTime.now().plusDays(10)
         }
-        val userCoupon = UserCoupon.create(user, coupon, 1)
+        val userCoupon = UserCoupon.create(userId, couponId, 1)
         
         // 쿠폰 발행
         userCoupon.issue(coupon.startDate, coupon.endDate)
@@ -119,9 +119,7 @@ class UserCouponUnitTest {
     @DisplayName("발행되지 않은 쿠폰 사용 시도 시 예외 발생")
     fun useNotIssuedCoupon() {
         // given
-        val user = mockk<User>()
-        val coupon = mockk<Coupon>()
-        val userCoupon = UserCoupon.create(user, coupon, 1)
+        val userCoupon = UserCoupon.create(userId, couponId, 1)
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -135,12 +133,12 @@ class UserCouponUnitTest {
     @DisplayName("이미 사용한 쿠폰 재사용 시도 시 예외 발생")
     fun useAlreadyUsedCoupon() {
         // given
-        val user = mockk<User>()
         val coupon = mockk<Coupon> {
+            every { id } returns couponId
             every { startDate } returns LocalDateTime.now().minusDays(1)
             every { endDate } returns LocalDateTime.now().plusDays(10)
         }
-        val userCoupon = UserCoupon.create(user, coupon, 1)
+        val userCoupon = UserCoupon.create(userId, couponId, 1)
         
         // 쿠폰 발행 및 사용
         userCoupon.issue(coupon.startDate, coupon.endDate)

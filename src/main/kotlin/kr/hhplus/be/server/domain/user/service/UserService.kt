@@ -40,8 +40,8 @@ class UserService(
     
     fun update(command: UserCommand.UpdateUserCommand): User {
         val user = findById(command.id)
-        user.update(command.loginId, command.password)
-        return userRepository.update(command.loginId, command.password)
+        val updatedUser = user.update(command.loginId, command.password)
+        return userRepository.update(updatedUser)
     }
     
     fun delete(id: Long) {

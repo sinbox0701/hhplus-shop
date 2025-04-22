@@ -4,31 +4,22 @@ import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.repository.ProductOptionRepository
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
 import org.springframework.stereotype.Service
-
+import org.springframework.transaction.annotation.Transactional
 @Service
 class ProductOptionService(
     private val productOptionRepository: ProductOptionRepository,
-    private val productRepository: ProductRepository
 ) {
     fun create(command: ProductOptionCommand.CreateProductOptionCommand): ProductOption {
-        // 상품이 존재하는지 확인
-        val product = productRepository.findById(command.productId) 
-            ?: throw IllegalArgumentException("Product not found with id: ${command.productId}")
-        
-        val productOption = ProductOption.create(product, command.name, command.availableQuantity, command.additionalPrice)
+        val productOption = ProductOption.create(command.productId, command.name, command.availableQuantity, command.additionalPrice)
         return productOptionRepository.save(productOption)
     }
 
     fun createAll(
         commands: List<ProductOptionCommand.CreateProductOptionCommand>
     ): List<ProductOption> {
-        // 상품이 존재하는지 확인
-        val product = productRepository.findById(commands[0].productId)
-            ?: throw IllegalArgumentException("Product not found with id: ${commands[0].productId}")
-        
         return commands.map { command ->
             val productOption = ProductOption.create(
-                product, 
+                command.productId, 
                 command.name, 
                 command.availableQuantity, 
                 command.additionalPrice
@@ -48,11 +39,12 @@ class ProductOptionService(
     }
 
     fun getAllByProductId(productId: Long): List<ProductOption> {
-        // 상품이 존재하는지 확인
-        productRepository.findById(productId) 
-            ?: throw IllegalArgumentException("Product not found with id: $productId")
-        
         return productOptionRepository.findByProductId(productId)
+    }
+
+    @Transactional(readOnly = true)
+    fun getAllByProductIds(productIds: List<Long>): List<ProductOption> {
+        return productOptionRepository.findAllByProductIds(productIds)
     }
 
     fun update(command: ProductOptionCommand.UpdateProductOptionCommand): ProductOption {
@@ -88,9 +80,6 @@ class ProductOptionService(
     
     fun deleteAll(productId: Long) {
         // 상품이 존재하는지 확인
-        productRepository.findById(productId)
-            ?: throw IllegalArgumentException("Product not found with id: $productId")
-            
         val options = productOptionRepository.findByProductId(productId)
         options.forEach { option ->
             productOptionRepository.delete(option.id!!)

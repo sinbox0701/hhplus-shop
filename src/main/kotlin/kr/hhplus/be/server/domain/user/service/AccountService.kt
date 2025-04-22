@@ -9,7 +9,7 @@ class AccountService(
     private val accountRepository: AccountRepository
 ) {
     fun create(command: AccountCommand.CreateAccountCommand): Account {
-        val account = Account.create(command.user, command.amount)
+        val account = Account.create(command.userId, command.amount)
         return accountRepository.save(account)
     }
 
@@ -22,13 +22,13 @@ class AccountService(
     }
     
     fun charge(command: AccountCommand.UpdateAccountCommand): Account {
-        val account = findById(command.id) ?: throw IllegalArgumentException("계좌를 찾을 수 없습니다: ${command.id}")
+        val account = findById(command.id)
         account.charge(command.amount)
         return accountRepository.update(command.id, account.amount)
     }
     
     fun withdraw(command: AccountCommand.UpdateAccountCommand): Account {
-        val account = findById(command.id) ?: throw IllegalArgumentException("계좌를 찾을 수 없습니다: ${command.id}")
+        val account = findById(command.id)
         account.withdraw(command.amount)
         return accountRepository.update(command.id, account.amount)
     }
