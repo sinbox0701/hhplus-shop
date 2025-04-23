@@ -46,4 +46,8 @@ class UserCouponRepositoryImpl(
     override fun deleteByUserIdAndCouponId(userId: Long, couponId: Long) {
         jpaUserCouponRepository.deleteByUserIdAndCouponId(userId, couponId)
     }
+    
+    override fun findAll(): List<UserCoupon> {
+        return jpaUserCouponRepository.findAll().map { it.toUserCoupon() }
+    }
 } 

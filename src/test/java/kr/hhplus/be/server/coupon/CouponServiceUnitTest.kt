@@ -3,6 +3,7 @@ package kr.hhplus.be.server.domain.coupon.service
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kr.hhplus.be.server.domain.common.TimeProvider
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
@@ -18,13 +19,20 @@ class CouponServiceUnitTest {
 
     private lateinit var couponRepository: CouponRepository
     private lateinit var userCouponRepository: UserCouponRepository
+    private lateinit var timeProvider: TimeProvider
     private lateinit var couponService: CouponService
 
     @BeforeEach
     fun setup() {
         couponRepository = mockk()
         userCouponRepository = mockk()
-        couponService = CouponService(couponRepository, userCouponRepository)
+        timeProvider = mockk()
+        
+        // 기본 timeProvider mock 설정
+        val now = LocalDateTime.now()
+        every { timeProvider.now() } returns now
+        
+        couponService = CouponService(couponRepository, userCouponRepository, timeProvider)
     }
 
     @Test
@@ -186,7 +194,7 @@ class CouponServiceUnitTest {
         assertEquals("수정된 쿠폰", result.description)
         assertEquals(200, result.remainingQuantity)
         verify { couponRepository.findById(1L) }
-        verify { coupon.update(command.discountRate, command.description, command.startDate, command.endDate, command.quantity) }
+        verify { coupon.update(command.discountRate, command.description, command.startDate, command.endDate, command.quantity, timeProvider) }
         verify { couponRepository.save(coupon) }
     }
 
@@ -210,7 +218,7 @@ class CouponServiceUnitTest {
         assertEquals(1L, result.id)
         assertEquals(95, result.remainingQuantity)
         verify { couponRepository.findById(1L) }
-        verify { coupon.decreaseQuantity(command.quantity) }
+        verify { coupon.decreaseQuantity(command.quantity, timeProvider) }
         verify { couponRepository.save(coupon) }
     }
 
@@ -245,7 +253,7 @@ class CouponServiceUnitTest {
         val coupon = mockk<Coupon>(relaxed = true) {
             every { id } returns 1L
             every { remainingQuantity } returns 3
-            every { decreaseQuantity(5) } throws IllegalArgumentException("남은 쿠폰이 없습니다.")
+            every { decreaseQuantity(5, timeProvider) } throws IllegalArgumentException("남은 쿠폰이 없습니다.")
         }
         
         val command = CouponCommand.UpdateCouponRemainingQuantityCommand(id = 1L, quantity = 5)
@@ -258,7 +266,7 @@ class CouponServiceUnitTest {
         }
         
         verify { couponRepository.findById(1L) }
-        verify { coupon.decreaseQuantity(command.quantity) }
+        verify { coupon.decreaseQuantity(command.quantity, timeProvider) }
     }
 
     @Test
@@ -433,7 +441,7 @@ class CouponServiceUnitTest {
         val userCoupon = mockk<UserCoupon> {
             every { id } returns 1L
             every { issued } returns false  // 아직 발급되지 않은 쿠폰
-            every { issue(startDate, endDate) } returns this@mockk  // issue 호출 시 자기 자신 반환
+            every { issue(startDate, endDate, timeProvider) } returns this@mockk  // issue 호출 시 자기 자신 반환
         }
         
         val command = CouponCommand.IssueCouponCommand(
@@ -450,7 +458,7 @@ class CouponServiceUnitTest {
 
         // then
         verify { userCouponRepository.findById(1L) }
-        verify { userCoupon.issue(startDate, endDate) }  // 정확한 파라미터로 issue 호출 확인
+        verify { userCoupon.issue(startDate, endDate, timeProvider) }  // 정확한 파라미터로 issue 호출 확인
         verify { userCouponRepository.save(userCoupon) }
     }
 
@@ -463,7 +471,7 @@ class CouponServiceUnitTest {
         val userCoupon = mockk<UserCoupon> {
             every { id } returns 1L
             every { issued } returns true  // 이미 발행된 쿠폰
-            every { issue(any(), any()) } throws IllegalArgumentException("이미 발행된 쿠폰입니다.")
+            every { issue(any(), any(), any()) } throws IllegalArgumentException("이미 발행된 쿠폰입니다.")
         }
         
         val command = CouponCommand.IssueCouponCommand(
@@ -480,7 +488,7 @@ class CouponServiceUnitTest {
         }
         
         verify { userCouponRepository.findById(1L) }
-        verify { userCoupon.issue(startDate, endDate) }
+        verify { userCoupon.issue(startDate, endDate, timeProvider) }
     }
 
     @Test
@@ -492,7 +500,7 @@ class CouponServiceUnitTest {
         val userCoupon = mockk<UserCoupon> {
             every { id } returns 1L
             every { issued } returns false
-            every { issue(startDate, endDate) } throws IllegalArgumentException("쿠폰 유효 기간이 아닙니다.")
+            every { issue(startDate, endDate, timeProvider) } throws IllegalArgumentException("쿠폰 유효 기간이 아닙니다.")
         }
         
         val command = CouponCommand.IssueCouponCommand(
@@ -509,7 +517,7 @@ class CouponServiceUnitTest {
         }
         
         verify { userCouponRepository.findById(1L) }
-        verify { userCoupon.issue(startDate, endDate) }
+        verify { userCoupon.issue(startDate, endDate, timeProvider) }
     }
 
     @Test

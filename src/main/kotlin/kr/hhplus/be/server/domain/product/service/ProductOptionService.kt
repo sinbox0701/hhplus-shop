@@ -97,6 +97,16 @@ class ProductOptionService(
     }
     
     /**
+     * 비관적 락을 사용하여 재고 증가
+     */
+    @Transactional
+    fun addQuantityWithPessimisticLock(id: Long, quantity: Int): ProductOption {
+        return productOptionRepository.updateWithPessimisticLock(id) { productOption ->
+            productOption.add(quantity)
+        }
+    }
+    
+    /**
      * 비관적 락을 사용하여 재고 복원
      */
     @Transactional

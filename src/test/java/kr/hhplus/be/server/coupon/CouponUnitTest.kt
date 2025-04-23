@@ -1,14 +1,25 @@
 package kr.hhplus.be.server.coupon
 
+import kr.hhplus.be.server.domain.common.FixedTimeProvider
+import kr.hhplus.be.server.domain.common.TimeProvider
 import kr.hhplus.be.server.domain.coupon.model.Coupon
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 
 class CouponUnitTest {
+    
+    private lateinit var timeProvider: TimeProvider
+    
+    @BeforeEach
+    fun setup() {
+        // 테스트에 사용할 고정된 시간 제공자 설정
+        timeProvider = FixedTimeProvider(LocalDateTime.now())
+    }
     
     @Test
     @DisplayName("유효한 데이터로 쿠폰 생성 성공")
@@ -30,7 +41,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = quantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -67,7 +79,8 @@ class CouponUnitTest {
                 startDate = startDate,
                 endDate = endDate,
                 quantity = quantity,
-                couponType = couponType
+                couponType = couponType,
+                timeProvider = timeProvider
             )
         }
         
@@ -95,7 +108,8 @@ class CouponUnitTest {
                 startDate = startDate,
                 endDate = endDate,
                 quantity = quantity,
-                couponType = couponType
+                couponType = couponType,
+                timeProvider = timeProvider
             )
         }
         
@@ -123,7 +137,8 @@ class CouponUnitTest {
                 startDate = startDate,
                 endDate = endDate,
                 quantity = quantity,
-                couponType = couponType
+                couponType = couponType,
+                timeProvider = timeProvider
             )
         }
         
@@ -151,7 +166,8 @@ class CouponUnitTest {
                 startDate = startDate,
                 endDate = endDate,
                 quantity = quantity,
-                couponType = couponType
+                couponType = couponType,
+                timeProvider = timeProvider
             )
         }
         
@@ -179,7 +195,8 @@ class CouponUnitTest {
                 startDate = startDate,
                 endDate = endDate,
                 quantity = invalidQuantity,
-                couponType = couponType
+                couponType = couponType,
+                timeProvider = timeProvider
             )
         }
         
@@ -190,29 +207,47 @@ class CouponUnitTest {
     @DisplayName("쿠폰 정보 업데이트 성공")
     fun updateCouponSuccess() {
         // given
-        val coupon = Coupon.create(
+        // 고정된 시간 생성
+        val fixedTime = LocalDateTime.of(2023, 5, 1, 12, 0)
+        val initialTimeProvider = object : TimeProvider {
+            override fun now() = fixedTime
+            override fun today() = fixedTime.toLocalDate()
+        }
+        
+        // 초기 쿠폰 생성
+        val initialCoupon = Coupon.create(
             code = "ABCDEF",
             discountRate = 10.0,
             description = "테스트 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
+            startDate = fixedTime.minusDays(1),
+            endDate = fixedTime.plusDays(10),
             quantity = 50,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = initialTimeProvider
         )
         
+        // 업데이트 값 설정
         val newDiscountRate = 20.0
         val newDescription = "업데이트된 쿠폰"
-        val newStartDate = LocalDateTime.now().plusDays(1)
-        val newEndDate = LocalDateTime.now().plusDays(20)
+        val newStartDate = fixedTime.minusDays(2)
+        val newEndDate = fixedTime.plusDays(20)
         val newQuantity = 70
         
+        // 업데이트 시간 설정 (+1시간)
+        val updateTime = fixedTime.plusHours(1)
+        val updateTimeProvider = object : TimeProvider {
+            override fun now() = updateTime
+            override fun today() = updateTime.toLocalDate()
+        }
+        
         // when
-        val updatedCoupon = coupon.update(
+        val updatedCoupon = initialCoupon.update(
             discountRate = newDiscountRate,
             description = newDescription,
             startDate = newStartDate,
             endDate = newEndDate,
-            quantity = newQuantity
+            quantity = newQuantity,
+            timeProvider = updateTimeProvider
         )
         
         // then
@@ -221,131 +256,122 @@ class CouponUnitTest {
         assertEquals(newStartDate, updatedCoupon.startDate)
         assertEquals(newEndDate, updatedCoupon.endDate)
         assertEquals(newQuantity, updatedCoupon.quantity)
-        assertEquals(70, updatedCoupon.remainingQuantity) // 기존 50에서 20 증가
-        assertNotEquals(updatedCoupon.createdAt, updatedCoupon.updatedAt)
+        assertEquals(initialCoupon.remainingQuantity + (newQuantity - initialCoupon.quantity), updatedCoupon.remainingQuantity)
+        assertEquals(initialCoupon.createdAt, updatedCoupon.createdAt)
+        assertEquals(updateTime, updatedCoupon.updatedAt)
     }
     
     @Test
     @DisplayName("쿠폰 수량 감소 성공")
     fun decreaseQuantitySuccess() {
         // given
+        // 고정된 시간 생성
+        val fixedTime = LocalDateTime.of(2023, 5, 1, 12, 0)
+        val initialTimeProvider = object : TimeProvider {
+            override fun now() = fixedTime
+            override fun today() = fixedTime.toLocalDate()
+        }
+        
+        // 쿠폰 생성
+        val initialQuantity = 50
         val coupon = Coupon.create(
             code = "ABCDEF",
             discountRate = 10.0,
             description = "테스트 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
-            quantity = 50,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            startDate = fixedTime.minusDays(1),
+            endDate = fixedTime.plusDays(10),
+            quantity = initialQuantity,
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = initialTimeProvider
         )
         
         val decreaseCount = 10
-        val expectedRemainingQuantity = 40
+        val expectedRemainingQuantity = initialQuantity - decreaseCount
+        
+        // 감소 시간 설정 (+1시간)
+        val decreaseTime = fixedTime.plusHours(1)
+        val decreaseTimeProvider = object : TimeProvider {
+            override fun now() = decreaseTime
+            override fun today() = decreaseTime.toLocalDate()
+        }
         
         // when
-        val updatedCoupon = coupon.decreaseQuantity(decreaseCount)
+        val updatedCoupon = coupon.decreaseQuantity(decreaseCount, decreaseTimeProvider)
         
         // then
+        assertEquals(initialQuantity, updatedCoupon.quantity)
         assertEquals(expectedRemainingQuantity, updatedCoupon.remainingQuantity)
-        assertNotEquals(updatedCoupon.createdAt, updatedCoupon.updatedAt)
+        assertEquals(coupon.createdAt, updatedCoupon.createdAt)
+        assertEquals(decreaseTime, updatedCoupon.updatedAt)
     }
     
     @Test
     @DisplayName("남은 쿠폰 수량보다 많은 수량을 감소시킬 경우 예외 발생")
     fun decreaseQuantityMoreThanRemaining() {
         // given
-        val coupon = Coupon.create(
-            code = "ABCDEF",
-            discountRate = 10.0,
-            description = "테스트 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
-            quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
-        )
+        val initialQuantity = 5
+        val coupon = createTestCoupon(quantity = initialQuantity)
         
         // 모든 쿠폰 소진
-        coupon.decreaseQuantity(5)
+        val emptyCoupon = coupon.decreaseQuantity(initialQuantity, timeProvider)
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            coupon.decreaseQuantity(1)
+            emptyCoupon.decreaseQuantity(1, timeProvider)
         }
         
-        assertTrue(exception.message!!.contains("남은 쿠폰이 없습니다"))
+        assertTrue(exception.message!!.contains("남은 쿠폰이 부족합니다"))
     }
     
     @Test
     @DisplayName("쿠폰 유효성 확인")
     fun checkCouponValidity() {
         // given
-        val validCoupon = Coupon.create(
-            code = "ABCDEF",
-            discountRate = 10.0,
-            description = "유효한 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
-            quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+        val now = timeProvider.now()
+        
+        val validCoupon = createTestCoupon(
+            startDate = now.minusDays(1),
+            endDate = now.plusDays(10),
+            quantity = 5
         )
         
-        val expiredCoupon = Coupon.create(
-            code = "GHIJKL",
-            discountRate = 10.0,
-            description = "만료된 쿠폰",
-            startDate = LocalDateTime.now().minusDays(20),
-            endDate = LocalDateTime.now().minusDays(10),
-            quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+        val expiredCoupon = createTestCoupon(
+            startDate = now.minusDays(20),
+            endDate = now.minusDays(10),
+            quantity = 5
         )
         
-        val futureCoupon = Coupon.create(
-            code = "MNOPQR",
-            discountRate = 10.0,
-            description = "미래 쿠폰",
-            startDate = LocalDateTime.now().plusDays(10),
-            endDate = LocalDateTime.now().plusDays(20),
-            quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+        val futureCoupon = createTestCoupon(
+            startDate = now.plusDays(10),
+            endDate = now.plusDays(20),
+            quantity = 5
         )
         
-        val depletesCoupon = Coupon.create(
-            code = "STUVWX",
-            discountRate = 10.0,
-            description = "소진된 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
-            quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+        val depletesCoupon = createTestCoupon(
+            startDate = now.minusDays(1),
+            endDate = now.plusDays(10),
+            quantity = 5
         )
-        depletesCoupon.decreaseQuantity(5) // 수량 모두 소진
+        val emptyCoupon = depletesCoupon.decreaseQuantity(5, timeProvider) // 수량 모두 소진
         
         // when & then
-        assertTrue(validCoupon.isValid())
-        assertFalse(expiredCoupon.isValid())
-        assertFalse(futureCoupon.isValid())
-        assertFalse(depletesCoupon.isValid())
+        assertTrue(validCoupon.isValid(timeProvider))
+        assertFalse(expiredCoupon.isValid(timeProvider))
+        assertFalse(futureCoupon.isValid(timeProvider))
+        assertFalse(emptyCoupon.isValid(timeProvider))
     }
     
     @Test
-    @DisplayName("남은 수량 확인")
-    fun checkRemainingQuantity() {
+    @DisplayName("쿠폰 남은 수량 확인")
+    fun hasRemainingQuantity() {
         // given
-        val coupon = Coupon.create(
-            code = "ABCDEF",
-            discountRate = 10.0,
-            description = "테스트 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
-            quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
-        )
+        val coupon = createTestCoupon(quantity = 5)
         
         // when & then
         assertTrue(coupon.hasRemainingQuantity())
         
-        coupon.decreaseQuantity(5)
-        assertFalse(coupon.hasRemainingQuantity())
+        val emptyCoupon = coupon.decreaseQuantity(5, timeProvider)
+        assertFalse(emptyCoupon.hasRemainingQuantity())
     }
 
     @Test
@@ -368,7 +394,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = quantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -395,7 +422,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = quantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -422,7 +450,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = quantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -434,24 +463,10 @@ class CouponUnitTest {
     @DisplayName("설명 최대 길이(30자) 테스트")
     fun createCouponWithMaxDescriptionLength() {
         // given
-        val code = "ABCDEF"
-        val discountRate = 10.0
-        val maxLengthDescription = "이것은최대길이서른자테스트입니다일이삼사오육칠팔구십" // 정확히 30자
-        val startDate = LocalDateTime.now().minusDays(1)
-        val endDate = LocalDateTime.now().plusDays(10)
-        val quantity = 50
-        val couponType = CouponType.DISCOUNT_PRODUCT
+        val maxLengthDescription = "123456789012345678901234567890" // 정확히 30자
         
         // when
-        val coupon = Coupon.create(
-            code = code,
-            discountRate = discountRate,
-            description = maxLengthDescription,
-            startDate = startDate,
-            endDate = endDate,
-            quantity = quantity,
-            couponType = couponType
-        )
+        val coupon = createTestCoupon(description = maxLengthDescription)
         
         // then
         assertEquals(maxLengthDescription, coupon.description)
@@ -478,7 +493,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = minQuantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -506,7 +522,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = maxQuantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -525,12 +542,13 @@ class CouponUnitTest {
             startDate = LocalDateTime.now().minusDays(1),
             endDate = LocalDateTime.now().plusDays(10),
             quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = timeProvider
         )
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            coupon.decreaseQuantity(0)
+            coupon.decreaseQuantity(0, timeProvider)
         }
         
         assertTrue(exception.message!!.contains("쿠폰 수량은 0보다 크게 감소할 수 없습니다"))
@@ -547,12 +565,13 @@ class CouponUnitTest {
             startDate = LocalDateTime.now().minusDays(1),
             endDate = LocalDateTime.now().plusDays(10),
             quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = timeProvider
         )
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            coupon.decreaseQuantity(-1)
+            coupon.decreaseQuantity(-1, timeProvider)
         }
         
         assertTrue(exception.message!!.contains("쿠폰 수량은 0보다 크게 감소할 수 없습니다"))
@@ -560,17 +579,33 @@ class CouponUnitTest {
 
     @Test
     @DisplayName("모든 필드가 null인 업데이트 테스트")
-    fun updateCouponWithAllNullFields() {
+    fun updateAllFieldsNull() {
         // given
+        // 고정된 시간 제공자 생성
+        val fixedTime = LocalDateTime.of(2023, 5, 1, 12, 0)
+        val initialTimeProvider = object : TimeProvider {
+            override fun now() = fixedTime
+            override fun today() = fixedTime.toLocalDate()
+        }
+        
+        // 쿠폰 생성
         val originalCoupon = Coupon.create(
             code = "ABCDEF",
             discountRate = 10.0,
             description = "테스트 쿠폰",
-            startDate = LocalDateTime.now().minusDays(1),
-            endDate = LocalDateTime.now().plusDays(10),
+            startDate = fixedTime.minusDays(1),
+            endDate = fixedTime.plusDays(10),
             quantity = 50,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = initialTimeProvider
         )
+        
+        // 업데이트 시간 설정 (+1일)
+        val updateTime = fixedTime.plusDays(1)
+        val updateTimeProvider = object : TimeProvider {
+            override fun now() = updateTime
+            override fun today() = updateTime.toLocalDate()
+        }
         
         // when
         val updatedCoupon = originalCoupon.update(
@@ -578,22 +613,28 @@ class CouponUnitTest {
             description = null,
             startDate = null,
             endDate = null,
-            quantity = null
+            quantity = null,
+            timeProvider = updateTimeProvider
         )
         
         // then
+        assertEquals(originalCoupon.id, updatedCoupon.id)
+        assertEquals(originalCoupon.couponType, updatedCoupon.couponType)
+        assertEquals(originalCoupon.code, updatedCoupon.code)
         assertEquals(originalCoupon.discountRate, updatedCoupon.discountRate)
         assertEquals(originalCoupon.description, updatedCoupon.description)
         assertEquals(originalCoupon.startDate, updatedCoupon.startDate)
         assertEquals(originalCoupon.endDate, updatedCoupon.endDate)
         assertEquals(originalCoupon.quantity, updatedCoupon.quantity)
         assertEquals(originalCoupon.remainingQuantity, updatedCoupon.remainingQuantity)
-        assertNotEquals(originalCoupon.updatedAt, updatedCoupon.updatedAt)
+        assertEquals(originalCoupon.createdAt, updatedCoupon.createdAt)
+        assertEquals(updateTime, updatedCoupon.updatedAt)
+        assertNotEquals(fixedTime, updatedCoupon.updatedAt)
     }
     
     @Test
-    @DisplayName("수량 감소로 남은 쿠폰 수량이 음수가 될 때 예외 발생")
-    fun updateCouponQuantityToNegativeRemaining() {
+    @DisplayName("수량 변경 시 남은 수량 검증")
+    fun validateRemainingQuantityOnQuantityUpdate() {
         // given
         val coupon = Coupon.create(
             code = "ABCDEF",
@@ -602,15 +643,23 @@ class CouponUnitTest {
             startDate = LocalDateTime.now().minusDays(1),
             endDate = LocalDateTime.now().plusDays(10),
             quantity = 50,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = timeProvider
         )
         
         // 쿠폰 45개 사용
-        val updatedCoupon = coupon.decreaseQuantity(45)
+        val updatedCoupon = coupon.decreaseQuantity(45, timeProvider)
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
-            updatedCoupon.update(quantity = 4) // 남은 수량은 5개인데 4개로 줄이려고 함
+            updatedCoupon.update(
+                discountRate = null,
+                description = null,
+                startDate = null,
+                endDate = null,
+                quantity = 4,
+                timeProvider = timeProvider
+            ) // 남은 수량은 5개인데 4개로 줄이려고 함
         }
         
         assertTrue(exception.message!!.contains("남은 쿠폰 수량은 0보다 작을 수 없습니다"))
@@ -636,7 +685,8 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = quantity,
-            couponType = couponType
+            couponType = couponType,
+            timeProvider = timeProvider
         )
         
         // then
@@ -658,33 +708,69 @@ class CouponUnitTest {
             startDate = startDate,
             endDate = endDate,
             quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = timeProvider
         )
         
         // when & then
-        assertFalse(coupon.isValid())
+        assertFalse(coupon.isValid(timeProvider))
     }
 
     @Test
     @DisplayName("종료일 직후에는 쿠폰이 유효하지 않음")
-    fun couponIsNotValidJustAfterEndDate() {
+    fun couponInvalidJustAfterEndDate() {
         // given
-        val now = LocalDateTime.now()
-        val startDate = now.minusDays(10)
-        val endDate = now.minusMinutes(1) // 1분 전 종료
+        // 고정된 시간 생성
+        val fixedTime = LocalDateTime.of(2023, 5, 1, 12, 0)
         
+        // 쿠폰 생성용 시간 제공자
+        val couponTimeProvider = object : TimeProvider {
+            override fun now() = fixedTime.minusDays(1) // 쿠폰 생성 시간은 1일 전
+            override fun today() = fixedTime.minusDays(1).toLocalDate()
+        }
+        
+        // 쿠폰 종료일을 fixedTime으로 설정 (고정 시간에 쿠폰이 만료됨)
         val coupon = Coupon.create(
             code = "ABCDEF",
             discountRate = 10.0,
             description = "테스트 쿠폰",
-            startDate = startDate,
-            endDate = endDate,
+            startDate = fixedTime.minusDays(10),
+            endDate = fixedTime,
             quantity = 5,
-            couponType = CouponType.DISCOUNT_PRODUCT
+            couponType = CouponType.DISCOUNT_PRODUCT,
+            timeProvider = couponTimeProvider
         )
         
+        // 유효성 검사용 시간 제공자 (검사 시간이 종료 시간과 같음)
+        val validationTimeProvider = object : TimeProvider {
+            override fun now() = fixedTime.plusSeconds(1) // 종료 시간 직후 1초
+            override fun today() = fixedTime.toLocalDate()
+        }
+        
         // when & then
-        assertFalse(coupon.isValid())
+        assertFalse(coupon.isValid(validationTimeProvider), "종료일 직후에는 쿠폰이 유효하지 않아야 함")
+    }
+
+    // 헬퍼 메서드 추가
+    private fun createTestCoupon(
+        code: String = "ABCDEF",
+        discountRate: Double = 10.0,
+        description: String = "테스트 쿠폰",
+        startDate: LocalDateTime = LocalDateTime.now().minusDays(1),
+        endDate: LocalDateTime = LocalDateTime.now().plusDays(10),
+        quantity: Int = 50,
+        couponType: CouponType = CouponType.DISCOUNT_PRODUCT
+    ): Coupon {
+        return Coupon.create(
+            code = code,
+            discountRate = discountRate,
+            description = description,
+            startDate = startDate,
+            endDate = endDate,
+            quantity = quantity,
+            couponType = couponType,
+            timeProvider = timeProvider
+        )
     }
 
 }

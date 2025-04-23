@@ -2,6 +2,7 @@ package kr.hhplus.be.server.interfaces.product
 
 import kr.hhplus.be.server.application.product.ProductResult
 import kr.hhplus.be.server.domain.product.model.Product
+import kr.hhplus.be.server.domain.product.model.ProductOption
 import java.time.LocalDateTime
 
 class ProductResponse {
@@ -56,6 +57,44 @@ class ProductResponse {
         val products: List<TopSellingProductResponse>,
         val startDate: LocalDateTime,
         val endDate: LocalDateTime
+    )
+    
+    data class ProductDetailResponse(
+        val productId: Long,
+        val name: String,
+        val description: String,
+        val price: Double,
+        val options: List<OptionResponse>,
+        val createdAt: LocalDateTime,
+        val updatedAt: LocalDateTime
+    )
+    
+    data class ProductOptionResponse(
+        val optionId: Long,
+        val productId: Long,
+        val name: String,
+        val availableQuantity: Int,
+        val additionalPrice: Double,
+        val createdAt: LocalDateTime,
+        val updatedAt: LocalDateTime
+    ) {
+        companion object {
+            fun from(productOption: ProductOption): ProductOptionResponse {
+                return ProductOptionResponse(
+                    optionId = productOption.id!!,
+                    productId = productOption.productId,
+                    name = productOption.name,
+                    availableQuantity = productOption.availableQuantity,
+                    additionalPrice = productOption.additionalPrice,
+                    createdAt = productOption.createdAt,
+                    updatedAt = productOption.updatedAt
+                )
+            }
+        }
+    }
+    
+    data class ProductListResponse(
+        val products: List<Response>
     )
     
     companion object {

@@ -33,7 +33,7 @@ data class UserCoupon private constructor(
         require(!issued) { "이미 발행된 쿠폰입니다." }
         
         val now = timeProvider.now()
-        require(now.isAfter(couponStartDate) && now.isBefore(couponEndDate)) { "쿠폰 유효 기간이 아닙니다." }
+        require(now.isAfter(couponStartDate) && now.isBefore(couponEndDate.plusDays(1))) { "쿠폰 유효 기간이 아닙니다." }
         
         return UserCoupon(
             id = this.id,

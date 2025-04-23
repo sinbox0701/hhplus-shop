@@ -88,14 +88,15 @@ data class Coupon private constructor(
         // 시작일과 종료일 검증
         require(updatedStartDate.isBefore(updatedEndDate)) { "시작일은 종료일보다 이전이어야 합니다." }
         
-        var updatedRemainingQuantity = this.remainingQuantity
         val updatedQuantity = quantity?.let { newQuantity ->
             require(newQuantity in MIN_QUANTITY..MAX_QUANTITY) { "쿠폰 수량은 $MIN_QUANTITY 부터 $MAX_QUANTITY 사이여야 합니다." }
-            val diff = newQuantity - this.quantity
-            updatedRemainingQuantity += diff
-            require(updatedRemainingQuantity >= 0) { "남은 쿠폰 수량은 0보다 작을 수 없습니다." }
             newQuantity
         } ?: this.quantity
+        
+        val quantityDiff = updatedQuantity - this.quantity
+        val updatedRemainingQuantity = this.remainingQuantity + quantityDiff
+        
+        require(updatedRemainingQuantity >= 0) { "남은 쿠폰 수량은 0보다 작을 수 없습니다." }
         
         return Coupon(
             id = this.id,
@@ -113,7 +114,7 @@ data class Coupon private constructor(
     }
     
     fun decreaseQuantity(count: Int, timeProvider: TimeProvider): Coupon {
-        require(remainingQuantity > 0) { "남은 쿠폰이 없습니다." }
+        require(remainingQuantity >= count) { "남은 쿠폰이 부족합니다." }
         require(count > 0) { "쿠폰 수량은 0보다 크게 감소할 수 없습니다." }
         
         return Coupon(
@@ -135,6 +136,6 @@ data class Coupon private constructor(
     
     fun isValid(timeProvider: TimeProvider): Boolean {
         val now = timeProvider.now()
-        return now.isAfter(startDate) && now.isBefore(endDate) && remainingQuantity > 0
+        return now.compareTo(startDate) >= 0 && now.compareTo(endDate) <= 0 && remainingQuantity > 0
     }
 }

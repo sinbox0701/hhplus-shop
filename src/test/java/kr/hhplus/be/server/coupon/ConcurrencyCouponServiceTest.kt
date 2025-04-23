@@ -27,31 +27,24 @@ import java.util.concurrent.atomic.AtomicInteger
 class ConcurrencyCouponServiceTest @Autowired constructor(
     private val couponRepository: CouponRepository,
     private val userCouponRepository: UserCouponRepository,
-    private val timeProvider: TimeProvider
+    private val timeProvider: TimeProvider,
+    private val userService: UserService
 ) {
 
     private lateinit var couponService: CouponService
     
-    @Autowired
-    private lateinit var userService: UserService
-
     private lateinit var testCoupon: Coupon
     private lateinit var testUser: User
 
     @BeforeEach
     fun setUp() {
         // 개별 쿠폰과 사용자 쿠폰을 모두 삭제합니다
-        try {
-            // 기존 데이터 정리
-            couponService.findAll().forEach { coupon ->
-                coupon.id?.let { couponRepository.delete(it) }
-            }
-            
-            couponService.findUserCouponsByUserId(1L).forEach { userCoupon ->
-                userCoupon.id?.let { userCouponRepository.delete(it) }
-            }
-        } catch (e: Exception) {
-            // 첫 실행 시에는 서비스가 초기화되지 않았을 수 있으므로 예외 무시
+        userCouponRepository.findAll().forEach { userCoupon ->
+            userCoupon.id?.let { userCouponRepository.delete(it) }
+        }
+        
+        couponRepository.findAll().forEach { coupon ->
+            coupon.id?.let { couponRepository.delete(it) }
         }
         
         couponService = CouponService(couponRepository, userCouponRepository, timeProvider)
@@ -68,7 +61,7 @@ class ConcurrencyCouponServiceTest @Autowired constructor(
         // 테스트용 쿠폰 생성 (총 50개 수량)
         val now = timeProvider.now()
         val couponCommand = CouponCommand.CreateCouponCommand(
-            code = "TEST${System.currentTimeMillis()}",
+            code = "TEST${System.currentTimeMillis()}".take(6).uppercase(),
             couponType = CouponType.DISCOUNT_ORDER,
             discountRate = 10.0,
             description = "동시성 테스트용 쿠폰",

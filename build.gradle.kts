@@ -63,6 +63,7 @@ dependencies {
 	testImplementation("org.testcontainers:mysql")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation("io.mockk:mockk:1.9.3")
+	testRuntimeOnly("com.h2database:h2")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
