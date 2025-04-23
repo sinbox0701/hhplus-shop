@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.util.*
 import jakarta.validation.Valid
+import kr.hhplus.be.server.interfaces.coupon.CouponRequest.IssueFirstComeFirstServedCouponRequest
+import kr.hhplus.be.server.interfaces.coupon.CouponResponse.UserCouponResponse
 
 @RestController
 @RequestMapping("/api/coupons")
@@ -188,5 +190,17 @@ class CouponController(
         }
         
         return ResponseEntity.ok(responses)
+    }
+
+    /**
+     * 비관적 락을 사용한 선착순 쿠폰 발급 API
+     */
+    @PostMapping("/users/{userId}/first-come-first-served")
+    fun issueFirstComeFirstServedCoupon(
+        @PathVariable userId: Long,
+        @RequestBody request: IssueFirstComeFirstServedCouponRequest
+    ): UserCouponResponse {
+        val userCoupon = couponService.issueFirstComeFirstServedCoupon(userId, request.couponCode)
+        return UserCouponResponse.from(userCoupon)
     }
 }

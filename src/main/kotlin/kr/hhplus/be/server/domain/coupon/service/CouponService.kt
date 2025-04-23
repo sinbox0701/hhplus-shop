@@ -8,6 +8,7 @@ import kr.hhplus.be.server.domain.coupon.repository.CouponRepository
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.repository.UserCouponRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CouponService(
@@ -144,5 +145,40 @@ class CouponService(
     fun isValidCoupon(couponId: Long): Boolean {
         val coupon = findById(couponId)
         return coupon.isValid(timeProvider)
+    }
+
+    /**
+     * 비관적 락을 사용하여 선착순 쿠폰 발급
+     * 쿠폰 발급 시 남은 수량을 확인하고 동시에 감소시키는 작업을 안전하게 수행
+     */
+    @Transactional
+    fun issueFirstComeFirstServedCoupon(userId: Long, couponCode: String): UserCoupon {
+        // 비관적 락을 사용하여 쿠폰 조회
+        val coupon = couponRepository.findByCodeWithPessimisticLock(couponCode)
+            ?: throw IllegalArgumentException("쿠폰을 찾을 수 없습니다: $couponCode")
+        
+        // 유효한 쿠폰인지 확인
+        if (!coupon.isValid(timeProvider)) {
+            throw IllegalStateException("유효하지 않은 쿠폰입니다: $couponCode")
+        }
+        
+        // 남은 수량이 있는지 확인
+        if (!coupon.hasRemainingQuantity()) {
+            throw IllegalStateException("쿠폰 수량이 모두 소진되었습니다: $couponCode")
+        }
+        
+        // 이미 발급받은 쿠폰인지 확인
+        val existingUserCoupon = userCouponRepository.findByUserIdAndCouponId(userId, coupon.id!!)
+        if (existingUserCoupon != null) {
+            throw IllegalStateException("이미 발급받은 쿠폰입니다: $couponCode")
+        }
+        
+        // 쿠폰 수량 감소
+        val updatedCoupon = coupon.decreaseQuantity(1, timeProvider)
+        couponRepository.update(updatedCoupon)
+        
+        // 유저 쿠폰 생성
+        val userCoupon = UserCoupon.create(userId, coupon.id!!, 1)
+        return userCouponRepository.save(userCoupon)
     }
 }

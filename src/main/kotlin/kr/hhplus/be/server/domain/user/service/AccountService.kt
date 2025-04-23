@@ -2,7 +2,9 @@ package kr.hhplus.be.server.domain.user.service
 
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.repository.AccountRepository
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AccountService(
@@ -37,4 +39,47 @@ class AccountService(
         accountRepository.delete(id)
     }
     
+    /**
+     * 낙관적 락을 사용하여 포인트 충전
+     * 충돌 시 최대 2번까지 재시도
+     */
+    @Transactional
+    fun chargeWithOptimisticLock(command: AccountCommand.UpdateAccountCommand, maxRetries: Int = 2): Account {
+        var retry = 0
+        
+        while (true) {
+            try {
+                val account = findById(command.id)
+                val updatedAccount = account.charge(command.amount)
+                return accountRepository.updateWithOptimisticLock(updatedAccount)
+            } catch (e: OptimisticLockingFailureException) {
+                if (retry >= maxRetries) {
+                    throw e
+                }
+                retry++
+            }
+        }
+    }
+    
+    /**
+     * 낙관적 락을 사용하여 포인트 출금
+     * 충돌 시 최대 2번까지 재시도
+     */
+    @Transactional
+    fun withdrawWithOptimisticLock(command: AccountCommand.UpdateAccountCommand, maxRetries: Int = 2): Account {
+        var retry = 0
+        
+        while (true) {
+            try {
+                val account = findById(command.id)
+                val updatedAccount = account.withdraw(command.amount)
+                return accountRepository.updateWithOptimisticLock(updatedAccount)
+            } catch (e: OptimisticLockingFailureException) {
+                if (retry >= maxRetries) {
+                    throw e
+                }
+                retry++
+            }
+        }
+    }
 }

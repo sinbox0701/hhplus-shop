@@ -17,13 +17,19 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
 import jakarta.validation.Valid
+import kr.hhplus.be.server.domain.user.service.AccountCommand
+import kr.hhplus.be.server.domain.user.service.AccountService
+import kr.hhplus.be.server.domain.user.model.Account
+import kr.hhplus.be.server.interfaces.user.UserRequest.ChargeAccountWithOptimisticLockRequest
+import kr.hhplus.be.server.interfaces.user.UserRequest.WithdrawAccountWithOptimisticLockRequest
 
 @RestController
 @RequestMapping("/api/users")
 @Validated
 class UserController(
     private val userAccountFacade: UserAccountFacade,
-    private val userService: UserService
+    private val userService: UserService,
+    private val accountService: AccountService
 ): UserApi {
 
     @GetMapping
@@ -146,5 +152,37 @@ class UserController(
         )
         
         return ResponseEntity.ok(accountResponse)
+    }
+
+    /**
+     * 낙관적 락을 사용한 포인트 충전 API
+     */
+    @PostMapping("/{userId}/accounts/{accountId}/charge-with-optimistic-lock")
+    fun chargeAccountWithOptimisticLock(
+        @PathVariable userId: Long,
+        @PathVariable accountId: Long,
+        @RequestBody request: ChargeAccountWithOptimisticLockRequest
+    ): Account {
+        val command = AccountCommand.UpdateAccountCommand(
+            id = accountId,
+            amount = request.amount
+        )
+        return accountService.chargeWithOptimisticLock(command)
+    }
+    
+    /**
+     * 낙관적 락을 사용한 포인트 출금 API
+     */
+    @PostMapping("/{userId}/accounts/{accountId}/withdraw-with-optimistic-lock")
+    fun withdrawAccountWithOptimisticLock(
+        @PathVariable userId: Long,
+        @PathVariable accountId: Long,
+        @RequestBody request: WithdrawAccountWithOptimisticLockRequest
+    ): Account {
+        val command = AccountCommand.UpdateAccountCommand(
+            id = accountId,
+            amount = request.amount
+        )
+        return accountService.withdrawWithOptimisticLock(command)
     }
 } 

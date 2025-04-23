@@ -57,4 +57,17 @@ class ProductOptionRepositoryImpl(
     override fun delete(id: Long) {
         jpaProductOptionRepository.deleteById(id)
     }
+    
+    @Transactional
+    override fun updateWithPessimisticLock(id: Long, updateFunction: (ProductOption) -> ProductOption): ProductOption {
+        val optionEntity = jpaProductOptionRepository.findByIdWithPessimisticLock(id)
+            ?: throw IllegalArgumentException("상품 옵션을 찾을 수 없습니다: $id")
+        
+        // 도메인 모델로 변환하여 업데이트 함수 적용
+        val updatedOption = updateFunction(optionEntity.toProductOption())
+        
+        // 업데이트된 도메인 모델을 엔티티로 변환하여 저장
+        val updatedEntity = ProductOptionEntity.fromProductOption(updatedOption)
+        return jpaProductOptionRepository.save(updatedEntity).toProductOption()
+    }
 } 

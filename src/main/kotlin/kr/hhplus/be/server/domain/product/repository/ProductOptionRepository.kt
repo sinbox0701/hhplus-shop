@@ -11,4 +11,5 @@ interface ProductOptionRepository {
     fun update(productOption: ProductOption): ProductOption
     fun updateQuantity(id: Long, quantity: Int): ProductOption
     fun delete(id: Long)
+    fun updateWithPessimisticLock(id: Long, updateFunction: (ProductOption) -> ProductOption): ProductOption
 } 

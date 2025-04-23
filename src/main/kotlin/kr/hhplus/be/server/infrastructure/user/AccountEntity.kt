@@ -21,7 +21,10 @@ class AccountEntity(
     val createdAt: LocalDateTime,
     
     @Column(nullable = false)
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+    
+    @Version
+    val version: Long = 0
 ) {
     fun toAccount(): Account {
         return Account.create(
@@ -33,14 +36,17 @@ class AccountEntity(
             val idField = accountClass.getDeclaredField("id")
             val createdAtField = accountClass.getDeclaredField("createdAt")
             val updatedAtField = accountClass.getDeclaredField("updatedAt")
+            val versionField = accountClass.getDeclaredField("version")
             
             idField.isAccessible = true
             createdAtField.isAccessible = true
             updatedAtField.isAccessible = true
+            versionField.isAccessible = true
             
             idField.set(this, id)
             createdAtField.set(this, createdAt)
             updatedAtField.set(this, updatedAt)
+            versionField.set(this, version)
         }
     }
     
@@ -51,7 +57,8 @@ class AccountEntity(
                 userId = account.userId,
                 amount = account.amount,
                 createdAt = account.createdAt,
-                updatedAt = account.updatedAt
+                updatedAt = account.updatedAt,
+                version = account.version
             )
         }
     }
