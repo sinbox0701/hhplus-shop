@@ -5,6 +5,7 @@ import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.repository.CouponRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 
 @Repository
 class CouponRepositoryImpl(
@@ -41,5 +42,15 @@ class CouponRepositoryImpl(
     
     override fun delete(id: Long) {
         jpaCouponRepository.deleteById(id)
+    }
+    
+    @Transactional
+    override fun findByIdWithPessimisticLock(id: Long): Coupon? {
+        return jpaCouponRepository.findByIdWithPessimisticLock(id)?.toCoupon()
+    }
+    
+    @Transactional
+    override fun findByCodeWithPessimisticLock(code: String): Coupon? {
+        return jpaCouponRepository.findByCodeWithPessimisticLock(code)?.toCoupon()
     }
 } 

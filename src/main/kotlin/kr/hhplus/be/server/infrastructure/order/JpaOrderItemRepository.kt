@@ -38,5 +38,19 @@ interface JpaOrderItemRepository : JpaRepository<OrderItemEntity, Long> {
         ORDER BY SUM(oi.quantity) DESC 
         LIMIT :limit
     """)
-    fun findTopSellingProductIds(startDate: LocalDateTime, endDate: LocalDateTime, limit: Int): List<Long>
+    fun findTopSellingProductIds(@Param("startDate") startDate: LocalDateTime, @Param("endDate") endDate: LocalDateTime, @Param("limit") limit: Int): List<Long>
+    
+    /**
+     * 특정 기간 동안의 상품별 판매량을 조회
+     * 복합 인덱스를 활용하여 성능 최적화
+     */
+    @Query("""
+        SELECT oi.productId, SUM(oi.quantity)
+        FROM OrderItemEntity oi 
+        JOIN OrderEntity o ON oi.orderId = o.id
+        WHERE o.orderDate BETWEEN :startDate AND :endDate 
+        AND o.status = 'COMPLETED'
+        GROUP BY oi.productId
+    """)
+    fun findProductQuantityMap(@Param("startDate") startDate: LocalDateTime, @Param("endDate") endDate: LocalDateTime): List<Array<Any>>
 } 

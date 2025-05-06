@@ -1,10 +1,12 @@
 package kr.hhplus.be.server.infrastructure.product
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import org.springframework.data.jpa.repository.Lock
 
 @Repository
 interface JpaProductOptionRepository : JpaRepository<ProductOptionEntity, Long> {
@@ -17,4 +19,8 @@ interface JpaProductOptionRepository : JpaRepository<ProductOptionEntity, Long> 
     @Modifying
     @Query("UPDATE ProductOptionEntity p SET p.availableQuantity = :quantity, p.updatedAt = CURRENT_TIMESTAMP WHERE p.id = :id")
     fun updateQuantity(@Param("id") id: Long, @Param("quantity") quantity: Int): Int
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM ProductOptionEntity o WHERE o.id = :id")
+    fun findByIdWithPessimisticLock(@Param("id") id: Long): ProductOptionEntity?
 } 

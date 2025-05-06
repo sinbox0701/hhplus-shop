@@ -6,6 +6,7 @@ import kr.hhplus.be.server.domain.coupon.service.CouponCommand
 import kr.hhplus.be.server.application.coupon.CouponCriteria
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import java.util.UUID
+import io.swagger.v3.oas.annotations.media.Schema
 
 class CouponRequest {
     data class CreateCouponRequest(
@@ -87,4 +88,11 @@ class CouponRequest {
             )
         }
     }
+
+    data class IssueFirstComeFirstServedCouponRequest(
+        @field:NotBlank(message = "쿠폰 코드는 필수입니다.")
+        @field:Pattern(regexp = "^[A-Z]{6}$", message = "쿠폰 코드는 대문자 영어 6자리여야 합니다.")
+        @field:Schema(description = "쿠폰 코드", example = "ABCDEF")
+        val couponCode: String
+    )
 }

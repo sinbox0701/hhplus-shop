@@ -6,6 +6,17 @@ import kr.hhplus.be.server.interfaces.product.ProductResponse
 import kr.hhplus.be.server.interfaces.product.ProductRequest
 import kr.hhplus.be.server.domain.product.service.ProductService
 import kr.hhplus.be.server.interfaces.product.api.ProductApi
+import kr.hhplus.be.server.domain.product.service.ProductCommand
+import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
+import kr.hhplus.be.server.domain.product.service.ProductOptionService
+import kr.hhplus.be.server.interfaces.product.ProductRequest.CreateProductRequest
+import kr.hhplus.be.server.interfaces.product.ProductRequest.UpdateProductRequest
+import kr.hhplus.be.server.interfaces.product.ProductRequest.CreateProductOptionRequest
+import kr.hhplus.be.server.interfaces.product.ProductRequest.UpdateProductOptionRequest
+import kr.hhplus.be.server.interfaces.product.ProductRequest.UpdateProductOptionQuantityRequest
+import kr.hhplus.be.server.interfaces.product.ProductResponse.ProductDetailResponse
+import kr.hhplus.be.server.interfaces.product.ProductResponse.ProductOptionResponse
+import kr.hhplus.be.server.interfaces.product.ProductResponse.ProductListResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -17,7 +28,8 @@ import jakarta.validation.Valid
 @Validated
 class ProductController(
     private val productFacade: ProductFacade,
-    private val productService: ProductService
+    private val productService: ProductService,
+    private val productOptionService: ProductOptionService
 ) : ProductApi {
 
     // Create 작업
@@ -177,5 +189,31 @@ class ProductController(
         val response = ProductResponse.from(updatedProduct)
         
         return ResponseEntity.ok(response)
+    }
+
+    /**
+     * 비관적 락을 사용하여 상품 옵션 재고 차감
+     */
+    @PostMapping("/{productId}/options/{optionId}/subtract-inventory-with-lock")
+    fun subtractOptionInventoryWithLock(
+        @PathVariable productId: Long,
+        @PathVariable optionId: Long,
+        @RequestBody request: UpdateProductOptionQuantityRequest
+    ): ProductOptionResponse {
+        val product = productOptionService.subtractQuantityWithPessimisticLock(optionId, request.quantity)
+        return ProductOptionResponse.from(product)
+    }
+    
+    /**
+     * 비관적 락을 사용하여 상품 옵션 재고 복원
+     */
+    @PostMapping("/{productId}/options/{optionId}/restore-inventory-with-lock")
+    fun restoreOptionInventoryWithLock(
+        @PathVariable productId: Long,
+        @PathVariable optionId: Long,
+        @RequestBody request: UpdateProductOptionQuantityRequest
+    ): ProductOptionResponse {
+        val product = productOptionService.restoreQuantityWithPessimisticLock(optionId, request.quantity)
+        return ProductOptionResponse.from(product)
     }
 } 

@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.order
 
 import io.mockk.*
+import kr.hhplus.be.server.domain.common.TimeProvider
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
@@ -11,17 +12,18 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.LocalDateTime
 
 class OrderServiceUnitTest {
 
     private lateinit var orderRepository: OrderRepository
     private lateinit var orderService: OrderService
+    private lateinit var timeProvider: TimeProvider
 
     @BeforeEach
     fun setup() {
-        orderRepository = mockk()
-        orderService = OrderService(orderRepository)
+        orderRepository = mockk(relaxed = true)
+        timeProvider = TestFixtures.fixedTimeProvider
+        orderService = OrderService(orderRepository, timeProvider)
     }
 
     @Test
@@ -42,7 +44,8 @@ class OrderServiceUnitTest {
         val savedOrder = Order.create(
             userId = userId,
             userCouponId = userCouponId,
-            totalPrice = totalPrice
+            totalPrice = totalPrice,
+            timeProvider = timeProvider
         )
         
         // repository에서 Order 저장 시 savedOrder를 반환하도록 설정
@@ -72,7 +75,8 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = userCouponId,
-            totalPrice = totalPrice
+            totalPrice = totalPrice,
+            timeProvider = timeProvider
         )
         // id 필드는 private이므로 리플렉션을 사용하거나, 이 테스트에서는 id 검증을 제외
         
@@ -112,8 +116,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0),
-            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0)
+            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
+            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
         )
         
         every { orderRepository.findByUserId(userId) } returns orders
@@ -135,8 +139,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0),
-            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0)
+            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
+            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
         )
         
         every { orderRepository.findByStatus(status) } returns orders
@@ -159,8 +163,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0),
-            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0)
+            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
+            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
         )
         
         every { orderRepository.findByUserIdAndStatus(userId, status) } returns orders
@@ -181,13 +185,14 @@ class OrderServiceUnitTest {
     @DisplayName("날짜 범위로 주문 목록을 가져온다")
     fun getOrdersByDateRangeSuccess() {
         // given
-        val startDate = LocalDateTime.now().minusDays(7)
-        val endDate = LocalDateTime.now()
+        val now = timeProvider.now()
+        val startDate = now.minusDays(7)
+        val endDate = now
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0),
-            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0)
+            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
+            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
         )
         
         every { orderRepository.findByCreatedAtBetween(startDate, endDate) } returns orders
@@ -212,11 +217,12 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = 10000.0
+            totalPrice = 10000.0,
+            timeProvider = timeProvider
         )
         
         // 업데이트된 Order 객체 생성
-        val updatedOrder = order.updateStatus(newStatus)
+        val updatedOrder = order.updateStatus(newStatus, timeProvider)
         
         val command = OrderCommand.UpdateOrderStatusCommand(
             id = orderId,
@@ -224,14 +230,14 @@ class OrderServiceUnitTest {
         )
         
         every { orderRepository.findById(orderId) } returns order
-        every { orderRepository.updateStatus(orderId, newStatus) } returns updatedOrder
+        every { orderRepository.save(any()) } returns updatedOrder
         
         // when
         val result = orderService.updateOrderStatus(command)
         
         // then
         verify { orderRepository.findById(orderId) }
-        verify { orderRepository.updateStatus(orderId, newStatus) }
+        verify { orderRepository.save(any()) }
         assertEquals(newStatus, result.status)
     }
     
@@ -247,7 +253,8 @@ class OrderServiceUnitTest {
             userId = userId,
             userCouponId = null,
             status = OrderStatus.COMPLETED,
-            totalPrice = 10000.0
+            totalPrice = 10000.0,
+            timeProvider = timeProvider
         )
         
         val command = OrderCommand.UpdateOrderStatusCommand(
@@ -263,7 +270,7 @@ class OrderServiceUnitTest {
         }
         
         verify { orderRepository.findById(orderId) }
-        verify(exactly = 0) { orderRepository.updateStatus(any(), any()) }
+        verify(exactly = 0) { orderRepository.save(any()) }
         assertTrue(exception.message!!.contains("주문을 취소할 수 없습니다"))
     }
     
@@ -278,20 +285,21 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = 10000.0
+            totalPrice = 10000.0,
+            timeProvider = timeProvider
         )
         
         // 취소된 Order 객체 생성
-        val cancelledOrder = order.updateStatus(OrderStatus.CANCELLED)
+        val cancelledOrder = order.updateStatus(OrderStatus.CANCELLED, timeProvider)
         
         every { orderRepository.findById(orderId) } returns order
-        every { orderRepository.updateStatus(orderId, OrderStatus.CANCELLED) } returns cancelledOrder
+        every { orderRepository.save(any()) } returns cancelledOrder
         
         // when
         val result = orderService.cancelOrder(orderId)
         
         // then
-        verify { orderRepository.updateStatus(orderId, OrderStatus.CANCELLED) }
+        verify { orderRepository.save(any()) }
         assertEquals(OrderStatus.CANCELLED, result.status)
     }
     
@@ -306,20 +314,21 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = 10000.0
+            totalPrice = 10000.0,
+            timeProvider = timeProvider
         )
         
         // 완료된 Order 객체 생성
-        val completedOrder = order.updateStatus(OrderStatus.COMPLETED)
+        val completedOrder = order.updateStatus(OrderStatus.COMPLETED, timeProvider)
         
         every { orderRepository.findById(orderId) } returns order
-        every { orderRepository.updateStatus(orderId, OrderStatus.COMPLETED) } returns completedOrder
+        every { orderRepository.save(any()) } returns completedOrder
         
         // when
         val result = orderService.completeOrder(orderId)
         
         // then
-        verify { orderRepository.updateStatus(orderId, OrderStatus.COMPLETED) }
+        verify { orderRepository.save(any()) }
         assertEquals(OrderStatus.COMPLETED, result.status)
     }
     
@@ -336,11 +345,12 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = initialPrice
+            totalPrice = initialPrice,
+            timeProvider = timeProvider
         )
         
         // 가격이 업데이트된 Order 객체 생성
-        val updatedOrder = order.updateTotalPrice(newTotalPrice)
+        val updatedOrder = order.updateTotalPrice(newTotalPrice, timeProvider)
         
         val command = OrderCommand.UpdateOrderTotalPriceCommand(
             id = orderId,
@@ -348,14 +358,14 @@ class OrderServiceUnitTest {
         )
         
         every { orderRepository.findById(orderId) } returns order
-        every { orderRepository.updateTotalPrice(orderId, newTotalPrice) } returns updatedOrder
+        every { orderRepository.save(any()) } returns updatedOrder
         
         // when
         val result = orderService.updateOrderTotalPrice(command)
         
         // then
         verify { orderRepository.findById(orderId) }
-        verify { orderRepository.updateTotalPrice(orderId, newTotalPrice) }
+        verify { orderRepository.save(any()) }
         assertEquals(newTotalPrice, result.totalPrice)
     }
 } 

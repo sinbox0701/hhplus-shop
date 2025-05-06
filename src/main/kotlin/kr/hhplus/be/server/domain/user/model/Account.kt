@@ -7,7 +7,8 @@ data class Account private constructor(
     val userId: Long,
     val amount: Double,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+    val version: Long = 0
 ) {
     companion object {
         const val MIN_BALANCE: Double = 0.0
@@ -36,7 +37,8 @@ data class Account private constructor(
             userId = this.userId,
             amount = newAmount,
             createdAt = this.createdAt,
-            updatedAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now(),
+            version = this.version
         )
     }
 
@@ -53,7 +55,8 @@ data class Account private constructor(
             userId = this.userId,
             amount = newAmount,
             createdAt = this.createdAt,
-            updatedAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now(),
+            version = this.version
         )
     }
 }

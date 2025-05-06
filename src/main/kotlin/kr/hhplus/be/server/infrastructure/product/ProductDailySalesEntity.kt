@@ -10,7 +10,8 @@ import java.time.LocalDateTime
     name = "product_daily_sales",
     indexes = [
         Index(name = "idx_product_daily_sales_date", columnList = "sale_date"),
-        Index(name = "idx_product_daily_sales_product_id", columnList = "product_id")
+        Index(name = "idx_product_daily_sales_product_id", columnList = "product_id"),
+        Index(name = "idx_product_daily_sales_date_quantity", columnList = "sale_date, quantity_sold DESC")
     ]
 )
 class ProductDailySalesEntity(

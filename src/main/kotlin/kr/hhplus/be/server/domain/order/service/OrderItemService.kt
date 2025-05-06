@@ -56,6 +56,18 @@ class OrderItemService(
         return orderItemRepository.findTopSellingProductIds(startDate, endDate, limit)
     }
     
+    /**
+     * 특정 기간 동안의 상품별 판매량을 Map으로 반환
+     * 인덱스를 활용한 효율적인 조회 수행
+     * 
+     * @param startDate 조회 시작 일시
+     * @param endDate 조회 종료 일시
+     * @return 상품ID와 판매량으로 구성된 Map
+     */
+    fun getProductQuantityMap(startDate: LocalDateTime, endDate: LocalDateTime): Map<Long, Int> {
+        return orderItemRepository.findProductQuantityMap(startDate, endDate)
+    }
+    
     fun update(command: OrderItemCommand.UpdateOrderItemCommand): OrderItem {
         val orderItem = getById(command.id)
         val updatedOrderItem = orderItem.update(command.quantity, command.productPrice)

@@ -36,10 +36,19 @@ class AccountRepositoryImpl(
             userId = accountEntity.userId,
             amount = amount,
             createdAt = accountEntity.createdAt,
-            updatedAt = LocalDateTime.now()
+            updatedAt = LocalDateTime.now(),
+            version = accountEntity.version
         )
         
         val savedEntity = jpaAccountRepository.save(updatedEntity)
+        return savedEntity.toAccount()
+    }
+    
+    @Transactional
+    override fun updateWithOptimisticLock(account: Account): Account {
+        // 이미 도메인 모델에서 로직 처리가 완료되었으므로, 해당 객체를 그대로 엔티티로 변환하여 저장
+        val accountEntity = AccountEntity.fromAccount(account)
+        val savedEntity = jpaAccountRepository.save(accountEntity)
         return savedEntity.toAccount()
     }
     

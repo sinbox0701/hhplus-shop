@@ -1,14 +1,17 @@
 package kr.hhplus.be.server.interfaces.user
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import kr.hhplus.be.server.application.user.UserCriteria
 import kr.hhplus.be.server.domain.user.service.UserCommand
+import kr.hhplus.be.server.domain.user.model.User
 
 class UserRequest {
     
@@ -90,4 +93,16 @@ class UserRequest {
             )
         }
     }
+    
+    data class ChargeAccountWithOptimisticLockRequest(
+        @field:Positive(message = "금액은 양수여야 합니다.")
+        @field:Schema(description = "충전 금액", example = "10000")
+        val amount: Double
+    )
+    
+    data class WithdrawAccountWithOptimisticLockRequest(
+        @field:Positive(message = "금액은 양수여야 합니다.")
+        @field:Schema(description = "출금 금액", example = "5000")
+        val amount: Double
+    )
 }

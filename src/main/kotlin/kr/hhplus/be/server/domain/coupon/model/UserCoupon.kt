@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.domain.coupon.model
 
+import kr.hhplus.be.server.domain.common.TimeProvider
 import java.time.LocalDateTime
 
 data class UserCoupon private constructor(
@@ -28,11 +29,11 @@ data class UserCoupon private constructor(
         }
     }
     
-    fun issue(couponStartDate: LocalDateTime, couponEndDate: LocalDateTime): UserCoupon {
+    fun issue(couponStartDate: LocalDateTime, couponEndDate: LocalDateTime, timeProvider: TimeProvider): UserCoupon {
         require(!issued) { "이미 발행된 쿠폰입니다." }
         
-        val now = LocalDateTime.now()
-        require(now.isAfter(couponStartDate) && now.isBefore(couponEndDate)) { "쿠폰 유효 기간이 아닙니다." }
+        val now = timeProvider.now()
+        require(now.isAfter(couponStartDate) && now.isBefore(couponEndDate.plusDays(1))) { "쿠폰 유효 기간이 아닙니다." }
         
         return UserCoupon(
             id = this.id,

@@ -47,9 +47,9 @@ class CouponEntity(
         // Coupon의 private 생성자 접근을 위한 리플렉션 사용
         val couponClass = Coupon::class.java
         val constructor = couponClass.getDeclaredConstructor(
-            Long::class.java, CouponType::class.java, String::class.java,
-            Double::class.java, String::class.java, LocalDateTime::class.java,
-            LocalDateTime::class.java, Int::class.java, Int::class.java,
+            Long::class.javaObjectType, CouponType::class.java, String::class.java,
+            Double::class.javaObjectType, String::class.java, LocalDateTime::class.java,
+            LocalDateTime::class.java, Int::class.javaObjectType, Int::class.javaObjectType,
             LocalDateTime::class.java, LocalDateTime::class.java
         )
         constructor.isAccessible = true

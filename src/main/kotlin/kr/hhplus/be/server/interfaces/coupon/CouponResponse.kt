@@ -80,4 +80,43 @@ class CouponResponse{
             }
         }
     }
+    
+    data class UserCouponResponse(
+        val id: Long,
+        val userId: Long,
+        val couponId: Long,
+        val issueDate: LocalDateTime,
+        val issued: Boolean,
+        val used: Boolean,
+        val quantity: Int,
+        val coupon: Response? = null
+    ) {
+        companion object {
+            fun from(userCoupon: UserCoupon): UserCouponResponse {
+                return UserCouponResponse(
+                    id = userCoupon.id ?: 0,
+                    userId = userCoupon.userId,
+                    couponId = userCoupon.couponId,
+                    issueDate = userCoupon.issueDate,
+                    issued = userCoupon.isIssued(),
+                    used = userCoupon.isUsed(),
+                    quantity = userCoupon.quantity,
+                    coupon = null
+                )
+            }
+            
+            fun from(userCoupon: UserCoupon, coupon: Coupon): UserCouponResponse {
+                return UserCouponResponse(
+                    id = userCoupon.id ?: 0,
+                    userId = userCoupon.userId,
+                    couponId = userCoupon.couponId,
+                    issueDate = userCoupon.issueDate,
+                    issued = userCoupon.isIssued(),
+                    used = userCoupon.isUsed(),
+                    quantity = userCoupon.quantity,
+                    coupon = Response.from(coupon)
+                )
+            }
+        }
+    }
 }

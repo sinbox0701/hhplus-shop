@@ -33,9 +33,9 @@ class UserCouponEntity(
         // UserCoupon의 private 생성자 접근을 위한 리플렉션 사용
         val userCouponClass = UserCoupon::class.java
         val constructor = userCouponClass.getDeclaredConstructor(
-            Long::class.java, Long::class.java, Long::class.java,
-            LocalDateTime::class.java, Boolean::class.java, Boolean::class.java, 
-            Int::class.java
+            Long::class.javaObjectType, Long::class.javaObjectType, Long::class.javaObjectType,
+            LocalDateTime::class.java, Boolean::class.javaObjectType, Boolean::class.javaObjectType, 
+            Int::class.javaObjectType
         )
         constructor.isAccessible = true
         
@@ -46,7 +46,7 @@ class UserCouponEntity(
     
     companion object {
         fun fromUserCoupon(userCoupon: UserCoupon): UserCouponEntity {
-            // UserCoupon의 private 필드 접근을 위한 리플렉션 사용
+            // UserCoupon의 필드에 접근하기 위한 리플렉션
             val userCouponClass = UserCoupon::class.java
             
             val idField = userCouponClass.getDeclaredField("id")
