@@ -12,7 +12,7 @@ object LockKeyConstants {
     const val PRODUCT_PREFIX = "product"
     const val USER_PREFIX = "user"
     const val COUPON_USER_PREFIX = "coupon-user"
-    const val COUPON_EVENT_PREFIX = "coupon-event"
+    const val COUPON_PREFIX = "coupon"
     const val USER_POINT_PREFIX = "user-point"
     const val ORDER_ITEM_RANK_PREFIX = "order-item-rank"
     
