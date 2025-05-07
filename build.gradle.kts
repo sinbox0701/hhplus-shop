@@ -53,6 +53,10 @@ dependencies {
 	// Swagger/OpenAPI
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
+	// Redis & Distributed Lock
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.redisson:redisson-spring-boot-starter:3.24.3")
+
     // DB
 	runtimeOnly("com.mysql:mysql-connector-j")
 
