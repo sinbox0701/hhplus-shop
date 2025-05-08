@@ -5,21 +5,32 @@ import kr.hhplus.be.server.application.coupon.CouponResult
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.service.CouponService
 import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.shared.lock.DistributedLock
+import kr.hhplus.be.server.shared.lock.LockKeyConstants
+import kr.hhplus.be.server.shared.transaction.TransactionHelper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CouponFacade(
     private val couponService: CouponService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val transactionHelper: TransactionHelper
 ) {
-    @Transactional()
-    fun create(criteria: CouponCriteria.CreateUserCouponCommand): UserCoupon{
-        val user = userService.findById(criteria.userId)
-        val coupon = couponService.create(criteria.toCreateCouponCommand())
-        val userCoupon = couponService.createUserCoupon(criteria.toCreateUserCouponCommand(user.id!!, coupon.id!!))
-        couponService.updateRemainingQuantity(criteria.toUpdateCouponRemainingQuantityCommand(coupon.id, 1))
-        return userCoupon
+    @DistributedLock(
+        domain = LockKeyConstants.COUPON_PREFIX,
+        resourceType = LockKeyConstants.RESOURCE_USER,
+        resourceIdExpression = "criteria.userId",
+        timeout = LockKeyConstants.EXTENDED_TIMEOUT
+    )
+    fun create(criteria: CouponCriteria.CreateUserCouponCommand): UserCoupon {
+        return transactionHelper.executeInTransaction {
+            val user = userService.findById(criteria.userId)
+            val coupon = couponService.create(criteria.toCreateCouponCommand())
+            val userCoupon = couponService.createUserCoupon(criteria.toCreateUserCouponCommand(user.id!!, coupon.id!!))
+            couponService.updateRemainingQuantity(criteria.toUpdateCouponRemainingQuantityCommand(coupon.id, 1))
+            userCoupon
+        }
     }
 
     @Transactional(readOnly = true)

@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   mysql:
     image: mysql:8.0
@@ -12,6 +12,18 @@ services:
     volumes:
       - ./data/mysql/:/var/lib/mysql
 
+  # Redis 단일 노드
+  redis:
+    image: redis:7.0
+    command: redis-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
 networks:
   default:
     driver: bridge
+
+volumes:
+  redis-data:
