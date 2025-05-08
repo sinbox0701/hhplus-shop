@@ -30,7 +30,7 @@ class ProductSalesAggregationFacade(
     private val log = LoggerFactory.getLogger(javaClass)
     private lateinit var applicationContext: ApplicationContext
     
-    override fun setApplicationContext(applicationContext: ApplicationContext) throws BeansException {
+    override fun setApplicationContext(applicationContext: ApplicationContext) {
         this.applicationContext = applicationContext
     }
     
