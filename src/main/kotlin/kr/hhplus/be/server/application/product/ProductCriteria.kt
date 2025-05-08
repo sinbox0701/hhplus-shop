@@ -89,4 +89,31 @@ class ProductCriteria {
         }
         
     }
+
+    /**
+     * 상품 재고 업데이트 Criteria
+     */
+    data class UpdateStockCriteria(
+        val productId: Long,
+        val quantity: Int
+    ) {
+        fun toCommand(): ProductCommand.UpdateStockCommand {
+            return ProductCommand.UpdateStockCommand(
+                productId = productId,
+                quantity = quantity
+            )
+        }
+    }
+    
+    /**
+     * 여러 상품 재고 일괄 업데이트 Criteria
+     */
+    data class BatchUpdateStockCriteria(
+        val items: List<StockItem>
+    )
+    
+    data class StockItem(
+        val productId: Long,
+        val quantity: Int
+    )
 }

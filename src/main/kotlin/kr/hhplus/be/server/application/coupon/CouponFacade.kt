@@ -5,23 +5,38 @@ import kr.hhplus.be.server.application.coupon.CouponResult
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.service.CouponService
 import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.shared.lock.DistributedLock
+import kr.hhplus.be.server.shared.lock.LockKeyConstants
+import kr.hhplus.be.server.shared.transaction.TransactionHelper
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CouponFacade(
     private val couponService: CouponService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val transactionHelper: TransactionHelper
 ) {
-    @Transactional()
-    fun create(criteria: CouponCriteria.CreateUserCouponCommand): UserCoupon{
-        val user = userService.findById(criteria.userId)
-        val coupon = couponService.create(criteria.toCreateCouponCommand())
-        val userCoupon = couponService.createUserCoupon(criteria.toCreateUserCouponCommand(user.id!!, coupon.id!!))
-        couponService.updateRemainingQuantity(criteria.toUpdateCouponRemainingQuantityCommand(coupon.id, 1))
-        return userCoupon
+    @CacheEvict(value = ["coupons"], key = "#criteria.userId")
+    @DistributedLock(
+        domain = LockKeyConstants.COUPON_PREFIX,
+        resourceType = LockKeyConstants.RESOURCE_USER,
+        resourceIdExpression = "criteria.userId",
+        timeout = LockKeyConstants.EXTENDED_TIMEOUT
+    )
+    fun create(criteria: CouponCriteria.CreateUserCouponCommand): UserCoupon {
+        return transactionHelper.executeInTransaction {
+            val user = userService.findById(criteria.userId)
+            val coupon = couponService.create(criteria.toCreateCouponCommand())
+            val userCoupon = couponService.createUserCoupon(criteria.toCreateUserCouponCommand(user.id!!, coupon.id!!))
+            couponService.updateRemainingQuantity(criteria.toUpdateCouponRemainingQuantityCommand(coupon.id, 1))
+            userCoupon
+        }
     }
 
+    @Cacheable(value = ["coupons"], key = "#userId")
     @Transactional(readOnly = true)
     fun findByUserId(userId: Long): List<CouponResult.UserCouponResult>{
         val user = userService.findById(userId)
@@ -34,6 +49,7 @@ class CouponFacade(
         }
     }
 
+    @Cacheable(value = ["coupons"], key = "#userId + '_' + #couponId")
     @Transactional(readOnly = true)
     fun findByUserIdAndCouponId(userId: Long, couponId: Long): CouponResult.UserCouponResult{
         val coupon = couponService.findById(couponId)
@@ -41,6 +57,7 @@ class CouponFacade(
         return CouponResult.UserCouponResult.from(userCoupon, coupon)
     }
 
+    @CacheEvict(value = ["coupons"], key = "#criteria.userId")
     @Transactional()
     fun issue(criteria: CouponCriteria.UpdateCouponCommand) {
         val coupon = couponService.findById(criteria.couponId)
@@ -48,6 +65,7 @@ class CouponFacade(
         couponService.issueUserCoupon(criteria.toIssueCouponCommand(userCoupon.id!!, coupon.startDate, coupon.endDate))
     }
 
+    @CacheEvict(value = ["coupons"], key = "#criteria.userId")
     @Transactional()
     fun use(criteria: CouponCriteria.UpdateCouponCommand) {
         userService.findById(criteria.userId)
@@ -56,6 +74,7 @@ class CouponFacade(
         couponService.useUserCoupon(userCoupon.id!!)
     }
 
+    @CacheEvict(value = ["coupons"], key = "#criteria.userId")
     @Transactional()
     fun deleteByUserIdAndCouponId(criteria: CouponCriteria.UpdateCouponCommand) {
         userService.findById(criteria.userId)
@@ -64,6 +83,7 @@ class CouponFacade(
         couponService.delete(criteria.couponId)
     }
 
+    @CacheEvict(value = ["coupons"], key = "#userId")
     @Transactional()
     fun deleteAllByUserId(userId: Long) {
         userService.findById(userId)
