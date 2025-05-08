@@ -7,6 +7,11 @@ import kr.hhplus.be.server.domain.product.repository.ProductDailySalesRepository
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.product.service.ProductSalesService
 import kr.hhplus.be.server.domain.product.service.ProductService
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.CachePut
+import org.springframework.cache.annotation.Cacheable
+import org.springframework.cache.annotation.Caching
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -17,11 +22,13 @@ class ProductFacade(
     private val productService: ProductService,
     private val productOptionService: ProductOptionService,
     private val orderItemService: OrderItemService,
-    private val productSalesService: ProductSalesService
+    private val productSalesService: ProductSalesService,
+    private val cacheManager: CacheManager
 ) {
     /**
      * 모든 상품 목록과 옵션을 조회하는 메서드
      */
+    @Cacheable(value = ["products"], key = "'all'")
     @Transactional(readOnly = true)
     fun getAllProductsWithOptions(): List<ProductResult.ProductWithOptions> {
         // 1. 모든 상품 조회
@@ -51,6 +58,8 @@ class ProductFacade(
     /**
      * 상품과 옵션을 함께 생성하는 메서드
      */
+    @CachePut(value = ["products"], key = "#result.product.id")
+    @CacheEvict(value = ["products"], key = "'all'")
     @Transactional
     fun createProductWithOptions(
         criteria: ProductCriteria.CreateProductCriteria
@@ -67,6 +76,7 @@ class ProductFacade(
     /**
      * 상품 정보와 모든 옵션 정보를 함께 조회하는 메서드
      */
+    @Cacheable(value = ["products"], key = "#productId")
     @Transactional(readOnly = true)
     fun getProductWithOptions(productId: Long): ProductResult.ProductWithOptions {
         // 1. 상품 조회
@@ -82,6 +92,7 @@ class ProductFacade(
      * 최근 3일 동안 가장 많이 팔린 상품 5개를 조회하는 메서드
      * - 집계 테이블을 활용하여 성능 최적화
      */
+    @Cacheable(value = ["bestSellers"], key = "#days + '_' + #limit")
     @Transactional(readOnly = true)
     fun getTopSellingProducts(days: Int = 3, limit: Int = 5): List<Product> {
         // 현재 날짜 기준 조회 기간 계산
@@ -109,6 +120,8 @@ class ProductFacade(
      /**
      * 상품과 옵션을 함께 업데이트하는 메서드
      */
+    @CachePut(value = ["products"], key = "#criteria.id")
+    @CacheEvict(value = ["products"], key = "'all'")
     @Transactional
     fun updateProductWithOptions(criteria: ProductCriteria.UpdateProductCriteria): ProductResult.ProductWithOptions {
         // 1. 상품 업데이트
@@ -156,6 +169,7 @@ class ProductFacade(
     /**
      * 상품에 옵션을 추가하는 메서드
      */
+    @CacheEvict(value = ["products"], allEntries = true)
     @Transactional
     fun addOptionsToProduct(criteria: ProductCriteria.UpdateProductCriteria): List<ProductOption> {
         // 1. 상품 검증
@@ -168,6 +182,7 @@ class ProductFacade(
     /**
      * 상품의 특정 옵션을 삭제하는 메서드
      */
+    @CacheEvict(value = ["products"], key = "#criteria.id")
     @Transactional
     fun removeOptionsFromProduct(criteria: ProductCriteria.UpdateProductCriteria) {
         // 1. 상품 검증
@@ -186,6 +201,11 @@ class ProductFacade(
     /**
      * 상품과 해당 상품의 모든 옵션을 함께 삭제하는 메서드
      */
+    @Caching(evict = [
+        CacheEvict(value = ["products"], key = "#productId"),
+        CacheEvict(value = ["products"], key = "'all'"),
+        CacheEvict(value = ["bestSellers"], allEntries = true)
+    ])
     @Transactional
     fun deleteProductWithOptions(productId: Long) {
         // 1. 상품 검증

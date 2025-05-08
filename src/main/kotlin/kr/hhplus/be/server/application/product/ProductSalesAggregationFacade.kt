@@ -3,6 +3,13 @@ package kr.hhplus.be.server.application.product
 import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.product.model.ProductDailySales
 import kr.hhplus.be.server.domain.product.service.ProductSalesService
+import kr.hhplus.be.server.domain.product.service.ProductService
+import org.slf4j.LoggerFactory
+import org.springframework.beans.BeansException
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,12 +23,21 @@ import java.time.LocalDateTime
 @Service
 class ProductSalesAggregationFacade(
     private val orderItemService: OrderItemService,
-    private val productSalesService: ProductSalesService
-) {
+    private val productSalesService: ProductSalesService,
+    private val productService: ProductService,
+    private val cacheManager: CacheManager
+) : ApplicationContextAware {
+    private val log = LoggerFactory.getLogger(javaClass)
+    private lateinit var applicationContext: ApplicationContext
+    
+    override fun setApplicationContext(applicationContext: ApplicationContext) throws BeansException {
+        this.applicationContext = applicationContext
+    }
     
     /**
-     * 매일 자정에 전날의 판매 데이터를 집계
+     * 매일 자정에 전날의 판매 데이터를 집계 후 캐시 갱신
      */
+    @CacheEvict(value = ["bestSellers"], allEntries = true)
     @Transactional
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정에 실행
     fun aggregateDailySales() {
@@ -63,5 +79,30 @@ class ProductSalesAggregationFacade(
         
         // 집계 테이블에 저장
         productSalesService.saveAllSales(salesEntities)
+        
+        // 캐시 갱신을 위한 인기 상품 미리 로드 (Refresh-Ahead 패턴)
+        refreshBestSellersCache()
+    }
+    
+    /**
+     * 인기 상품 캐시 미리 갱신 (Refresh-Ahead 패턴)
+     */
+    @Scheduled(fixedRate = 900000) // 15분마다 실행 (15min * 60sec * 1000ms)
+    fun refreshBestSellersCache() {
+        // 인기 상품 캐시 미리 생성 (주요 사용 케이스)
+        try {
+            log.info("인기 상품 캐시 갱신 시작")
+            
+            // 기본 인기 상품 캐싱 (3일, 5개)
+            val productFacade = applicationContext.getBean(ProductFacade::class.java)
+            productFacade.getTopSellingProducts(3, 5)
+            
+            // 추가적인 인기 상품 케이스 캐싱
+            productFacade.getTopSellingProducts(7, 10)
+            
+            log.info("인기 상품 캐시 갱신 완료")
+        } catch (e: Exception) {
+            log.error("인기 상품 캐시 갱신 중 오류 발생", e)
+        }
     }
 } 

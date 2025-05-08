@@ -34,8 +34,11 @@ class CacheConfig {
         // 캐시별 TTL 설정
         val cacheConfigurations = mapOf(
             "products" to defaultCacheConfig.entryTtl(Duration.ofMinutes(60)),
-            "categories" to defaultCacheConfig.entryTtl(Duration.ofHours(12)),
-            "bestSellers" to defaultCacheConfig.entryTtl(Duration.ofMinutes(15))
+            "bestSellers" to defaultCacheConfig.entryTtl(Duration.ofMinutes(15)),
+            "users" to defaultCacheConfig.entryTtl(Duration.ofMinutes(30)),
+            "userAccounts" to defaultCacheConfig.entryTtl(Duration.ofMinutes(30)),
+            "coupons" to defaultCacheConfig.entryTtl(Duration.ofMinutes(20)),
+            "orderProducts" to defaultCacheConfig.entryTtl(Duration.ofMinutes(10))
         )
         
         return RedisCacheManager.builder(redisConnectionFactory)

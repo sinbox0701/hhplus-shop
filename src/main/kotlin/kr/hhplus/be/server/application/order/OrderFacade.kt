@@ -7,6 +7,8 @@ import kr.hhplus.be.server.domain.order.service.OrderCommand
 import kr.hhplus.be.server.domain.order.service.OrderItemCommand
 import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.order.service.OrderService
+import kr.hhplus.be.server.domain.product.model.Product
+import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.product.service.ProductService
@@ -18,6 +20,8 @@ import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.shared.lock.DistributedLock
 import kr.hhplus.be.server.shared.lock.LockKeyConstants
 import kr.hhplus.be.server.shared.transaction.TransactionHelper
+import org.springframework.cache.annotation.Cacheable
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -33,6 +37,22 @@ class OrderFacade(
     private val accountService: AccountService,
     private val transactionHelper: TransactionHelper
 ) {
+    /**
+     * 상품 정보 캐시로 조회
+     */
+    @Cacheable(value = ["orderProducts"], key = "'product_' + #productId")
+    fun getProductWithCache(productId: Long): Product {
+        return productService.get(productId)
+    }
+    
+    /**
+     * 상품 옵션 캐시로 조회
+     */
+    @Cacheable(value = ["orderProducts"], key = "'option_' + #optionId")
+    fun getProductOptionWithCache(optionId: Long): ProductOption {
+        return productOptionService.get(optionId)
+    }
+    
     /**
      * 주문 생성 (장바구니 아이템을 주문으로 변환)
      */
@@ -69,11 +89,11 @@ class OrderFacade(
             // 3. 상품 및 옵션 검증 및 가격 계산
             var totalPrice = 0.0
             val orderItemCommands = criteria.orderItems.map { item -> 
-                // 상품 및 옵션 정보 조회
-                val product = productService.get(item.productId)
-                val productOption = productOptionService.get(item.productOptionId)
+                // 상품 및 옵션 정보 조회 (캐시된 값 사용)
+                val product = getProductWithCache(item.productId)
+                val productOption = getProductOptionWithCache(item.productOptionId)
                 
-                // 재고 확인
+                // 재고 확인 - 재고는 항상 최신 정보를 사용
                 if (productOption.availableQuantity < item.quantity) {
                     throw IllegalStateException("상품 옵션의 재고가 부족합니다: ${productOption.name}")
                 }
