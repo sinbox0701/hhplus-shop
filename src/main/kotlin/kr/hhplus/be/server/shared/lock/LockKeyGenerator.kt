@@ -139,7 +139,7 @@ object LockKeyGenerator {
          * 이벤트 정보 수정 시 사용
          */
         fun idLock(couponEventId: String) = generate(
-            LockKeyConstants.COUPON_EVENT_PREFIX,
+            LockKeyConstants.COUPON_PREFIX,
             LockKeyConstants.RESOURCE_ID,
             couponEventId
         )
@@ -149,7 +149,7 @@ object LockKeyGenerator {
          * 이벤트 참여 처리 시 사용
          */
         fun eventLock(couponEventId: String) = generate(
-            LockKeyConstants.COUPON_EVENT_PREFIX,
+            LockKeyConstants.COUPON_PREFIX,
             LockKeyConstants.RESOURCE_EVENT,
             couponEventId
         )
