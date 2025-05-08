@@ -8,6 +8,9 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.reflect.MethodSignature
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.expression.ExpressionParser
+import org.springframework.expression.spel.standard.SpelExpressionParser
+import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.stereotype.Component
 
 /**
@@ -18,6 +21,8 @@ import org.springframework.stereotype.Component
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class DistributedLockAspect(private val lockManager: DistributedLockManager) {
+    
+    private val parser: ExpressionParser = SpelExpressionParser()
     
     /**
      * @DistributedLock 어노테이션이 적용된 메서드 실행을 가로채서
@@ -96,10 +101,10 @@ class DistributedLockAspect(private val lockManager: DistributedLockManager) {
     }
     
     /**
-     * 표현식에서 리소스 ID를 추출합니다.
-     * 예: "criteria.userId"와 같은 표현식에서 실제 userId 값을 추출
+     * 표현식에서 리소스 ID 값을 추출합니다.
+     * 단순한 파라미터 이름이나 중첩된 필드 접근(criteria.userId 등)을 처리합니다.
      *
-     * @param expression 표현식
+     * @param expression 리소스 ID 표현식
      * @param joinPoint 메서드 실행 지점
      * @return 추출된 리소스 ID 문자열
      */
@@ -108,37 +113,27 @@ class DistributedLockAspect(private val lockManager: DistributedLockManager) {
         val parameterNames = methodSignature.parameterNames
         val args = joinPoint.args
         
-        // 표현식에서 파라미터 경로 파싱 (예: "criteria.userId")
-        val parts = expression.split(".")
-        val rootParamName = parts[0]
-        
-        // 파라미터 인덱스 찾기
-        val paramIndex = parameterNames.indexOf(rootParamName)
-        if (paramIndex == -1) {
-            throw IllegalArgumentException("파라미터 이름 '$rootParamName'을 찾을 수 없습니다: $expression")
+        // 단순 파라미터 이름인 경우 직접 매핑
+        val parameterIndex = parameterNames.indexOf(expression)
+        if (parameterIndex >= 0 && parameterIndex < args.size) {
+            return args[parameterIndex].toString()
         }
         
-        // 파라미터 값 가져오기
-        var value: Any? = args[paramIndex]
+        // SPEL 표현식으로 처리
+        val context = StandardEvaluationContext()
         
-        // 중첩 필드 처리
-        for (i in 1 until parts.size) {
-            if (value == null) break
-            
-            val fieldName = parts[i]
-            val getterMethod = value::class.java.methods.find { 
-                it.name == "get${fieldName.capitalize()}" || 
-                it.name == fieldName || 
-                it.name == "is${fieldName.capitalize()}"
+        // 파라미터를 컨텍스트에 등록
+        for (i in parameterNames.indices) {
+            if (i < args.size) {
+                context.setVariable(parameterNames[i], args[i])
             }
-            
-            if (getterMethod == null) {
-                throw IllegalArgumentException("필드 '$fieldName'을 클래스 '${value::class.java.simpleName}'에서 찾을 수 없습니다: $expression")
-            }
-            
-            value = getterMethod.invoke(value)
         }
         
-        return value?.toString() ?: throw IllegalArgumentException("표현식 '$expression'에서 null 값이 추출되었습니다")
+        // 표현식 평가
+        val resourceId = parser.parseExpression("#${expression}").getValue(context)
+        
+        return resourceId?.toString() ?: throw IllegalArgumentException(
+            "리소스 ID 표현식이 null을 반환했습니다: $expression"
+        )
     }
 } 

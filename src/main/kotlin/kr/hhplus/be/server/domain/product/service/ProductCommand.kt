@@ -13,4 +13,9 @@ class ProductCommand {
         val description: String? = null,
         val price: Double? = null
     )
+    
+    data class UpdateStockCommand(
+        val productId: Long,
+        val quantity: Int
+    )
 }

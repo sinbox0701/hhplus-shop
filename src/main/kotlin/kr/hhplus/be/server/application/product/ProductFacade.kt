@@ -16,6 +16,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kr.hhplus.be.server.shared.lock.CompositeLock
+import kr.hhplus.be.server.shared.lock.DistributedLock
+import kr.hhplus.be.server.shared.lock.LockKeyConstants
+import kr.hhplus.be.server.domain.product.service.ProductCommand
 
 @Service
 class ProductFacade(
@@ -216,5 +220,81 @@ class ProductFacade(
         
         // 3. 상품 삭제
         productService.delete(productId)
+    }
+
+    /**
+     * 상품 재고를 증가시키는 메서드
+     */
+    @DistributedLock(
+        domain = LockKeyConstants.PRODUCT_PREFIX,
+        resourceType = LockKeyConstants.RESOURCE_STOCK,
+        resourceIdExpression = "criteria.productId"
+    )
+    @CachePut(value = ["products"], key = "#criteria.productId")
+    @CacheEvict(value = ["products"], key = "'all'")
+    @Transactional
+    fun increaseStock(criteria: ProductCriteria.UpdateStockCriteria): ProductResult.Single {
+        val product = productService.increaseStock(criteria.toCommand())
+        return ProductResult.Single.from(product)
+    }
+    
+    /**
+     * 상품 재고를 감소시키는 메서드
+     */
+    @DistributedLock(
+        domain = LockKeyConstants.PRODUCT_PREFIX,
+        resourceType = LockKeyConstants.RESOURCE_STOCK,
+        resourceIdExpression = "criteria.productId"
+    )
+    @CachePut(value = ["products"], key = "#criteria.productId")
+    @CacheEvict(value = ["products"], key = "'all'")
+    @Transactional
+    fun decreaseStock(criteria: ProductCriteria.UpdateStockCriteria): ProductResult.Single {
+        val product = productService.decreaseStock(criteria.toCommand())
+        return ProductResult.Single.from(product)
+    }
+    
+    /**
+     * 여러 상품의 재고를 한 번에 감소시키는 메서드 (주문 처리 시 사용)
+     */
+    @CompositeLock(
+        locks = [
+            DistributedLock(
+                domain = LockKeyConstants.PRODUCT_PREFIX,
+                resourceType = LockKeyConstants.RESOURCE_STOCK,
+                resourceIdExpression = "criteria.items[0].productId",
+                timeout = LockKeyConstants.EXTENDED_TIMEOUT
+            ),
+            DistributedLock(
+                domain = LockKeyConstants.PRODUCT_PREFIX,
+                resourceType = LockKeyConstants.RESOURCE_STOCK,
+                resourceIdExpression = "criteria.items.size > 1 ? criteria.items[1].productId : criteria.items[0].productId"
+            )
+        ],
+        ordered = true
+    )
+    @Transactional
+    fun decreaseStockBatch(criteria: ProductCriteria.BatchUpdateStockCriteria): List<ProductResult.Single> {
+        // 결과 저장 리스트
+        val results = mutableListOf<ProductResult.Single>()
+        
+        // 각 상품별 재고 차감 처리
+        criteria.items.forEach { stockItem ->
+            val updateCommand = ProductCommand.UpdateStockCommand(
+                productId = stockItem.productId,
+                quantity = stockItem.quantity
+            )
+            
+            val product = productService.decreaseStock(updateCommand)
+            results.add(ProductResult.Single.from(product))
+            
+            // 캐시 갱신
+            cacheManager.getCache("products")?.evict(stockItem.productId)
+        }
+        
+        // 전체 상품 리스트 캐시 갱신
+        cacheManager.getCache("products")?.evict("all")
+        
+        return results
     }
 }
