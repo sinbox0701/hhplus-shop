@@ -1,0 +1,165 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 12. 분산 락 키 관리 가이드라인
+
+## 1. 개요
+
+본 문서는 Voyage-Shop 애플리케이션의 분산 락 키 관리에 관한 규약을 정의합니다. 분산 락은 여러 서버나 스레드에서 동시에 동일한 리소스에 접근할 때 발생할 수 있는 동시성 문제를 방지하기 위해 사용됩니다.
+
+분산 락 키를 체계적으로 관리하는 것은 다음과 같은 이점이 있습니다:
+- 일관된 락 키 네이밍 규칙으로 코드 가독성 향상
+- 중복 코드 제거 및 유지보수성 향상
+- 실수로 인한 락 획득 실패 및 동시성 문제 방지
+
+## 2. 락 키 구조
+
+모든 락 키는 다음 형식을 따릅니다:
+
+```
+{도메인}-{리소스타입}:{리소스ID}
+```
+
+예시:
+- `order-user:123` - 사용자 ID 123에 대한 주문 락
+- `product-stock:456` - 상품 ID 456의 재고에 대한 락
+- `coupon-user-id:789` - 쿠폰 사용자 ID 789에 대한 락
+
+## 3. 락 키 생성 유틸리티 클래스
+
+모든 파사드 레이어에서는 락 키 생성 시 `LockKeyGenerator` 유틸리티 클래스를 사용해야 합니다. 이 클래스는 도메인별로 그룹화된 정적 메서드를 제공하여 일관된 락 키 생성을 보장합니다.
+
+```kotlin
+val orderUserLock = LockKeyGenerator.Order.userLock("user123")
+val productStockLock = LockKeyGenerator.Product.stockLock("product456")
+val couponUserLock = LockKeyGenerator.CouponUser.idLock("coupon789")
+```
+
+## 4. 타임아웃 상수 사용
+
+락 획득 시 타임아웃 값은 `LockKeyConstants`에 정의된 상수를 사용합니다:
+
+```kotlin
+val timeouts = listOf(LockKeyConstants.EXTENDED_TIMEOUT) + 
+    List(allKeys.size - 1) { LockKeyConstants.DEFAULT_TIMEOUT }
+```
+
+기본값:
+- `DEFAULT_TIMEOUT`: 10초
+- `EXTENDED_TIMEOUT`: 30초
+
+## 5. 도메인별 락 사용 가이드라인
+
+### 5.1 주문(Order) 도메인
+
+- 주문 생성 시: `Order.userLock(userId)`
+- 주문 상태 변경 시: `Order.idLock(orderId)` 또는 `Order.statusLock(orderId)`
+- 주문 결제 처리 시: `Order.paymentLock(orderId)`
+
+### 5.2 상품(Product) 도메인
+
+- 재고 변경 시: `Product.stockLock(productId)`
+- 상품 정보 수정 시: `Product.idLock(productId)`
+
+### 5.3 쿠폰(CouponUser) 도메인
+
+- 쿠폰 사용 시: `CouponUser.idLock(couponUserId)`
+- 사용자별 쿠폰 처리 시: `CouponUser.userLock(userId)`
+
+### 5.4 쿠폰 이벤트(CouponEvent) 도메인
+
+- 쿠폰 이벤트 정보 수정 시: `CouponEvent.idLock(couponEventId)`
+- 이벤트 참여 처리 시: `CouponEvent.eventLock(couponEventId)`
+
+### 5.5 사용자 포인트(UserPoint) 도메인
+
+- 포인트 증감 처리 시: `UserPoint.userLock(userId)` 또는 `UserPoint.pointLock(userId)`
+- 포인트 정보 수정 시: `UserPoint.idLock(pointId)`
+
+### 5.6 주문 아이템 랭킹(OrderItemRank) 도메인
+
+- 랭킹 갱신 처리 시: `OrderItemRank.updateLock(rankType)`
+
+## 6. 락 획득 순서
+
+데드락을 방지하기 위해 여러 락을 획득해야 하는 경우 다음 순서를 따릅니다:
+
+1. 사용자 관련 락 (`user`, `user-point`)
+2. 주문 관련 락 (`order`)
+3. 상품 관련 락 (`product`)
+4. 쿠폰 관련 락 (`coupon-user`, `coupon-event`)
+
+동일한 타입의 락이 여러 개 필요한 경우(예: 여러 상품의 재고 락), `DistributedLockUtils.sortLockKeys` 메서드를 사용하여 문자열 순서로 정렬하여 획득합니다.
+
+```kotlin
+val productKeys = productIds.map { LockKeyGenerator.Product.stockLock(it) }
+val sortedProductKeys = DistributedLockUtils.sortLockKeys(productKeys)
+```
+
+## 7. 락 구현 예시
+
+아래는 OrderFacade에서 주문 생성 시 락을 획득하는 예시입니다:
+
+```kotlin
+fun createOrder(criteria: OrderCriteria.Create): OrderResult.Single {
+    // 1. 락 키 생성
+    val orderKey = LockKeyGenerator.Order.userLock(criteria.userId)
+    
+    // 상품 락 키 생성
+    val productIds = criteria.items.map { it.productId }
+    val productKeys = productIds.map { LockKeyGenerator.Product.stockLock(it) }
+    
+    // 쿠폰 락 키 생성
+    val couponKey = criteria.couponUserId?.let { LockKeyGenerator.CouponUser.idLock(it) }
+    
+    // 2. 락 획득 순서 정의 (사용자 -> 상품들 -> 쿠폰)
+    val allKeys = listOf(orderKey) + DistributedLockUtils.sortLockKeys(productKeys) + listOfNotNull(couponKey)
+    
+    // 3. 타임아웃 설정
+    val timeouts = listOf(LockKeyConstants.EXTENDED_TIMEOUT) + 
+        List(allKeys.size - 1) { LockKeyConstants.DEFAULT_TIMEOUT }
+    
+    // 4. 모든 락을 순서대로 획득하고 액션 실행
+    return DistributedLockUtils.withOrderedLocks(
+        lockManager = lockManager,
+        keys = allKeys,
+        timeouts = timeouts,
+        action = {
+            // 트랜잭션 및 비즈니스 로직 처리
+            val transactionTemplate = TransactionTemplate(transactionManager)
+            transactionTemplate.execute {
+                // 비즈니스 로직 처리
+            }
+        }
+    )
+}
+```
+
+## 8. 분산 락 관련 가이드라인
+
+### 8.1 락 범위 최소화
+
+- 락을 획득하는 시간은 최소화하고, 필요한 작업만 락 내에서 수행합니다.
+- 외부 API 호출 등 시간이 오래 걸릴 수 있는 작업은 가능한 락 획득 전이나 락 해제 후에 수행합니다.
+
+### 8.2 타임아웃 설정
+
+- 첫 번째 락은 `LockKeyConstants.EXTENDED_TIMEOUT` (30초)를 사용합니다.
+- 나머지 락은 `LockKeyConstants.DEFAULT_TIMEOUT` (10초)를 사용합니다.
+- 특수한 요구 사항이 있는 경우, 상황에 맞게 조정합니다.
+
+### 8.3 예외 처리
+
+- 락 획득 실패 시 `LockAcquisitionException`이 발생합니다.
+- 이 예외는 적절히 처리하여 사용자에게 의미 있는 메시지를 제공해야 합니다.
+
+## 9. 신규 도메인 추가 시 가이드라인
+
+신규 도메인을 추가할 때는 다음 단계에 따라 락 관리 코드를 추가합니다:
+
+1. `LockKeyConstants`에 도메인 프리픽스 상수 추가
+2. `LockKeyGenerator`에 해당 도메인을 위한 중첩 객체 추가
+3. 필요한 락 키 생성 메서드 구현
+4. 이 문서에 도메인별 락 사용 가이드라인 업데이트

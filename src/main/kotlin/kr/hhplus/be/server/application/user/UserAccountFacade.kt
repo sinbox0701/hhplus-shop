@@ -5,6 +5,8 @@ import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.AccountCommand
 import kr.hhplus.be.server.domain.user.service.AccountService
 import kr.hhplus.be.server.domain.user.service.UserService
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -30,6 +32,7 @@ class UserAccountFacade(
     /**
      * 유저와 계좌 정보 조회
      */
+    @Cacheable(value = ["userAccounts"], key = "#userId")
     @Transactional(readOnly = true)
     fun findUserWithAccount(userId: Long): Pair<User, Account> {
         val user = userService.findById(userId)
@@ -41,6 +44,7 @@ class UserAccountFacade(
     /**
      * 유저 확인 후 계좌 잔액 충전
      */
+    @CacheEvict(value = ["userAccounts"], key = "#criteria.userId")
     @Transactional
     fun chargeAccount(criteria: UserCriteria.ChargeAccountCriteria): Account {
         // 유저 확인
@@ -59,6 +63,7 @@ class UserAccountFacade(
     /**
      * 유저 확인 후 계좌 잔액 차감
      */
+    @CacheEvict(value = ["userAccounts"], key = "#userId")
     @Transactional
     fun withdrawAccount(userId: Long, amount: Double): Account {
         // 유저 확인
@@ -78,6 +83,7 @@ class UserAccountFacade(
     /**
      * 유저 삭제 시 계좌도 함께 삭제
      */
+    @CacheEvict(value = ["userAccounts"], key = "#userId")
     @Transactional
     fun deleteUserWithAccount(userId: Long) {
         // 계좌 확인 및 삭제
