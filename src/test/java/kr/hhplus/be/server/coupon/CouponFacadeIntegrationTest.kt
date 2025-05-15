@@ -12,6 +12,7 @@ import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.service.CouponService
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.shared.transaction.TransactionHelper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -41,7 +42,8 @@ class CouponFacadeIntegrationTest {
     fun setup() {
         couponService = mockk(relaxed = true)
         userService = mockk(relaxed = true)
-        couponFacade = CouponFacade(couponService, userService)
+        val transactionHelper = mockk<TransactionHelper>(relaxed = true)
+        couponFacade = CouponFacade(couponService, userService, transactionHelper)
     }
 
     @Test
