@@ -1,4 +1,4 @@
-package kr.hhplus.be.server.web.api.admin
+package kr.hhplus.be.server.interfaces.config
 
 import com.github.benmanes.caffeine.cache.stats.CacheStats
 import org.springframework.cache.CacheManager
@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentMap
  * 캐시 관리를 위한 관리자용 API 컨트롤러
  */
 @RestController
-@RequestMapping("/api/admin/cache")
+@RequestMapping("/api/cache")
 class CacheManagementController(
     private val cacheManager: CacheManager,
     private val redisTemplate: RedisTemplate<String, Any>
