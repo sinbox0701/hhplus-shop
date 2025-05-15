@@ -297,4 +297,33 @@ class ProductFacade(
         
         return results
     }
+
+    /**
+     * 상품 ID 목록으로 상품과 옵션 정보를 함께 조회하는 메서드
+     */
+    @Transactional(readOnly = true)
+    fun getProductsWithOptionsByIds(productIds: List<Long>): List<ProductResult.ProductWithOptions> {
+        if (productIds.isEmpty()) return emptyList()
+        
+        // 1. 상품 정보 조회
+        val products = productService.getByIds(productIds)
+        if (products.isEmpty()) return emptyList()
+        
+        // 2. 모든 상품의 옵션 한 번에 조회
+        val allOptions = productOptionService.getAllByProductIds(productIds)
+        
+        // 3. 옵션을 상품별로 그룹화
+        val optionsByProductId = allOptions.groupBy { it.productId }
+        
+        // 4. 결과 조합 (순서 유지를 위해 productIds 순서대로 맵핑)
+        val productsMap = products.associateBy { it.id }
+        return productIds
+            .mapNotNull { productsMap[it] }
+            .map { product ->
+                ProductResult.ProductWithOptions(
+                    product, 
+                    optionsByProductId[product.id] ?: emptyList()
+                )
+            }
+    }
 }
