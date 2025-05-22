@@ -52,3 +52,10 @@ spring:
     url: jdbc:mysql://localhost:3306/hhplus?characterEncoding=UTF-8&serverTimezone=UTC
     username: application
     password: application
+
+# 데이터 플랫폼 설정
+data-platform:
+  # 데이터 플랫폼 연동 활성화 여부 (기본값: false)
+  enabled: false
+  # 데이터 플랫폼 API 엔드포인트
+  api-endpoint: http://localhost:8080/api/data-platform

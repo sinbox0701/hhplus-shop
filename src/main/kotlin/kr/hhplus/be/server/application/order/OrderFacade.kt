@@ -22,11 +22,15 @@ import kr.hhplus.be.server.shared.lock.DistributedLock
 import kr.hhplus.be.server.shared.lock.LockKeyConstants
 import kr.hhplus.be.server.shared.transaction.TransactionHelper
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
+/**
+ * 주문 Facade
+ * - 주문 도메인 서비스와 연결하는 역할
+ * - 이벤트 기반 아키텍처로 각 서비스 간 의존성 제거
+ */
 @Service
 class OrderFacade(
     private val orderService: OrderService,
@@ -35,15 +39,13 @@ class OrderFacade(
     private val productOptionService: ProductOptionService,
     private val userService: UserService,
     private val couponService: CouponService,
-    private val accountService: AccountService,
-    private val productRankingService: ProductRankingService,
     private val transactionHelper: TransactionHelper
 ) {
     /**
      * 상품 정보 캐시로 조회
      */
     @Cacheable(value = ["orderProducts"], key = "'product_' + #productId")
-    fun getProductWithCache(productId: Long): Product {
+    fun getProductWithCache(productId: Long): kr.hhplus.be.server.domain.product.model.Product {
         return productService.get(productId)
     }
     
@@ -51,12 +53,13 @@ class OrderFacade(
      * 상품 옵션 캐시로 조회
      */
     @Cacheable(value = ["orderProducts"], key = "'option_' + #optionId")
-    fun getProductOptionWithCache(optionId: Long): ProductOption {
+    fun getProductOptionWithCache(optionId: Long): kr.hhplus.be.server.domain.product.model.ProductOption {
         return productOptionService.get(optionId)
     }
     
     /**
      * 주문 생성 (장바구니 아이템을 주문으로 변환)
+     * - 주문 도메인 로직만 처리하고 나머지는 이벤트로 처리
      */
     @DistributedLock(
         domain = LockKeyConstants.ORDER_PREFIX,
@@ -70,100 +73,41 @@ class OrderFacade(
             val user = userService.findById(criteria.userId)
             
             // 2. 쿠폰 유효성 검증
-            val couponInfo = criteria.userCouponId?.let { couponId ->
-                val userCoupon = couponService.findUserCouponById(couponId)
-                val coupon = couponService.findById(userCoupon.couponId)
-                
-                // 쿠폰 유효기간 검증
-                val now = LocalDateTime.now()
-                if (now.isBefore(coupon.startDate) || now.isAfter(coupon.endDate)) {
-                    throw IllegalStateException("쿠폰 유효기간이 아닙니다")
-                }
-                
-                // 쿠폰 사용 가능 여부 검증
-                if (userCoupon.isIssued() && userCoupon.isUsed()) {
-                    throw IllegalStateException("이미 사용된 쿠폰입니다")
-                }
-                
-                Pair(userCoupon, coupon)
-            }
+            val couponInfo = validateAndGetCoupon(criteria.userCouponId, criteria.userId)
 
             // 3. 상품 및 옵션 검증 및 가격 계산
-            var totalPrice = 0.0
-            val orderItemCommands = criteria.orderItems.map { item -> 
-                // 상품 및 옵션 정보 조회 (캐시된 값 사용)
-                val product = getProductWithCache(item.productId)
-                val productOption = getProductOptionWithCache(item.productOptionId)
-                
-                // 재고 확인 - 재고는 항상 최신 정보를 사용
-                if (productOption.availableQuantity < item.quantity) {
-                    throw IllegalStateException("상품 옵션의 재고가 부족합니다: ${productOption.name}")
-                }
-                
-                // 상품 가격 계산
-                val basePrice = product.price + productOption.additionalPrice
-                val itemPrice = basePrice * item.quantity
-                
-                totalPrice += itemPrice
-                
-                // 주문 상품 생성 명령 준비
-                OrderItemCommand.CreateOrderItemCommand(
-                    orderId = 0, // 임시 값, 실제 orderId는 주문 생성 후 설정
-                    productId = product.id!!,
-                    productOptionId = productOption.id!!,
-                    userCouponId = couponInfo?.first?.id,
-                    quantity = item.quantity,
-                    discountRate = null
-                ) to Pair(product, productOption)
-            }
+            val (orderItemCommands, totalPrice) = validateProductsAndCalculatePrice(criteria.orderItems)
             
             // 4. 쿠폰 할인 적용
-            val finalPrice = if (couponInfo != null) {
-                val (userCoupon, coupon) = couponInfo
-                // 쿠폰 종류에 따라 할인 적용 방식 다르게 처리
-                when (coupon.couponType) {
-                    CouponType.DISCOUNT_ORDER -> totalPrice * (1 - coupon.discountRate / 100) // 주문 전체 할인
-                    CouponType.DISCOUNT_PRODUCT -> totalPrice * (1 - coupon.discountRate / 100) // 상품 할인도 동일하게 적용
-                }
-            } else {
-                totalPrice
-            }
+            val finalPrice = applyDiscount(totalPrice, couponInfo?.second)
             
-            // 5. 주문 생성 (재고 확인 후 실행)
+            // 5. 주문 생성
             val order = orderService.createOrder(OrderCommand.CreateOrderCommand(
                 userId = user.id!!,
                 userCouponId = couponInfo?.first?.id,
-                totalPrice = 0.0 // 임시 가격 (나중에 업데이트)
-            ))
-            
-            // 6. 주문 상품 생성 및 재고 감소
-            val orderItems = orderItemCommands.map { (itemCommand, productPair) -> 
-                val (product, productOption) = productPair
-                
-                // 주문 상품 생성
-                val orderItem = orderItemService.create(itemCommand.copy(orderId = order.id!!))
-                
-                // 재고 감소
-                productOptionService.subtractQuantity(ProductOptionCommand.UpdateQuantityCommand(
-                    id = productOption.id!!,
-                    quantity = itemCommand.quantity
-                ))
-                
-                orderItem
-            }
-            
-            // 7. 주문 총 가격 업데이트
-            val updatedOrder = orderService.updateOrderTotalPrice(OrderCommand.UpdateOrderTotalPriceCommand(
-                id = order.id!!,
                 totalPrice = finalPrice
             ))
             
-            OrderResult.OrderWithItems(updatedOrder, orderItems)
+            // 6. 주문 상품 생성
+            val orderItems = createOrderItems(orderItemCommands, order.id!!)
+            
+            // 7. 주문 이벤트 발행 (이벤트를 통해 재고 감소 등 부가 작업 처리)
+            val completedOrder = orderService.createOrderAndPublishEvent(
+                OrderCommand.CreateOrderCommand(
+                    userId = order.userId,
+                    userCouponId = order.userCouponId,
+                    totalPrice = finalPrice
+                ),
+                orderItems
+            )
+            
+            OrderResult.OrderWithItems(completedOrder, orderItems)
         }
     }
     
     /**
      * 주문 결제 처리
+     * - 결제 완료 후 이벤트를 발행하여 쿠폰 적용, 계좌 차감 등 부가 작업 처리
      */
     @DistributedLock(
         domain = LockKeyConstants.ORDER_PREFIX,
@@ -176,46 +120,26 @@ class OrderFacade(
             // 1. 주문 조회
             val order = orderService.getOrder(criteria.orderId)
             
-            // 2. 사용자 및 계좌 확인
+            // 2. 사용자 확인
             val user = userService.findById(criteria.userId)
             if (order.userId != user.id) {
                 throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
             }
             
-            val account = accountService.findByUserId(user.id!!)
-            
-            // 3. 잔액 확인
-            if (account.amount < order.totalPrice) {
-                throw IllegalStateException("계좌 잔액이 부족합니다")
+            // 3. 주문 상태 확인
+            if (order.status != OrderStatus.PENDING) {
+                throw IllegalStateException("결제할 수 없는 주문 상태입니다: ${order.status}")
             }
             
             try {
-                // 4. 주문 상태 확인
-                if (order.status != OrderStatus.PENDING) {
-                    throw IllegalStateException("결제할 수 없는 주문 상태입니다: ${order.status}")
-                }
-                
-                // 5. 계좌에서 금액 차감
-                accountService.withdraw(AccountCommand.UpdateAccountCommand(
-                    id = account.id!!,
-                    amount = order.totalPrice
-                ))
-                
-                // 6. 쿠폰 사용 처리
-                order.userCouponId?.let {
-                    couponService.useUserCoupon(it)
-                }
-                
-                // 7. 주문 상태 완료로 변경
+                // 4. 주문 완료 처리 (이벤트를 통해 계좌 차감, 쿠폰 사용 등 처리)
                 val completedOrder = orderService.completeOrder(order.id!!)
                 
-                // 8. 주문 아이템 조회
+                // 5. 주문 아이템 조회
                 val orderItems = orderItemService.getByOrderId(order.id!!)
                 
                 OrderResult.OrderWithItems(completedOrder, orderItems)
-                
             } catch (e: Exception) {
-                // 오류 발생 시 롤백은 transactionHelper에 의해 자동으로 처리됨
                 throw e
             }
         }
@@ -223,6 +147,7 @@ class OrderFacade(
     
     /**
      * 주문 취소
+     * - 취소 후 이벤트를 발행하여 재고 복구, 계좌 환불 등 처리
      */
     @DistributedLock(
         domain = LockKeyConstants.ORDER_PREFIX,
@@ -241,117 +166,13 @@ class OrderFacade(
                 throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
             }
             
-            // 3. 주문 취소 가능 여부 확인
-            if (!order.isCancellable()) {
-                throw IllegalStateException("취소할 수 없는 주문 상태입니다: ${order.status}")
-            }
+            // 3. 주문 취소 처리 (이벤트를 통해 재고 복구, 환불 등 처리)
+            val cancelledOrder = orderService.cancelOrder(order.id!!)
             
             // 4. 주문 아이템 조회
             val orderItems = orderItemService.getByOrderId(order.id!!)
             
-            // 5. 재고 복구
-            orderItems.forEach { orderItem ->
-                productOptionService.updateQuantity(ProductOptionCommand.UpdateQuantityCommand(
-                    id = orderItem.productOptionId,
-                    quantity = orderItem.quantity
-                ))
-            }
-            
-            // 6. 주문이 이미 결제 완료 상태라면 환불 처리
-            if (order.status == OrderStatus.COMPLETED) {
-                // 계좌 조회
-                val account = accountService.findByUserId(userId)
-                
-                // 환불 처리 (계좌에 금액 환불)
-                accountService.charge(AccountCommand.UpdateAccountCommand(
-                    id = account.id!!,
-                    amount = order.totalPrice
-                ))
-                
-                // 쿠폰 사용 취소 처리
-                order.userCouponId?.let { couponId ->
-                    // 실제로는 쿠폰 사용 취소 메소드 호출 필요
-                    // couponService.cancelUsedCoupon(couponId)
-                }
-            }
-            
-            // 7. 주문 상태 취소로 변경
-            val canceledOrder = orderService.cancelOrder(order.id!!)
-            
-            OrderResult.OrderWithItems(canceledOrder, orderItems)
-        }
-    }
-    
-    /**
-     * 부분 주문 취소 (일부 상품만 취소)
-     */
-    @DistributedLock(
-        domain = LockKeyConstants.ORDER_PREFIX,
-        resourceType = LockKeyConstants.RESOURCE_ID,
-        resourceIdExpression = "orderId",
-        timeout = LockKeyConstants.EXTENDED_TIMEOUT
-    )
-    fun cancelOrderItem(orderId: Long, orderItemId: Long, userId: Long): OrderResult.OrderWithItems {
-        return transactionHelper.executeInTransaction {
-            // 1. 주문 및 주문 아이템 조회
-            val order = orderService.getOrder(orderId)
-            val orderItem = orderItemService.getById(orderItemId)
-            
-            // 2. 주문 소유자 확인
-            val user = userService.findById(userId)
-            if (order.userId != user.id) {
-                throw IllegalArgumentException("해당 주문의 소유자가 아닙니다")
-            }
-            
-            // 3. 주문 아이템이 해당 주문에 포함되는지 확인
-            if (orderItem.orderId != order.id) {
-                throw IllegalArgumentException("해당 주문에 포함된 상품이 아닙니다")
-            }
-            
-            // 4. 주문 취소 가능 여부 확인
-            if (!order.isCancellable()) {
-                throw IllegalStateException("취소할 수 없는 주문 상태입니다: ${order.status}")
-            }
-            
-            // 5. 재고 복구
-            productOptionService.updateQuantity(ProductOptionCommand.UpdateQuantityCommand(
-                id = orderItem.productOptionId,
-                quantity = orderItem.quantity
-            ))
-            
-            // 6. 주문 상품 삭제
-            orderItemService.deleteById(orderItem.id!!)
-            
-            // 7. 주문의 총 가격 재계산
-            val remainingItems = orderItemService.getByOrderId(order.id!!)
-            val newTotalPrice = orderItemService.calculateTotalPrice(remainingItems)
-            
-            // 8. 주문이 이미 결제 완료 상태라면 부분 환불 처리
-            if (order.status == OrderStatus.COMPLETED) {
-                // 계좌 조회
-                val account = accountService.findByUserId(userId)
-                
-                // 환불 처리 (계좌에 해당 상품 금액만 환불)
-                accountService.charge(AccountCommand.UpdateAccountCommand(
-                    id = account.id!!,
-                    amount = orderItem.price
-                ))
-            }
-            
-            // 9. 주문 총 가격 업데이트
-            val updatedOrder = orderService.updateOrderTotalPrice(OrderCommand.UpdateOrderTotalPriceCommand(
-                id = order.id!!,
-                totalPrice = newTotalPrice
-            ))
-            
-            // 10. 모든 상품이 취소되었는지 확인
-            if (remainingItems.isEmpty()) {
-                // 주문 자체를 취소 상태로 변경
-                orderService.cancelOrder(order.id!!)
-                return@executeInTransaction OrderResult.OrderWithItems(orderService.getOrder(order.id!!), emptyList())
-            }
-            
-            OrderResult.OrderWithItems(updatedOrder, remainingItems)
+            OrderResult.OrderWithItems(cancelledOrder, orderItems)
         }
     }
     
@@ -410,34 +231,94 @@ class OrderFacade(
             OrderResult.OrderWithItems(order, orderItems)
         }
     }
+    
+    // 내부 헬퍼 메소드
 
     /**
-     * 주문 완료 후 처리
-     * - 주문 상태 변경 및 랭킹 업데이트
+     * 쿠폰 유효성 검증 및 조회
      */
-    @Transactional
-    fun completeOrder(orderId: Long) {
-        // 1. 주문 상태 업데이트
-        val order = orderService.getOrder(orderId)
-        if (order.status != OrderStatus.PENDING) {
-            throw IllegalStateException("완료할 수 없는 주문 상태입니다: ${order.status}")
+    private fun validateAndGetCoupon(userCouponId: Long?, userId: Long): Pair<kr.hhplus.be.server.domain.coupon.model.UserCoupon, kr.hhplus.be.server.domain.coupon.model.Coupon>? {
+        return userCouponId?.let { couponId ->
+            val userCoupon = couponService.findUserCouponById(couponId)
+            val coupon = couponService.findById(userCoupon.couponId)
+            
+            // 쿠폰 소유자 확인
+            if (userCoupon.userId != userId) {
+                throw IllegalArgumentException("해당 쿠폰의 소유자가 아닙니다")
+            }
+            
+            // 쿠폰 유효기간 검증
+            val now = LocalDateTime.now()
+            if (now.isBefore(coupon.startDate) || now.isAfter(coupon.endDate)) {
+                throw IllegalStateException("쿠폰 유효기간이 아닙니다")
+            }
+            
+            // 쿠폰 사용 가능 여부 검증
+            if (userCoupon.isIssued() && userCoupon.isUsed()) {
+                throw IllegalStateException("이미 사용된 쿠폰입니다")
+            }
+            
+            Pair(userCoupon, coupon)
+        }
+    }
+    
+    /**
+     * 상품 및 옵션 검증 및 가격 계산
+     */
+    private fun validateProductsAndCalculatePrice(orderItems: List<OrderCriteria.OrderItemRequest>): Pair<List<Pair<OrderItemCommand.CreateOrderItemCommand, Pair<kr.hhplus.be.server.domain.product.model.Product, kr.hhplus.be.server.domain.product.model.ProductOption>>>, Double> {
+        var totalPrice = 0.0
+        val orderItemCommands = orderItems.map { item -> 
+            // 상품 및 옵션 정보 조회 (캐시된 값 사용)
+            val product = getProductWithCache(item.productId)
+            val productOption = getProductOptionWithCache(item.productOptionId)
+            
+            // 재고 확인 - 재고는 항상 최신 정보를 사용
+            if (productOption.availableQuantity < item.quantity) {
+                throw IllegalStateException("상품 옵션의 재고가 부족합니다: ${productOption.name}")
+            }
+            
+            // 상품 가격 계산
+            val basePrice = product.price + productOption.additionalPrice
+            val itemPrice = basePrice * item.quantity
+            
+            totalPrice += itemPrice
+            
+            // 주문 상품 생성 명령 준비
+            Pair(OrderItemCommand.CreateOrderItemCommand(
+                orderId = 0, // 임시 값, 실제 orderId는 주문 생성 후 설정
+                productId = product.id!!,
+                productOptionId = productOption.id!!,
+                userCouponId = null,
+                quantity = item.quantity,
+                discountRate = null
+            ), Pair(product, productOption))
         }
         
-        // 주문 상태를 완료로 변경
-        orderService.updateOrderStatus(OrderCommand.UpdateOrderStatusCommand(
-            id = orderId,
-            status = OrderStatus.COMPLETED
-        ))
-        
-        // 2. 상품 랭킹 업데이트
-        val orderItems = orderItemService.getByOrderId(orderId)
-        
-        // 각 주문 상품에 대해 랭킹 점수 업데이트
-        orderItems.forEach { orderItem ->
-            productRankingService.incrementProductScore(
-                productId = orderItem.productId,
-                increment = orderItem.quantity.toInt()
-            )
+        return Pair(orderItemCommands, totalPrice)
+    }
+    
+    /**
+     * 쿠폰 할인 적용
+     */
+    private fun applyDiscount(totalPrice: Double, coupon: kr.hhplus.be.server.domain.coupon.model.Coupon?): Double {
+        return if (coupon != null) {
+            // 쿠폰 종류에 따라 할인 적용 방식 다르게 처리
+            when (coupon.couponType) {
+                kr.hhplus.be.server.domain.coupon.model.CouponType.DISCOUNT_ORDER -> totalPrice * (1 - coupon.discountRate / 100) // 주문 전체 할인
+                kr.hhplus.be.server.domain.coupon.model.CouponType.DISCOUNT_PRODUCT -> totalPrice * (1 - coupon.discountRate / 100) // 상품 할인도 동일하게 적용
+            }
+        } else {
+            totalPrice
+        }
+    }
+    
+    /**
+     * 주문 상품 생성
+     */
+    private fun createOrderItems(orderItemCommands: List<Pair<OrderItemCommand.CreateOrderItemCommand, Pair<kr.hhplus.be.server.domain.product.model.Product, kr.hhplus.be.server.domain.product.model.ProductOption>>>, orderId: Long): List<OrderItem> {
+        return orderItemCommands.map { (itemCommand, _) -> 
+            // 주문 상품 생성
+            orderItemService.create(itemCommand.copy(orderId = orderId))
         }
     }
 }
