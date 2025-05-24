@@ -22,6 +22,7 @@ import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.product.service.ProductService
+import kr.hhplus.be.server.domain.ranking.service.ProductRankingService
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.AccountCommand
@@ -37,11 +38,13 @@ import kr.hhplus.be.server.order.TestFixtures.PRODUCT_PRICE
 import kr.hhplus.be.server.order.TestFixtures.QUANTITY
 import kr.hhplus.be.server.order.TestFixtures.USER_COUPON_ID
 import kr.hhplus.be.server.order.TestFixtures.USER_ID
+import kr.hhplus.be.server.shared.transaction.TransactionHelper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.cache.CacheManager
 import java.time.LocalDateTime
 
 class OrderFacadeIntegrationTest {
@@ -68,6 +71,10 @@ class OrderFacadeIntegrationTest {
         userService = mockk()
         couponService = mockk()
         accountService = mockk()
+        // 누락된 의존성 추가
+        val transactionHelper = mockk<TransactionHelper>(relaxed = true)
+        val productRankingService = mockk<ProductRankingService>(relaxed = true)
+        
         orderFacade = OrderFacade(
             orderService,
             orderItemService,
@@ -75,7 +82,9 @@ class OrderFacadeIntegrationTest {
             productOptionService,
             userService,
             couponService,
-            accountService
+            accountService,
+            productRankingService,
+            transactionHelper
         )
     }
 

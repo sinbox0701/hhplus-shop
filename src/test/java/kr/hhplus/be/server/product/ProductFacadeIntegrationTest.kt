@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.cache.CacheManager
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -46,11 +47,13 @@ class ProductFacadeIntegrationTest {
         productOptionService = mockk()
         orderItemService = mockk()
         productSalesService = mockk()
+        val cacheManager = mockk<CacheManager>(relaxed = true)
         productFacade = ProductFacade(
             productService = productService,
             productOptionService = productOptionService,
             orderItemService = orderItemService,
-            productSalesService = productSalesService
+            productSalesService = productSalesService,
+            cacheManager = cacheManager
         )
     }
 
