@@ -12,6 +12,7 @@ import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.product.service.ProductService
+import kr.hhplus.be.server.domain.ranking.service.ProductRankingService
 import kr.hhplus.be.server.domain.user.service.AccountCommand
 import kr.hhplus.be.server.domain.user.service.AccountService
 import kr.hhplus.be.server.domain.user.service.UserService
@@ -35,6 +36,7 @@ class OrderFacade(
     private val userService: UserService,
     private val couponService: CouponService,
     private val accountService: AccountService,
+    private val productRankingService: ProductRankingService,
     private val transactionHelper: TransactionHelper
 ) {
     /**
@@ -406,6 +408,36 @@ class OrderFacade(
         return orders.map { order ->
             val orderItems = orderItemService.getByOrderId(order.id!!)
             OrderResult.OrderWithItems(order, orderItems)
+        }
+    }
+
+    /**
+     * 주문 완료 후 처리
+     * - 주문 상태 변경 및 랭킹 업데이트
+     */
+    @Transactional
+    fun completeOrder(orderId: Long) {
+        // 1. 주문 상태 업데이트
+        val order = orderService.getOrder(orderId)
+        if (order.status != OrderStatus.PENDING) {
+            throw IllegalStateException("완료할 수 없는 주문 상태입니다: ${order.status}")
+        }
+        
+        // 주문 상태를 완료로 변경
+        orderService.updateOrderStatus(OrderCommand.UpdateOrderStatusCommand(
+            id = orderId,
+            status = OrderStatus.COMPLETED
+        ))
+        
+        // 2. 상품 랭킹 업데이트
+        val orderItems = orderItemService.getByOrderId(orderId)
+        
+        // 각 주문 상품에 대해 랭킹 점수 업데이트
+        orderItems.forEach { orderItem ->
+            productRankingService.incrementProductScore(
+                productId = orderItem.productId,
+                increment = orderItem.quantity.toInt()
+            )
         }
     }
 }

@@ -20,6 +20,17 @@ spring:
     properties:
       hibernate.timezone.default_storage: NORMALIZE_UTC
       hibernate.jdbc.time_zone: UTC
+  # Redis 설정 추가
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1시간(ms)
+      cache-null-values: false
 
 springdoc:
   swagger-ui:
