@@ -2,6 +2,8 @@ package kr.hhplus.be.server.order
 
 import kr.hhplus.be.server.application.order.OrderCriteria
 import kr.hhplus.be.server.application.order.OrderFacade
+import kr.hhplus.be.server.application.order.OrderResult
+import kr.hhplus.be.server.domain.order.OrderEventPublisher
 import kr.hhplus.be.server.domain.order.service.OrderService
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
@@ -19,14 +21,37 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestPropertySource
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource(properties = ["spring.jpa.properties.hibernate.order_inserts=true", "spring.jpa.properties.hibernate.order_updates=true"])
 class ConcurrencyOrderFacadeTest {
+
+    /**
+     * 이벤트 테스트용 설정 클래스 추가
+     */
+    @Configuration
+    class TestConfig {
+        
+        @Bean
+        @Primary
+        fun testOrderEventPublisher(): OrderEventPublisher {
+            // 테스트용 이벤트 발행자 - 실제 이벤트 발행하지 않고 로깅만 함
+            return object : OrderEventPublisher {
+                override fun publish(event: kr.hhplus.be.server.domain.order.event.OrderEvent) {
+                    println("Test event published: $event")
+                }
+            }
+        }
+    }
 
     @Autowired
     private lateinit var orderFacade: OrderFacade
@@ -228,7 +253,6 @@ class ConcurrencyOrderFacadeTest {
         // given
         // 재고를 5개로 제한
         val limitedQuantity = 5
-        val updatedOption = testProductOption.copy(availableQuantity = limitedQuantity)
         productOptionService.update(ProductOptionCommand.UpdateProductOptionCommand(
             id = testProductOption.id!!,
             name = testProductOption.name,

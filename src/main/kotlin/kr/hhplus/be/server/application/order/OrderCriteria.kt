@@ -10,17 +10,27 @@ import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.UserCommand
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.user.service.AccountCommand
+
 class OrderCriteria{
+    /**
+     * 주문 상품 요청 인터페이스
+     */
+    interface OrderItemRequest {
+        val productId: Long
+        val productOptionId: Long
+        val quantity: Int
+    }
+
     /**
     * 주문 상품 생성 요청 데이터 클래스
      */
     data class OrderItemCreateCriteria(
-        val productId: Long,
-        val productOptionId: Long,
-        val quantity: Int,
+        override val productId: Long,
+        override val productOptionId: Long,
+        override val quantity: Int,
         val userCouponId: Long? = null,
         val discountRate: Double? = null
-    ){
+    ) : OrderItemRequest {
         fun toOrderItemCommand(orderId: Long, productId: Long, productOptionId: Long, quantity: Int, userCouponId: Long?, discountRate: Double?): OrderItemCommand.CreateOrderItemCommand {
             return OrderItemCommand.CreateOrderItemCommand(orderId, productId, productOptionId, quantity, userCouponId, discountRate)
         }

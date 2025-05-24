@@ -2,10 +2,12 @@ package kr.hhplus.be.server.order
 
 import io.mockk.*
 import kr.hhplus.be.server.domain.common.TimeProvider
+import kr.hhplus.be.server.domain.order.OrderEventPublisher
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
 import kr.hhplus.be.server.domain.order.service.OrderCommand
+import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.order.service.OrderService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -18,12 +20,21 @@ class OrderServiceUnitTest {
     private lateinit var orderRepository: OrderRepository
     private lateinit var orderService: OrderService
     private lateinit var timeProvider: TimeProvider
+    private lateinit var orderEventPublisher: OrderEventPublisher
+    private lateinit var orderItemService: OrderItemService
 
     @BeforeEach
     fun setup() {
         orderRepository = mockk(relaxed = true)
         timeProvider = TestFixtures.fixedTimeProvider
-        orderService = OrderService(orderRepository, timeProvider)
+        orderEventPublisher = mockk(relaxed = true)
+        orderItemService = mockk(relaxed = true)
+        orderService = OrderService(
+            orderRepository, 
+            orderEventPublisher, 
+            orderItemService, 
+            timeProvider
+        )
     }
 
     @Test

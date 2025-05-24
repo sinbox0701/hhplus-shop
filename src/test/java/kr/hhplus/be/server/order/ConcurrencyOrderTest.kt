@@ -1,11 +1,13 @@
 package kr.hhplus.be.server.order
 
 import kr.hhplus.be.server.domain.common.TimeProvider
+import kr.hhplus.be.server.domain.order.OrderEventPublisher
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderItem
 import kr.hhplus.be.server.domain.order.model.OrderStatus
 import kr.hhplus.be.server.domain.order.repository.OrderItemRepository
 import kr.hhplus.be.server.domain.order.repository.OrderRepository
+import kr.hhplus.be.server.domain.order.service.OrderItemService
 import kr.hhplus.be.server.domain.order.service.OrderService
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.repository.ProductRepository
@@ -29,6 +31,8 @@ class ConcurrencyOrderTest {
     private lateinit var productRepository: TestProductRepository
     private lateinit var timeProvider: TimeProvider
     private lateinit var orderService: OrderService
+    private lateinit var orderEventPublisher: OrderEventPublisher
+    private lateinit var orderItemService: OrderItemService
 
     // 테스트용 OrderRepository 구현
     class TestOrderRepository : OrderRepository {
@@ -219,13 +223,20 @@ class ConcurrencyOrderTest {
         orderItemRepository = TestOrderItemRepository()
         productRepository = TestProductRepository()
         timeProvider = Mockito.mock(TimeProvider::class.java)
+        orderEventPublisher = Mockito.mock(OrderEventPublisher::class.java)
+        orderItemService = Mockito.mock(OrderItemService::class.java)
         
         // 현재 시간 설정
         val now = LocalDateTime.now()
         Mockito.`when`(timeProvider.now()).thenReturn(now)
         
         // OrderService 생성
-        orderService = OrderService(orderRepository, timeProvider)
+        orderService = OrderService(
+            orderRepository,
+            orderEventPublisher,
+            orderItemService,
+            timeProvider
+        )
     }
 
     @Test
