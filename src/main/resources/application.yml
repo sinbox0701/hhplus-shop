@@ -31,6 +31,19 @@ spring:
     redis:
       time-to-live: 3600000 # 1시간(ms)
       cache-null-values: false
+  # Kafka 설정 추가
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      retries: 3
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      group-id: coupon-consumer-group
 
 springdoc:
   swagger-ui:

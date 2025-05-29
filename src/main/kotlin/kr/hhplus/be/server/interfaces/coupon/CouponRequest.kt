@@ -7,6 +7,8 @@ import kr.hhplus.be.server.application.coupon.CouponCriteria
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import java.util.UUID
 import io.swagger.v3.oas.annotations.media.Schema
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 
 class CouponRequest {
     data class CreateCouponRequest(
@@ -94,5 +96,23 @@ class CouponRequest {
         @field:Pattern(regexp = "^[A-Z]{6}$", message = "쿠폰 코드는 대문자 영어 6자리여야 합니다.")
         @field:Schema(description = "쿠폰 코드", example = "ABCDEF")
         val couponCode: String
+    )
+    
+    data class CouponPublishRequestDto @JsonCreator constructor(
+        @JsonProperty("userId") val userId: Long,
+        @JsonProperty("couponCode") val couponCode: String
+    )
+    
+    data class CouponPublishResponseDto @JsonCreator constructor(
+        @JsonProperty("requestId") val requestId: String,
+        @JsonProperty("message") val message: String
+    )
+    
+    data class UserCouponDto @JsonCreator constructor(
+        @JsonProperty("id") val id: Long?,
+        @JsonProperty("userId") val userId: Long,
+        @JsonProperty("couponId") val couponId: Long,
+        @JsonProperty("issued") val issued: Boolean,
+        @JsonProperty("used") val used: Boolean
     )
 }

@@ -61,6 +61,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
+    // Kafka
+    implementation("org.springframework.kafka:spring-kafka")
+
     // DB
 	runtimeOnly("com.mysql:mysql-connector-j")
 
