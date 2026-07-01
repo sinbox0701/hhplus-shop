@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -64,14 +65,14 @@ class ConcurrencyOrderFacadeTest {
         // 테스트용 계좌 생성 - 충분한 잔액
         accountService.create(AccountCommand.CreateAccountCommand(
             userId = testUser.id!!,
-            amount = 1000000.0
+            amount = BigDecimal("1000000")
         ))
 
         // 테스트용 상품 생성
         val productCommand = ProductCommand.CreateProductCommand(
             name = "테스트 상품",
             description = "동시성 테스트용 상품",
-            price = 1000.0
+            price = BigDecimal("1000")
         )
         testProduct = productService.create(productCommand)
 
@@ -80,7 +81,7 @@ class ConcurrencyOrderFacadeTest {
             productId = testProduct.id!!,
             name = "기본 옵션",
             availableQuantity = 20,
-            additionalPrice = 0.0
+            additionalPrice = BigDecimal.ZERO
         )
         testProductOption = productOptionService.create(optionCommand)
     }

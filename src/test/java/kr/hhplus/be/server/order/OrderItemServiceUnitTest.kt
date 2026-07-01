@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 
 class OrderItemServiceUnitTest {
 
@@ -29,7 +30,7 @@ class OrderItemServiceUnitTest {
         private const val PRODUCT_ID = 2L
         private const val PRODUCT_OPTION_ID = 3L
         private const val USER_COUPON_ID = 5L
-        private const val PRODUCT_PRICE = 10000.0
+        private val PRODUCT_PRICE = BigDecimal("10000")
         private const val BASE_QUANTITY = 2
     }
 
@@ -62,21 +63,21 @@ class OrderItemServiceUnitTest {
             productOptionId = PRODUCT_OPTION_ID,
             userCouponId = USER_COUPON_ID,
             quantity = quantity,
-            price = PRODUCT_PRICE * (1 - discountRate / 100)
+            price = PRODUCT_PRICE.multiply(BigDecimal.valueOf(1 - discountRate / 100))
         )
-        
+
         every { orderItemRepository.save(any()) } returns createdOrderItem
-        
+
         // when
         val result = orderItemService.create(command)
-        
+
         // then
         verify { orderItemRepository.save(any()) }
         assertEquals(ORDER_ID, result.orderId)
         assertEquals(PRODUCT_ID, result.productId)
         assertEquals(PRODUCT_OPTION_ID, result.productOptionId)
         assertEquals(quantity, result.quantity)
-        assertEquals(PRODUCT_PRICE * (1 - discountRate / 100), result.price)
+        assertEquals(0, PRODUCT_PRICE.multiply(BigDecimal.valueOf(1 - discountRate / 100)).compareTo(result.price))
     }
     
     @Test
@@ -145,7 +146,7 @@ class OrderItemServiceUnitTest {
                 productOptionId = PRODUCT_OPTION_ID + 1,
                 userCouponId = null,
                 quantity = BASE_QUANTITY + 1,
-                price = PRODUCT_PRICE * 2
+                price = PRODUCT_PRICE.multiply(BigDecimal(2))
             )
         )
         
@@ -182,7 +183,7 @@ class OrderItemServiceUnitTest {
                 productOptionId = PRODUCT_OPTION_ID + 1,
                 userCouponId = null,
                 quantity = BASE_QUANTITY + 1,
-                price = PRODUCT_PRICE * 2
+                price = PRODUCT_PRICE.multiply(BigDecimal(2))
             )
         )
         
@@ -232,8 +233,8 @@ class OrderItemServiceUnitTest {
         // given
         val orderItemId = 123L
         val newQuantity = 3
-        val productPrice = 15000.0
-        
+        val productPrice = BigDecimal("15000")
+
         // 원본 OrderItem 객체 생성
         val orderItem = OrderItem.create(
             orderId = ORDER_ID,
@@ -243,27 +244,27 @@ class OrderItemServiceUnitTest {
             quantity = BASE_QUANTITY,
             price = PRODUCT_PRICE
         )
-        
+
         // 업데이트된 OrderItem 객체 생성
         val updatedOrderItem = orderItem.update(newQuantity, productPrice)
-        
+
         val command = OrderItemCommand.UpdateOrderItemCommand(
             id = orderItemId,
             quantity = newQuantity,
             productPrice = productPrice
         )
-        
+
         every { orderItemRepository.findById(orderItemId) } returns orderItem
         every { orderItemRepository.update(any()) } returns updatedOrderItem
-        
+
         // when
         val result = orderItemService.update(command)
-        
+
         // then
         verify { orderItemRepository.findById(orderItemId) }
         verify { orderItemRepository.update(any()) }
         assertEquals(newQuantity, result.quantity)
-        assertEquals(productPrice * newQuantity, result.price)
+        assertEquals(0, productPrice.multiply(BigDecimal(newQuantity)).compareTo(result.price))
     }
     
     @Test
@@ -280,7 +281,7 @@ class OrderItemServiceUnitTest {
             productOptionId = PRODUCT_OPTION_ID,
             userCouponId = null,
             quantity = BASE_QUANTITY,
-            price = PRODUCT_PRICE * BASE_QUANTITY
+            price = PRODUCT_PRICE.multiply(BigDecimal(BASE_QUANTITY))
         )
         
         // 업데이트된 OrderItem 객체 생성
@@ -300,8 +301,8 @@ class OrderItemServiceUnitTest {
         // then
         verify { orderItemRepository.findById(orderItemId) }
         verify { orderItemRepository.update(any()) }
-        val expectedPrice = PRODUCT_PRICE * BASE_QUANTITY * (1 - discountRate / 100)
-        assertEquals(expectedPrice, result.price)
+        val expectedPrice = PRODUCT_PRICE.multiply(BigDecimal(BASE_QUANTITY)).multiply(BigDecimal.valueOf(1 - discountRate / 100))
+        assertEquals(0, expectedPrice.compareTo(result.price))
     }
     
     @Test
@@ -345,7 +346,7 @@ class OrderItemServiceUnitTest {
                 productOptionId = PRODUCT_OPTION_ID,
                 userCouponId = null,
                 quantity = BASE_QUANTITY,
-                price = 20000.0
+                price = BigDecimal("20000")
             ),
             OrderItem.create(
                 orderId = ORDER_ID,
@@ -353,14 +354,14 @@ class OrderItemServiceUnitTest {
                 productOptionId = PRODUCT_OPTION_ID + 1,
                 userCouponId = null,
                 quantity = BASE_QUANTITY + 1,
-                price = 5000.0
+                price = BigDecimal("5000")
             )
         )
-        
+
         // when
         val result = orderItemService.calculateTotalPrice(orderItems)
-        
+
         // then
-        assertEquals(25000.0, result) // 20000.0 + 5000.0 = 25000.0
+        assertEquals(0, BigDecimal("25000").compareTo(result)) // 20000 + 5000 = 25000
     }
 } 

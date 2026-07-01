@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 import java.util.*
 
 class UserAccountFacadeIntegrationTest {
@@ -28,8 +29,8 @@ class UserAccountFacadeIntegrationTest {
         private const val TEST_EMAIL = "test@example.com"
         private const val TEST_LOGIN_ID = "testuser"
         private const val TEST_PASSWORD = "password123"
-        private const val CHARGE_AMOUNT = 10000.0
-        private const val WITHDRAW_AMOUNT = 5000.0
+        private val CHARGE_AMOUNT = BigDecimal("10000")
+        private val WITHDRAW_AMOUNT = BigDecimal("5000")
     }
 
     @BeforeEach
@@ -114,7 +115,7 @@ class UserAccountFacadeIntegrationTest {
         assertNotNull(foundAccount)
         assertEquals(TEST_ID, foundUser.id)
         assertEquals(TEST_ID, foundAccount.userId)
-        assertEquals(Account.MIN_BALANCE, foundAccount.amount)
+        assertEquals(0, Account.MIN_BALANCE.compareTo(foundAccount.amount))
 
         verify(exactly = 1) { userService.findById(TEST_ID) }
         verify(exactly = 1) { accountService.findByUserId(TEST_ID) }
@@ -164,7 +165,7 @@ class UserAccountFacadeIntegrationTest {
 
         val accountAfterCharge = Account.create(
             userId = TEST_ID,
-            initialAmount = Account.MIN_BALANCE + CHARGE_AMOUNT
+            initialAmount = Account.MIN_BALANCE.add(CHARGE_AMOUNT)
         ).apply {
             val field = this::class.java.getDeclaredField("id")
             field.isAccessible = true
@@ -185,7 +186,7 @@ class UserAccountFacadeIntegrationTest {
 
         // then
         assertNotNull(chargedAccount)
-        assertEquals(Account.MIN_BALANCE + CHARGE_AMOUNT, chargedAccount.amount)
+        assertEquals(0, Account.MIN_BALANCE.add(CHARGE_AMOUNT).compareTo(chargedAccount.amount))
 
         verify(exactly = 1) { userService.findById(TEST_ID) }
         verify(exactly = 1) { accountService.findByUserId(TEST_ID) }
@@ -230,7 +231,7 @@ class UserAccountFacadeIntegrationTest {
             field.set(this, TEST_ID)
         }
 
-        val initialAmount = Account.MIN_BALANCE + CHARGE_AMOUNT
+        val initialAmount = Account.MIN_BALANCE.add(CHARGE_AMOUNT)
 
         val accountBeforeWithdraw = Account.create(
             userId = TEST_ID,
@@ -243,7 +244,7 @@ class UserAccountFacadeIntegrationTest {
 
         val accountAfterWithdraw = Account.create(
             userId = TEST_ID,
-            initialAmount = initialAmount - WITHDRAW_AMOUNT
+            initialAmount = initialAmount.subtract(WITHDRAW_AMOUNT)
         ).apply {
             val field = this::class.java.getDeclaredField("id")
             field.isAccessible = true
@@ -259,7 +260,7 @@ class UserAccountFacadeIntegrationTest {
 
         // then
         assertNotNull(withdrawnAccount)
-        assertEquals(initialAmount - WITHDRAW_AMOUNT, withdrawnAccount.amount)
+        assertEquals(0, initialAmount.subtract(WITHDRAW_AMOUNT).compareTo(withdrawnAccount.amount))
 
         verify(exactly = 1) { userService.findById(TEST_ID) }
         verify(exactly = 1) { accountService.findByUserId(TEST_ID) }

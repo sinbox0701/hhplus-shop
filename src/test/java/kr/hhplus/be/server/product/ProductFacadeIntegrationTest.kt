@@ -12,12 +12,14 @@ import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.product.service.ProductSalesService
 import kr.hhplus.be.server.domain.product.service.ProductService
+import org.springframework.cache.CacheManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -27,6 +29,7 @@ class ProductFacadeIntegrationTest {
     private lateinit var productOptionService: ProductOptionService
     private lateinit var orderItemService: OrderItemService
     private lateinit var productSalesService: ProductSalesService
+    private lateinit var cacheManager: CacheManager
     private lateinit var productFacade: ProductFacade
 
     companion object {
@@ -34,9 +37,9 @@ class ProductFacadeIntegrationTest {
         private const val TEST_OPTION_ID = 2L
         private const val TEST_PRODUCT_NAME = "테스트 상품"
         private const val TEST_PRODUCT_DESCRIPTION = "테스트 상품 설명"
-        private const val TEST_PRODUCT_PRICE = 10000.0
+        private val TEST_PRODUCT_PRICE = BigDecimal("10000")
         private const val TEST_OPTION_NAME = "테스트 옵션"
-        private const val TEST_OPTION_PRICE = 1000.0
+        private val TEST_OPTION_PRICE = BigDecimal("1000")
         private const val TEST_OPTION_QUANTITY = 100
     }
 
@@ -46,11 +49,13 @@ class ProductFacadeIntegrationTest {
         productOptionService = mockk()
         orderItemService = mockk()
         productSalesService = mockk()
+        cacheManager = mockk(relaxed = true)
         productFacade = ProductFacade(
             productService = productService,
             productOptionService = productOptionService,
             orderItemService = orderItemService,
-            productSalesService = productSalesService
+            productSalesService = productSalesService,
+            cacheManager = cacheManager
         )
     }
 
@@ -83,11 +88,11 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_PRODUCT_ID, results[0].product.id)
         assertEquals(TEST_PRODUCT_NAME, results[0].product.name)
         assertEquals(TEST_PRODUCT_DESCRIPTION, results[0].product.description)
-        assertEquals(TEST_PRODUCT_PRICE, results[0].product.price)
+        assertEquals(0, TEST_PRODUCT_PRICE.compareTo(results[0].product.price))
         assertEquals(1, results[0].options.size)
         assertEquals(TEST_OPTION_ID, results[0].options[0].id)
         assertEquals(TEST_OPTION_NAME, results[0].options[0].name)
-        assertEquals(TEST_OPTION_PRICE, results[0].options[0].additionalPrice)
+        assertEquals(0, TEST_OPTION_PRICE.compareTo(results[0].options[0].additionalPrice))
         assertEquals(TEST_OPTION_QUANTITY, results[0].options[0].availableQuantity)
 
         verify(exactly = 1) { productService.getAll() }
@@ -136,11 +141,11 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_PRODUCT_ID, result.product.id)
         assertEquals(TEST_PRODUCT_NAME, result.product.name)
         assertEquals(TEST_PRODUCT_DESCRIPTION, result.product.description)
-        assertEquals(TEST_PRODUCT_PRICE, result.product.price)
+        assertEquals(0, TEST_PRODUCT_PRICE.compareTo(result.product.price))
         assertEquals(1, result.options.size)
         assertEquals(TEST_OPTION_ID, result.options[0].id)
         assertEquals(TEST_OPTION_NAME, result.options[0].name)
-        assertEquals(TEST_OPTION_PRICE, result.options[0].additionalPrice)
+        assertEquals(0, TEST_OPTION_PRICE.compareTo(result.options[0].additionalPrice))
         assertEquals(TEST_OPTION_QUANTITY, result.options[0].availableQuantity)
 
         verify(exactly = 1) { productService.create(any()) }
@@ -175,11 +180,11 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_PRODUCT_ID, result.product.id)
         assertEquals(TEST_PRODUCT_NAME, result.product.name)
         assertEquals(TEST_PRODUCT_DESCRIPTION, result.product.description)
-        assertEquals(TEST_PRODUCT_PRICE, result.product.price)
+        assertEquals(0, TEST_PRODUCT_PRICE.compareTo(result.product.price))
         assertEquals(1, result.options.size)
         assertEquals(TEST_OPTION_ID, result.options[0].id)
         assertEquals(TEST_OPTION_NAME, result.options[0].name)
-        assertEquals(TEST_OPTION_PRICE, result.options[0].additionalPrice)
+        assertEquals(0, TEST_OPTION_PRICE.compareTo(result.options[0].additionalPrice))
         assertEquals(TEST_OPTION_QUANTITY, result.options[0].availableQuantity)
 
         verify(exactly = 1) { productService.get(TEST_PRODUCT_ID) }
@@ -216,19 +221,19 @@ class ProductFacadeIntegrationTest {
         every { product1.id } returns 1L
         every { product1.name } returns "인기 상품 1"
         every { product1.description } returns "인기 상품 설명 1"
-        every { product1.price } returns 10000.0
+        every { product1.price } returns BigDecimal("10000")
 
         val product2 = mockk<Product>()
         every { product2.id } returns 2L
         every { product2.name } returns "인기 상품 2"
         every { product2.description } returns "인기 상품 설명 2"
-        every { product2.price } returns 20000.0
+        every { product2.price } returns BigDecimal("20000")
 
         val product3 = mockk<Product>()
         every { product3.id } returns 3L
         every { product3.name } returns "인기 상품 3"
         every { product3.description } returns "인기 상품 설명 3"
-        every { product3.price } returns 30000.0
+        every { product3.price } returns BigDecimal("30000")
 
         every { productSalesService.getTopSellingProductIds(startDate, 5) } returns topProductIds
         every { productService.getByIds(topProductIds) } returns listOf(product1, product2, product3)
@@ -275,7 +280,7 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_PRODUCT_ID, results[0].id)
         assertEquals(TEST_PRODUCT_NAME, results[0].name)
         assertEquals(TEST_PRODUCT_DESCRIPTION, results[0].description)
-        assertEquals(TEST_PRODUCT_PRICE, results[0].price)
+        assertEquals(0, TEST_PRODUCT_PRICE.compareTo(results[0].price))
 
         verify(exactly = 1) { productSalesService.getTopSellingProductIds(any(), 5) }
         verify(exactly = 1) { productService.getAll() }
@@ -289,12 +294,12 @@ class ProductFacadeIntegrationTest {
             id = TEST_OPTION_ID,
             name = "업데이트된 옵션",
             availableQuantity = 200,
-            additionalPrice = 2000.0
+            additionalPrice = BigDecimal("2000")
         )
 
         val newOption = ProductCriteria.CreateProductOptionCriteria(
             name = "새 옵션",
-            price = 1500.0,
+            price = BigDecimal("1500"),
             availableQuantity = 150
         )
 
@@ -302,7 +307,7 @@ class ProductFacadeIntegrationTest {
             id = TEST_PRODUCT_ID,
             name = "업데이트된 상품",
             description = "업데이트된 설명",
-            price = 12000.0,
+            price = BigDecimal("12000"),
             optionsToUpdate = listOf(optionToUpdate),
             optionsToAdd = listOf(newOption)
         )
@@ -311,13 +316,13 @@ class ProductFacadeIntegrationTest {
         every { product.id } returns TEST_PRODUCT_ID
         every { product.name } returns "업데이트된 상품"
         every { product.description } returns "업데이트된 설명"
-        every { product.price } returns 12000.0
+        every { product.price } returns BigDecimal("12000")
 
         val updatedOption = mockk<ProductOption>()
         every { updatedOption.id } returns TEST_OPTION_ID
         every { updatedOption.productId } returns TEST_PRODUCT_ID
         every { updatedOption.name } returns "업데이트된 옵션"
-        every { updatedOption.additionalPrice } returns 2000.0
+        every { updatedOption.additionalPrice } returns BigDecimal("2000")
         every { updatedOption.availableQuantity } returns 200
 
         val existingOption = mockk<ProductOption>()
@@ -339,11 +344,11 @@ class ProductFacadeIntegrationTest {
         assertEquals(TEST_PRODUCT_ID, result.product.id)
         assertEquals("업데이트된 상품", result.product.name)
         assertEquals("업데이트된 설명", result.product.description)
-        assertEquals(12000.0, result.product.price)
+        assertEquals(0, BigDecimal("12000").compareTo(result.product.price))
         assertEquals(1, result.options.size)
         assertEquals(TEST_OPTION_ID, result.options[0].id)
         assertEquals("업데이트된 옵션", result.options[0].name)
-        assertEquals(2000.0, result.options[0].additionalPrice)
+        assertEquals(0, BigDecimal("2000").compareTo(result.options[0].additionalPrice))
         assertEquals(200, result.options[0].availableQuantity)
 
         verify(exactly = 1) { productService.update(any()) }
@@ -360,7 +365,7 @@ class ProductFacadeIntegrationTest {
         // given
         val newOption = ProductCriteria.CreateProductOptionCriteria(
             name = "새 옵션",
-            price = 1500.0,
+            price = BigDecimal("1500"),
             availableQuantity = 150
         )
 
@@ -376,7 +381,7 @@ class ProductFacadeIntegrationTest {
         every { option.id } returns 3L
         every { option.productId } returns TEST_PRODUCT_ID
         every { option.name } returns "새 옵션"
-        every { option.additionalPrice } returns 1500.0
+        every { option.additionalPrice } returns BigDecimal("1500")
         every { option.availableQuantity } returns 150
 
         every { productService.get(TEST_PRODUCT_ID) } returns product
@@ -391,7 +396,7 @@ class ProductFacadeIntegrationTest {
         assertEquals(3L, results[0].id)
         assertEquals(TEST_PRODUCT_ID, results[0].productId)
         assertEquals("새 옵션", results[0].name)
-        assertEquals(1500.0, results[0].additionalPrice)
+        assertEquals(0, BigDecimal("1500").compareTo(results[0].additionalPrice))
         assertEquals(150, results[0].availableQuantity)
 
         verify(exactly = 1) { productService.get(TEST_PRODUCT_ID) }

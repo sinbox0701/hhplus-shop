@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 class ProductUnitTest {
@@ -15,26 +16,26 @@ class ProductUnitTest {
         // given
         val name = "테스트 상품"
         val description = "테스트 상품 설명"
-        val price = 10000.0
-        
+        val price = BigDecimal("10000")
+
         // when
         val product = Product.create(name, description, price)
-        
+
         // then
         assertEquals(name, product.name)
         assertEquals(description, product.description)
-        assertEquals(price, product.price)
+        assertEquals(0, price.compareTo(product.price))
         assertNotNull(product.createdAt)
         assertNotNull(product.updatedAt)
     }
-    
+
     @Test
     @DisplayName("가격이 최소값보다 낮을 경우 예외 발생")
     fun createProductWithTooLowPrice() {
         // given
         val name = "테스트 상품"
         val description = "테스트 상품 설명"
-        val price = 0.0 // 최소값은 1.0
+        val price = BigDecimal("0") // 최소값은 1.0
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -50,7 +51,7 @@ class ProductUnitTest {
         // given
         val name = "테스트 상품"
         val description = "테스트 상품 설명"
-        val price = 1000001.0 // 최대값은 1000000.0
+        val price = BigDecimal("1000001") // 최대값은 1000000.0
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -64,26 +65,26 @@ class ProductUnitTest {
     @DisplayName("유효한 데이터로 상품 정보 업데이트 성공")
     fun updateProductWithValidData() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
         val newName = "업데이트된 상품"
         val newDescription = "업데이트된 상품 설명"
-        val newPrice = 20000.0
-        
+        val newPrice = BigDecimal("20000")
+
         // when
         val updatedProduct = product.update(newName, newDescription, newPrice)
-        
+
         // then
         assertEquals(newName, updatedProduct.name)
         assertEquals(newDescription, updatedProduct.description)
-        assertEquals(newPrice, updatedProduct.price)
+        assertEquals(0, newPrice.compareTo(updatedProduct.price))
         assertNotEquals(updatedProduct.createdAt, updatedProduct.updatedAt)
     }
-    
+
     @Test
     @DisplayName("이름만 업데이트 성공")
     fun updateOnlyName() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
         val originalDescription = product.description
         val originalPrice = product.price
         val newName = "업데이트된 상품"
@@ -94,14 +95,14 @@ class ProductUnitTest {
         // then
         assertEquals(newName, updatedProduct.name)
         assertEquals(originalDescription, updatedProduct.description)
-        assertEquals(originalPrice, updatedProduct.price)
+        assertEquals(0, originalPrice.compareTo(updatedProduct.price))
     }
     
     @Test
     @DisplayName("설명만 업데이트 성공")
     fun updateOnlyDescription() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
         val originalName = product.name
         val originalPrice = product.price
         val newDescription = "업데이트된 상품 설명"
@@ -112,32 +113,32 @@ class ProductUnitTest {
         // then
         assertEquals(originalName, updatedProduct.name)
         assertEquals(newDescription, updatedProduct.description)
-        assertEquals(originalPrice, updatedProduct.price)
+        assertEquals(0, originalPrice.compareTo(updatedProduct.price))
     }
     
     @Test
     @DisplayName("가격만 업데이트 성공")
     fun updateOnlyPrice() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
         val originalName = product.name
         val originalDescription = product.description
-        val newPrice = 20000.0
-        
+        val newPrice = BigDecimal("20000")
+
         // when
         val updatedProduct = product.update(null, null, newPrice)
-        
+
         // then
         assertEquals(originalName, updatedProduct.name)
         assertEquals(originalDescription, updatedProduct.description)
-        assertEquals(newPrice, updatedProduct.price)
+        assertEquals(0, newPrice.compareTo(updatedProduct.price))
     }
     
     @Test
     @DisplayName("이름이 너무 짧을 경우 업데이트 시 예외 발생")
     fun updateWithTooShortName() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
         val invalidName = "테" // 최소 3자 필요
         
         // when & then
@@ -152,7 +153,7 @@ class ProductUnitTest {
     @DisplayName("이름이 너무 길 경우 업데이트 시 예외 발생")
     fun updateWithTooLongName() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
         val invalidName = "아주아주아주아앙아아아아아아아아아ㅏ아앙주아주아주아주아주긴이름" // 최대 20자 필요
         
         // when & then
@@ -167,8 +168,8 @@ class ProductUnitTest {
     @DisplayName("가격이 너무 낮을 경우 업데이트 시 예외 발생")
     fun updateWithTooLowPrice() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
-        val invalidPrice = 0.0 // 최소 1.0 필요
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
+        val invalidPrice = BigDecimal("0") // 최소 1.0 필요
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -182,8 +183,8 @@ class ProductUnitTest {
     @DisplayName("가격이 너무 높을 경우 업데이트 시 예외 발생")
     fun updateWithTooHighPrice() {
         // given
-        val product = Product.create("테스트 상품", "테스트 상품 설명", 10000.0)
-        val invalidPrice = 1000001.0 // 최대 1000000.0 필요
+        val product = Product.create("테스트 상품", "테스트 상품 설명", BigDecimal("10000"))
+        val invalidPrice = BigDecimal("1000001") // 최대 1000000.0 필요
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {

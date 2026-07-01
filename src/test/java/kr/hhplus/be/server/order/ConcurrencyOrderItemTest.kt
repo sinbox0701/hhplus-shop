@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
@@ -175,7 +176,7 @@ class ConcurrencyOrderItemTest {
                         productOptionId = productOptionId,
                         userCouponId = null,
                         quantity = 1,
-                        price = 1000.0
+                        price = BigDecimal("1000")
                     )
                     orderItemRepository.save(orderItem)
                     

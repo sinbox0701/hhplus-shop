@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 
 class OrderServiceUnitTest {
 
@@ -32,7 +33,7 @@ class OrderServiceUnitTest {
         // given
         val userId = 1L
         val userCouponId = 3L
-        val totalPrice = 10000.0
+        val totalPrice = BigDecimal("10000")
 
         val command = OrderCommand.CreateOrderCommand(
             userId = userId,
@@ -47,19 +48,19 @@ class OrderServiceUnitTest {
             totalPrice = totalPrice,
             timeProvider = timeProvider
         )
-        
+
         // repository에서 Order 저장 시 savedOrder를 반환하도록 설정
         every { orderRepository.save(any()) } returns savedOrder
-        
+
         // when
         val result = orderService.createOrder(command)
-        
+
         // then
         verify { orderRepository.save(any()) }
         assertEquals(userId, result.userId)
         assertEquals(userCouponId, result.userCouponId)
         assertEquals(OrderStatus.PENDING, result.status)
-        assertEquals(totalPrice, result.totalPrice)
+        assertEquals(0, totalPrice.compareTo(result.totalPrice))
     }
     
     @Test
@@ -69,7 +70,7 @@ class OrderServiceUnitTest {
         val orderId = 100L
         val userId = 1L
         val userCouponId = 3L
-        val totalPrice = 10000.0
+        val totalPrice = BigDecimal("10000")
 
         // Order 모킹 대신 테스트용 Order 객체 생성
         val order = Order.create(
@@ -79,16 +80,16 @@ class OrderServiceUnitTest {
             timeProvider = timeProvider
         )
         // id 필드는 private이므로 리플렉션을 사용하거나, 이 테스트에서는 id 검증을 제외
-        
+
         every { orderRepository.findById(orderId) } returns order
-        
+
         // when
         val result = orderService.getOrder(orderId)
-        
+
         // then
         verify { orderRepository.findById(orderId) }
         assertEquals(userId, result.userId)
-        assertEquals(totalPrice, result.totalPrice)
+        assertEquals(0, totalPrice.compareTo(result.totalPrice))
     }
     
     @Test
@@ -116,8 +117,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
-            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
+            Order.create(userId = userId, userCouponId = null, totalPrice = BigDecimal("10000"), timeProvider = timeProvider),
+            Order.create(userId = userId, userCouponId = null, totalPrice = BigDecimal("20000"), timeProvider = timeProvider)
         )
         
         every { orderRepository.findByUserId(userId) } returns orders
@@ -139,8 +140,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
-            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
+            Order.create(userId = 1L, userCouponId = null, totalPrice = BigDecimal("10000"), timeProvider = timeProvider),
+            Order.create(userId = 2L, userCouponId = null, totalPrice = BigDecimal("20000"), timeProvider = timeProvider)
         )
         
         every { orderRepository.findByStatus(status) } returns orders
@@ -163,8 +164,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = userId, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
-            Order.create(userId = userId, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
+            Order.create(userId = userId, userCouponId = null, totalPrice = BigDecimal("10000"), timeProvider = timeProvider),
+            Order.create(userId = userId, userCouponId = null, totalPrice = BigDecimal("20000"), timeProvider = timeProvider)
         )
         
         every { orderRepository.findByUserIdAndStatus(userId, status) } returns orders
@@ -191,8 +192,8 @@ class OrderServiceUnitTest {
         
         // Order 모킹 대신 테스트용 Order 객체 리스트 생성
         val orders = listOf(
-            Order.create(userId = 1L, userCouponId = null, totalPrice = 10000.0, timeProvider = timeProvider),
-            Order.create(userId = 2L, userCouponId = null, totalPrice = 20000.0, timeProvider = timeProvider)
+            Order.create(userId = 1L, userCouponId = null, totalPrice = BigDecimal("10000"), timeProvider = timeProvider),
+            Order.create(userId = 2L, userCouponId = null, totalPrice = BigDecimal("20000"), timeProvider = timeProvider)
         )
         
         every { orderRepository.findByCreatedAtBetween(startDate, endDate) } returns orders
@@ -217,7 +218,7 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = 10000.0,
+            totalPrice = BigDecimal("10000"),
             timeProvider = timeProvider
         )
         
@@ -253,7 +254,7 @@ class OrderServiceUnitTest {
             userId = userId,
             userCouponId = null,
             status = OrderStatus.COMPLETED,
-            totalPrice = 10000.0,
+            totalPrice = BigDecimal("10000"),
             timeProvider = timeProvider
         )
         
@@ -285,7 +286,7 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = 10000.0,
+            totalPrice = BigDecimal("10000"),
             timeProvider = timeProvider
         )
         
@@ -314,7 +315,7 @@ class OrderServiceUnitTest {
         val order = Order.create(
             userId = userId,
             userCouponId = null,
-            totalPrice = 10000.0,
+            totalPrice = BigDecimal("10000"),
             timeProvider = timeProvider
         )
         
@@ -338,8 +339,8 @@ class OrderServiceUnitTest {
         // given
         val orderId = 100L
         val userId = 1L
-        val initialPrice = 10000.0
-        val newTotalPrice = 20000.0
+        val initialPrice = BigDecimal("10000")
+        val newTotalPrice = BigDecimal("20000")
         
         // 원본 Order 객체 생성
         val order = Order.create(
@@ -366,6 +367,6 @@ class OrderServiceUnitTest {
         // then
         verify { orderRepository.findById(orderId) }
         verify { orderRepository.save(any()) }
-        assertEquals(newTotalPrice, result.totalPrice)
+        assertEquals(0, newTotalPrice.compareTo(result.totalPrice))
     }
 } 

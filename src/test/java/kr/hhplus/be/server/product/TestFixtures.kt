@@ -4,14 +4,15 @@ import io.mockk.every
 import io.mockk.mockk
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 object TestFixtures {
     // 상수 정의
     const val PRODUCT_ID = 1L
     const val PRODUCT_OPTION_ID = 1L
-    const val PRODUCT_PRICE = 10000.0
-    const val OPTION_PRICE = 1000.0
+    val PRODUCT_PRICE: BigDecimal = BigDecimal("10000")
+    val OPTION_PRICE: BigDecimal = BigDecimal("1000")
     const val AVAILABLE_QUANTITY = 100
     
     // 상품 Fixture
@@ -19,7 +20,7 @@ object TestFixtures {
         id: Long = PRODUCT_ID,
         name: String = "테스트 상품",
         description: String = "테스트 상품 설명",
-        price: Double = PRODUCT_PRICE
+        price: BigDecimal = PRODUCT_PRICE
     ): Product {
         val now = LocalDateTime.now()
         val product = mockk<Product>()
@@ -40,7 +41,7 @@ object TestFixtures {
         productId: Long = PRODUCT_ID,
         name: String = "테스트 옵션",
         availableQuantity: Int = AVAILABLE_QUANTITY,
-        additionalPrice: Double = OPTION_PRICE
+        additionalPrice: BigDecimal = OPTION_PRICE
     ): ProductOption {
         val now = LocalDateTime.now()
         val option = mockk<ProductOption>()

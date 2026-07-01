@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -35,7 +36,7 @@ class ConcurrencyProductOptionServiceTest {
         val productCommand = ProductCommand.CreateProductCommand(
             name = "테스트 상품",
             description = "동시성 테스트용 상품",
-            price = 1000.0
+            price = BigDecimal("1000")
         )
         testProduct = productService.create(productCommand)
 
@@ -44,7 +45,7 @@ class ConcurrencyProductOptionServiceTest {
             productId = testProduct.id!!,
             name = "기본 옵션",
             availableQuantity = 100,
-            additionalPrice = 0.0
+            additionalPrice = BigDecimal.ZERO
         )
         testProductOption = productOptionService.create(optionCommand)
     }
@@ -146,7 +147,7 @@ class ConcurrencyProductOptionServiceTest {
         val productCommand = ProductCommand.CreateProductCommand(
             name = "제한 재고 상품",
             description = "재고 소진 테스트용 상품",
-            price = 500.0
+            price = BigDecimal("500")
         )
         val product = productService.create(productCommand)
 
@@ -154,7 +155,7 @@ class ConcurrencyProductOptionServiceTest {
             productId = product.id!!,
             name = "기본 옵션",
             availableQuantity = initialStock,
-            additionalPrice = 0.0
+            additionalPrice = BigDecimal.ZERO
         )
         val productOption = productOptionService.create(optionCommand)
         

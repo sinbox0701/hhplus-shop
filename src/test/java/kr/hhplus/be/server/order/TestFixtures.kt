@@ -14,6 +14,7 @@ import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 object TestFixtures {
@@ -26,8 +27,8 @@ object TestFixtures {
     const val COUPON_ID = 1L
     const val USER_COUPON_ID = 1L
     const val ACCOUNT_ID = 1L
-    const val PRODUCT_PRICE = 10000.0
-    const val OPTION_PRICE = 1000.0
+    val PRODUCT_PRICE: BigDecimal = BigDecimal("10000")
+    val OPTION_PRICE: BigDecimal = BigDecimal("1000")
     const val QUANTITY = 2
     const val DISCOUNT_RATE = 10.0
 
@@ -69,7 +70,7 @@ object TestFixtures {
     fun createOrder(
         status: OrderStatus = OrderStatus.PENDING,
         userCouponId: Long? = null,
-        totalPrice: Double = (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY,
+        totalPrice: BigDecimal = PRODUCT_PRICE.add(OPTION_PRICE).multiply(BigDecimal(QUANTITY)),
         timeProvider: TimeProvider = fixedTimeProvider
     ): Order {
         val order = mockk<Order>()
@@ -100,7 +101,7 @@ object TestFixtures {
         every { orderItem.productId } returns PRODUCT_ID
         every { orderItem.productOptionId } returns PRODUCT_OPTION_ID
         every { orderItem.quantity } returns QUANTITY
-        every { orderItem.price } returns (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY
+        every { orderItem.price } returns PRODUCT_PRICE.add(OPTION_PRICE).multiply(BigDecimal(QUANTITY))
         every { orderItem.createdAt } returns now
         
         return orderItem
@@ -144,7 +145,7 @@ object TestFixtures {
     }
 
     // 계좌 Fixture
-    fun createAccount(amount: Double = 100000.0): Account {
+    fun createAccount(amount: BigDecimal = BigDecimal("100000")): Account {
         val account = mockk<Account>()
         every { account.id } returns ACCOUNT_ID
         every { account.userId } returns USER_ID

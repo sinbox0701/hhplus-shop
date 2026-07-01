@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
+import java.math.BigDecimal
 import io.mockk.mockk
 
 class ProductOptionUnitTest {
@@ -19,16 +20,16 @@ class ProductOptionUnitTest {
         // given
         val name = "옵션"
         val availableQuantity = 100
-        val additionalPrice = 1000.0
-        
+        val additionalPrice = BigDecimal("1000")
+
         // when
         val productOption = ProductOption.create(productId, name, availableQuantity, additionalPrice)
-        
+
         // then
         assertEquals(productId, productOption.productId)
         assertEquals(name, productOption.name)
         assertEquals(availableQuantity, productOption.availableQuantity)
-        assertEquals(additionalPrice, productOption.additionalPrice)
+        assertEquals(0, additionalPrice.compareTo(productOption.additionalPrice))
         assertNotNull(productOption.createdAt)
         assertNotNull(productOption.updatedAt)
     }
@@ -39,7 +40,7 @@ class ProductOptionUnitTest {
         // given
         val name = "" // 최소 길이는 1
         val availableQuantity = 100
-        val additionalPrice = 1000.0
+        val additionalPrice = BigDecimal("1000")
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -55,7 +56,7 @@ class ProductOptionUnitTest {
         // given
         val name = "아주아주아주길다아주길다" // 최대 길이는 10
         val availableQuantity = 100
-        val additionalPrice = 1000.0
+        val additionalPrice = BigDecimal("1000")
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -71,7 +72,7 @@ class ProductOptionUnitTest {
         // given
         val name = "옵션"
         val availableQuantity = -1 // 최소값은 0
-        val additionalPrice = 1000.0
+        val additionalPrice = BigDecimal("1000")
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -87,7 +88,7 @@ class ProductOptionUnitTest {
         // given
         val name = "옵션"
         val availableQuantity = 1001 // 최대값은 1000
-        val additionalPrice = 1000.0
+        val additionalPrice = BigDecimal("1000")
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -101,16 +102,16 @@ class ProductOptionUnitTest {
     @DisplayName("유효한 데이터로 상품 옵션 정보 업데이트 성공")
     fun updateProductOptionWithValidData() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val newName = "새옵션"
-        val newAdditionalPrice = 2000.0
-        
+        val newAdditionalPrice = BigDecimal("2000")
+
         // when
         val updatedOption = productOption.update(newName, newAdditionalPrice)
-        
+
         // then
         assertEquals(newName, updatedOption.name)
-        assertEquals(newAdditionalPrice, updatedOption.additionalPrice)
+        assertEquals(0, newAdditionalPrice.compareTo(updatedOption.additionalPrice))
         assertNotEquals(updatedOption.createdAt, updatedOption.updatedAt)
     }
     
@@ -118,7 +119,7 @@ class ProductOptionUnitTest {
     @DisplayName("이름만 업데이트 성공")
     fun updateOnlyName() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val originalAdditionalPrice = productOption.additionalPrice
         val newName = "새옵션"
         
@@ -127,30 +128,30 @@ class ProductOptionUnitTest {
         
         // then
         assertEquals(newName, updatedOption.name)
-        assertEquals(originalAdditionalPrice, updatedOption.additionalPrice)
+        assertEquals(0, originalAdditionalPrice.compareTo(updatedOption.additionalPrice))
     }
     
     @Test
     @DisplayName("추가 가격만 업데이트 성공")
     fun updateOnlyAdditionalPrice() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val originalName = productOption.name
-        val newAdditionalPrice = 2000.0
-        
+        val newAdditionalPrice = BigDecimal("2000")
+
         // when
         val updatedOption = productOption.update(null, newAdditionalPrice)
-        
+
         // then
         assertEquals(originalName, updatedOption.name)
-        assertEquals(newAdditionalPrice, updatedOption.additionalPrice)
+        assertEquals(0, newAdditionalPrice.compareTo(updatedOption.additionalPrice))
     }
     
     @Test
     @DisplayName("이름이 너무 짧을 경우 업데이트 시 예외 발생")
     fun updateWithTooShortName() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val invalidName = "" // 최소 1자 필요
         
         // when & then
@@ -165,7 +166,7 @@ class ProductOptionUnitTest {
     @DisplayName("이름이 너무 길 경우 업데이트 시 예외 발생")
     fun updateWithTooLongName() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val invalidName = "아주아주아주아주아주아주길다" // 최대 10자 필요
         
         // when & then
@@ -180,7 +181,7 @@ class ProductOptionUnitTest {
     @DisplayName("수량 추가 성공")
     fun addQuantitySuccess() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val quantityToAdd = 50
         val expectedQuantity = 150
         
@@ -196,7 +197,7 @@ class ProductOptionUnitTest {
     @DisplayName("수량 추가 시 음수값 입력하면 예외 발생")
     fun addNegativeQuantity() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val invalidQuantity = -10
         
         // when & then
@@ -211,7 +212,7 @@ class ProductOptionUnitTest {
     @DisplayName("수량 추가 시 최댓값 초과할 경우 예외 발생")
     fun addTooLargeQuantity() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val invalidQuantity = 901 // 현재 100 + 901 = 1001 > 최대값 1000
         
         // when & then
@@ -226,7 +227,7 @@ class ProductOptionUnitTest {
     @DisplayName("수량 차감 성공")
     fun subtractQuantitySuccess() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val quantityToSubtract = 50
         val expectedQuantity = 50
         
@@ -242,7 +243,7 @@ class ProductOptionUnitTest {
     @DisplayName("수량 차감 시 음수값 입력하면 예외 발생")
     fun subtractNegativeQuantity() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val invalidQuantity = -10
         
         // when & then
@@ -257,7 +258,7 @@ class ProductOptionUnitTest {
     @DisplayName("수량 차감 시 최대값보다 클 경우 예외 발생")
     fun subtractTooLargeQuantity() {
         // given
-        val productOption = ProductOption.create(productId, "옵션", 100, 1000.0)
+        val productOption = ProductOption.create(productId, "옵션", 100, BigDecimal("1000"))
         val invalidQuantity = 1001 // 최대값 1000보다 큼
         
         // when & then

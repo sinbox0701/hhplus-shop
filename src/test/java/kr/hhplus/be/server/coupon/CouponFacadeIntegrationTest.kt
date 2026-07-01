@@ -12,6 +12,7 @@ import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.coupon.service.CouponService
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.UserService
+import kr.hhplus.be.server.shared.transaction.TransactionHelper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -24,6 +25,7 @@ class CouponFacadeIntegrationTest {
 
     private lateinit var couponService: CouponService
     private lateinit var userService: UserService
+    private lateinit var transactionHelper: TransactionHelper
     private lateinit var couponFacade: CouponFacade
 
     companion object {
@@ -41,7 +43,12 @@ class CouponFacadeIntegrationTest {
     fun setup() {
         couponService = mockk(relaxed = true)
         userService = mockk(relaxed = true)
-        couponFacade = CouponFacade(couponService, userService)
+        transactionHelper = mockk()
+        // 트랜잭션 헬퍼는 전달된 람다를 그대로 실행하도록 스텁 처리
+        every { transactionHelper.executeInTransaction<Any>(any()) } answers {
+            (firstArg<() -> Any>())()
+        }
+        couponFacade = CouponFacade(couponService, userService, transactionHelper)
     }
 
     @Test

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -36,7 +37,7 @@ class ProductOptionConcurrencyTest {
             productId = 1L,
             name = "테스트옵션",
             availableQuantity = 100,
-            additionalPrice = 1000.0
+            additionalPrice = BigDecimal("1000")
         )
         val savedOption = productOptionRepository.save(productOption)
         productOptionId = savedOption.id!!

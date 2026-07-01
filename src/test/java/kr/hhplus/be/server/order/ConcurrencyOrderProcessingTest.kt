@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -67,14 +68,14 @@ class ConcurrencyOrderProcessingTest {
         // 테스트용 계좌 생성 - 정확한 잔액 설정
         accountService.create(AccountCommand.CreateAccountCommand(
             userId = testUser.id!!,
-            amount = 5000.0 // 주문 동시성 테스트용 금액
+            amount = BigDecimal("5000") // 주문 동시성 테스트용 금액
         ))
 
         // 테스트용 상품 생성
         val productCommand = ProductCommand.CreateProductCommand(
             name = "테스트 상품",
             description = "동시성 테스트용 상품",
-            price = 1000.0
+            price = BigDecimal("1000")
         )
         testProduct = productService.create(productCommand)
 
@@ -83,7 +84,7 @@ class ConcurrencyOrderProcessingTest {
             productId = testProduct.id!!,
             name = "기본 옵션",
             availableQuantity = 5,
-            additionalPrice = 0.0
+            additionalPrice = BigDecimal.ZERO
         )
         testProductOption = productOptionService.create(optionCommand)
     }
@@ -96,10 +97,10 @@ class ConcurrencyOrderProcessingTest {
     fun `동시에 여러 요청이 동일한 계좌로 결제할 때 정확한 잔액이 유지되어야 한다`() {
         // given
         val threadCount = 10
-        val orderPrice = 1000.0 // 각 주문당 1000원
+        val orderPrice = BigDecimal("1000") // 각 주문당 1000원
         val successCount = AtomicInteger(0)
         val initialBalance = accountService.findByUserId(testUser.id!!).amount
-        val expectedSuccessCount = (initialBalance / orderPrice).toInt()
+        val expectedSuccessCount = initialBalance.divide(orderPrice, 0, java.math.RoundingMode.DOWN).toInt()
         
         val executor = Executors.newFixedThreadPool(threadCount)
         val latch = CountDownLatch(threadCount)
@@ -161,8 +162,8 @@ class ConcurrencyOrderProcessingTest {
         
         // 2. 계좌 잔액은 정확히 남아있어야 함
         val finalBalance = accountService.findByUserId(testUser.id!!).amount
-        val expectedFinalBalance = initialBalance - (orderPrice * successCount.get())
-        assertEquals(expectedFinalBalance, finalBalance, 0.01,
+        val expectedFinalBalance = initialBalance.subtract(orderPrice.multiply(BigDecimal(successCount.get())))
+        assertEquals(0, expectedFinalBalance.compareTo(finalBalance),
             "최종 계좌 잔액이 예상값과 일치해야 함")
         
         // 3. 주문 상태 확인 - 성공한 주문은 COMPLETED, 나머지는 PENDING 상태여야 함
