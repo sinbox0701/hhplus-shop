@@ -22,6 +22,8 @@ import kr.hhplus.be.server.domain.product.model.ProductOption
 import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
 import kr.hhplus.be.server.domain.product.service.ProductOptionService
 import kr.hhplus.be.server.domain.product.service.ProductService
+import kr.hhplus.be.server.domain.ranking.service.ProductRankingService
+import kr.hhplus.be.server.shared.transaction.TransactionHelper
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.AccountCommand
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 class OrderFacadeIntegrationTest {
@@ -57,6 +60,8 @@ class OrderFacadeIntegrationTest {
     private lateinit var userService: UserService
     private lateinit var couponService: CouponService
     private lateinit var accountService: AccountService
+    private lateinit var productRankingService: ProductRankingService
+    private lateinit var transactionHelper: TransactionHelper
     private lateinit var orderFacade: OrderFacade
 
     @BeforeEach
@@ -68,6 +73,12 @@ class OrderFacadeIntegrationTest {
         userService = mockk()
         couponService = mockk()
         accountService = mockk()
+        productRankingService = mockk(relaxed = true)
+        transactionHelper = mockk()
+        // 트랜잭션 헬퍼는 전달된 람다를 그대로 실행하도록 스텁 처리
+        every { transactionHelper.executeInTransaction<Any>(any()) } answers {
+            (firstArg<() -> Any>())()
+        }
         orderFacade = OrderFacade(
             orderService,
             orderItemService,
@@ -75,7 +86,9 @@ class OrderFacadeIntegrationTest {
             productOptionService,
             userService,
             couponService,
-            accountService
+            accountService,
+            productRankingService,
+            transactionHelper
         )
     }
 
@@ -111,7 +124,7 @@ class OrderFacadeIntegrationTest {
         every { order.id } returns TestFixtures.ORDER_ID
         every { order.userId } returns TestFixtures.USER_ID
         every { order.userCouponId } returns null
-        every { order.totalPrice } returns (TestFixtures.PRODUCT_PRICE + TestFixtures.OPTION_PRICE) * TestFixtures.QUANTITY
+        every { order.totalPrice } returns TestFixtures.PRODUCT_PRICE.add(TestFixtures.OPTION_PRICE).multiply(BigDecimal(TestFixtures.QUANTITY))
         every { order.status } returns status
         every { order.isCancellable() } returns (status == OrderStatus.PENDING)
         return order
@@ -124,7 +137,7 @@ class OrderFacadeIntegrationTest {
         every { orderItem.productId } returns TestFixtures.PRODUCT_ID
         every { orderItem.productOptionId } returns TestFixtures.PRODUCT_OPTION_ID
         every { orderItem.quantity } returns TestFixtures.QUANTITY
-        every { orderItem.price } returns (TestFixtures.PRODUCT_PRICE + TestFixtures.OPTION_PRICE) * TestFixtures.QUANTITY
+        every { orderItem.price } returns TestFixtures.PRODUCT_PRICE.add(TestFixtures.OPTION_PRICE).multiply(BigDecimal(TestFixtures.QUANTITY))
         every { orderItem.isCancelled() } returns false
         return orderItem
     }
@@ -150,7 +163,7 @@ class OrderFacadeIntegrationTest {
         return userCoupon
     }
 
-    private fun createMockAccount(amount: Double = 100000.0): Account {
+    private fun createMockAccount(amount: BigDecimal = BigDecimal("100000")): Account {
         val account = mockk<Account>()
         every { account.id } returns TestFixtures.ACCOUNT_ID
         every { account.userId } returns TestFixtures.USER_ID
@@ -215,7 +228,9 @@ class OrderFacadeIntegrationTest {
         val coupon = TestFixtures.createCoupon()
         val userCoupon = TestFixtures.createUserCoupon()
         
-        val discountedTotalPrice = ((PRODUCT_PRICE + OPTION_PRICE) * QUANTITY) * (1 - DISCOUNT_RATE / 100)
+        val discountedTotalPrice = PRODUCT_PRICE.add(OPTION_PRICE).multiply(BigDecimal(QUANTITY))
+            .multiply(BigDecimal.ONE.subtract(BigDecimal.valueOf(DISCOUNT_RATE).divide(BigDecimal(100))))
+            .setScale(2, java.math.RoundingMode.HALF_UP)
         val order = TestFixtures.createOrder(
             userCouponId = USER_COUPON_ID,
             totalPrice = discountedTotalPrice
@@ -348,7 +363,7 @@ class OrderFacadeIntegrationTest {
         val order = TestFixtures.createOrder()
         
         // 잔액이 주문 금액보다 적게 설정
-        val insufficientAmount = (PRODUCT_PRICE + OPTION_PRICE) * QUANTITY - 1000.0
+        val insufficientAmount = PRODUCT_PRICE.add(OPTION_PRICE).multiply(BigDecimal(QUANTITY)).subtract(BigDecimal("1000"))
         val account = TestFixtures.createAccount(insufficientAmount)
 
         val criteria = OrderCriteria.OrderPaymentCriteria(
@@ -503,7 +518,7 @@ class OrderFacadeIntegrationTest {
         every { productOptionService.updateQuantity(any()) } returns productOption1
         every { orderItemService.deleteById(orderItemToCancel.id!!) } returns Unit
         every { orderItemService.getByOrderId(order.id!!) } returns listOf(orderItem2)
-        every { orderItemService.calculateTotalPrice(any()) } returns product2.price * orderItem2.quantity
+        every { orderItemService.calculateTotalPrice(any()) } returns product2.price.multiply(BigDecimal(orderItem2.quantity))
         every { orderService.updateOrderTotalPrice(any()) } returns order
         
         // 취소된 상품 재고 확인을 위한 설정
@@ -514,7 +529,7 @@ class OrderFacadeIntegrationTest {
         
         // 계좌 환불 정보 확인
         val accountAfterCancel = mockk<Account>()
-        every { accountAfterCancel.amount } returns account.amount + product1.price * orderItemToCancel.quantity
+        every { accountAfterCancel.amount } returns account.amount.add(product1.price.multiply(BigDecimal(orderItemToCancel.quantity)))
         every { accountService.findByUserId(user.id!!) } returns accountAfterCancel
         
         // OrderItem에 isCancelled 메서드 추가 설정
@@ -550,8 +565,8 @@ class OrderFacadeIntegrationTest {
         
         // 4. 취소된 상품에 대한 환불이 이루어져야 함
         val updatedAccount = accountService.findByUserId(user.id!!)
-        val refundAmount = product1.price * orderItemToCancel.quantity
-        assertEquals(updatedAccount.amount, account.amount + refundAmount, 0.01, 
+        val refundAmount = product1.price.multiply(BigDecimal(orderItemToCancel.quantity))
+        assertEquals(0, account.amount.add(refundAmount).compareTo(updatedAccount.amount),
             "취소된 상품에 대한 환불이 정확하게 이루어져야 함")
     }
 

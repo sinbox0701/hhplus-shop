@@ -25,6 +25,8 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 @Service
@@ -89,8 +91,8 @@ class OrderFacade(
             }
 
             // 3. 상품 및 옵션 검증 및 가격 계산
-            var totalPrice = 0.0
-            val orderItemCommands = criteria.orderItems.map { item -> 
+            var totalPrice = BigDecimal.ZERO
+            val orderItemCommands = criteria.orderItems.map { item ->
                 // 상품 및 옵션 정보 조회 (캐시된 값 사용)
                 val product = getProductWithCache(item.productId)
                 val productOption = getProductOptionWithCache(item.productOptionId)
@@ -101,10 +103,10 @@ class OrderFacade(
                 }
                 
                 // 상품 가격 계산
-                val basePrice = product.price + productOption.additionalPrice
-                val itemPrice = basePrice * item.quantity
-                
-                totalPrice += itemPrice
+                val basePrice = product.price.add(productOption.additionalPrice)
+                val itemPrice = basePrice.multiply(BigDecimal(item.quantity))
+
+                totalPrice = totalPrice.add(itemPrice)
                 
                 // 주문 상품 생성 명령 준비
                 OrderItemCommand.CreateOrderItemCommand(
@@ -121,9 +123,12 @@ class OrderFacade(
             val finalPrice = if (couponInfo != null) {
                 val (userCoupon, coupon) = couponInfo
                 // 쿠폰 종류에 따라 할인 적용 방식 다르게 처리
+                val discountFactor = BigDecimal.ONE.subtract(
+                    BigDecimal.valueOf(coupon.discountRate).divide(BigDecimal(100))
+                )
                 when (coupon.couponType) {
-                    CouponType.DISCOUNT_ORDER -> totalPrice * (1 - coupon.discountRate / 100) // 주문 전체 할인
-                    CouponType.DISCOUNT_PRODUCT -> totalPrice * (1 - coupon.discountRate / 100) // 상품 할인도 동일하게 적용
+                    CouponType.DISCOUNT_ORDER -> totalPrice.multiply(discountFactor).setScale(2, RoundingMode.HALF_UP) // 주문 전체 할인
+                    CouponType.DISCOUNT_PRODUCT -> totalPrice.multiply(discountFactor).setScale(2, RoundingMode.HALF_UP) // 상품 할인도 동일하게 적용
                 }
             } else {
                 totalPrice
@@ -133,7 +138,7 @@ class OrderFacade(
             val order = orderService.createOrder(OrderCommand.CreateOrderCommand(
                 userId = user.id!!,
                 userCouponId = couponInfo?.first?.id,
-                totalPrice = 0.0 // 임시 가격 (나중에 업데이트)
+                totalPrice = BigDecimal.ZERO // 임시 가격 (나중에 업데이트)
             ))
             
             // 6. 주문 상품 생성 및 재고 감소

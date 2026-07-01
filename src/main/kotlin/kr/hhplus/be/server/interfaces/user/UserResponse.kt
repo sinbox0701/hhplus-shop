@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.interfaces.user
 
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 class UserResponse {
@@ -26,7 +27,7 @@ class UserResponse {
     data class AccountResponse(
         val id: Long,
         val userId: Long,
-        val amount: Double,
+        val amount: BigDecimal,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
     )
@@ -34,7 +35,7 @@ class UserResponse {
     data class AccountTransactionResponse(
         val id: Long,
         val accountId: Long,
-        val amount: Double,
+        val amount: BigDecimal,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
     )

@@ -3,15 +3,19 @@ package kr.hhplus.be.server.domain.order.service
 import kr.hhplus.be.server.domain.order.model.OrderItem
 import kr.hhplus.be.server.domain.order.repository.OrderItemRepository
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 import java.time.LocalDateTime
 @Service
 class OrderItemService(
     private val orderItemRepository: OrderItemRepository
 ) {
     fun create(command: OrderItemCommand.CreateOrderItemCommand): OrderItem {
-        // 실제 상품 가격을 가져오는 로직이 필요합니다. 현재는 100.0으로 임시 설정
-        val basePrice = 100.0 // 실제로는 상품 서비스 또는 레포지토리에서 가격을 가져와야 함
-        val finalPrice = command.discountRate?.let { basePrice * (1 - it / 100) } ?: basePrice
+        // 실제 상품 가격을 가져오는 로직이 필요합니다. 현재는 100으로 임시 설정
+        val basePrice = BigDecimal("100") // 실제로는 상품 서비스 또는 레포지토리에서 가격을 가져와야 함
+        val finalPrice = command.discountRate?.let {
+            basePrice.multiply(BigDecimal.ONE.subtract(BigDecimal.valueOf(it).divide(BigDecimal(100))))
+                .setScale(2, java.math.RoundingMode.HALF_UP)
+        } ?: basePrice
         
         val orderItem = OrderItem.create(
             orderId = command.orderId,
@@ -88,7 +92,7 @@ class OrderItemService(
         orderItemRepository.deleteByOrderId(orderId)
     }
     
-    fun calculateTotalPrice(orderItems: List<OrderItem>): Double {
-        return orderItems.sumOf { it.price }
+    fun calculateTotalPrice(orderItems: List<OrderItem>): BigDecimal {
+        return orderItems.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.price) }
     }
 }

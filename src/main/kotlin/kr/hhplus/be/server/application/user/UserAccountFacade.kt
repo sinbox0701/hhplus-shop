@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 
 @Service
 class UserAccountFacade(
@@ -65,7 +66,7 @@ class UserAccountFacade(
      */
     @CacheEvict(value = ["userAccounts"], key = "#userId")
     @Transactional
-    fun withdrawAccount(userId: Long, amount: Double): Account {
+    fun withdrawAccount(userId: Long, amount: BigDecimal): Account {
         // 유저 확인
         val user = userService.findById(userId)
         

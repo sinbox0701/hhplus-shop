@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.infrastructure.product
 
 import kr.hhplus.be.server.domain.product.model.Product
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import jakarta.persistence.*
 
@@ -17,9 +18,9 @@ class ProductEntity(
     @Column(nullable = false, columnDefinition = "TEXT")
     val description: String,
     
-    @Column(nullable = false)
-    val price: Double,
-    
+    @Column(nullable = false, precision = 19, scale = 2)
+    val price: BigDecimal,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime,
     
@@ -31,7 +32,7 @@ class ProductEntity(
         val productClass = Product::class.java
         val constructor = productClass.getDeclaredConstructor(
             Long::class.java, String::class.java, String::class.java,
-            Double::class.java, LocalDateTime::class.java, LocalDateTime::class.java
+            BigDecimal::class.java, LocalDateTime::class.java, LocalDateTime::class.java
         )
         constructor.isAccessible = true
         
@@ -63,7 +64,7 @@ class ProductEntity(
                 id = idField.get(product) as? Long,
                 name = nameField.get(product) as String,
                 description = descriptionField.get(product) as String,
-                price = priceField.get(product) as Double,
+                price = priceField.get(product) as BigDecimal,
                 createdAt = createdAtField.get(product) as LocalDateTime,
                 updatedAt = updatedAtField.get(product) as LocalDateTime
             )

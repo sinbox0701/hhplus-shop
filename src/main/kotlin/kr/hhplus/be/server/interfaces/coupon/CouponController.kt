@@ -4,8 +4,6 @@ import kr.hhplus.be.server.application.coupon.CouponCriteria
 import kr.hhplus.be.server.application.coupon.CouponFacade
 import kr.hhplus.be.server.application.coupon.CouponResult
 import kr.hhplus.be.server.interfaces.coupon.api.CouponApi
-import kr.hhplus.be.server.interfaces.coupon.CouponRequest
-import kr.hhplus.be.server.interfaces.coupon.CouponResponse
 import kr.hhplus.be.server.domain.coupon.model.CouponType
 import kr.hhplus.be.server.domain.coupon.service.CouponService
 import org.springframework.http.HttpStatus
@@ -17,6 +15,7 @@ import java.util.*
 import jakarta.validation.Valid
 import kr.hhplus.be.server.interfaces.coupon.CouponRequest.IssueFirstComeFirstServedCouponRequest
 import kr.hhplus.be.server.interfaces.coupon.CouponResponse.UserCouponResponse
+import kr.hhplus.be.server.application.coupon.CouponApplicationService
 
 @RestController
 @RequestMapping("/api/coupons")
@@ -24,6 +23,7 @@ import kr.hhplus.be.server.interfaces.coupon.CouponResponse.UserCouponResponse
 class CouponController(
     private val couponFacade: CouponFacade,
     private val couponService: CouponService,
+    private val couponApplicationService: CouponApplicationService
 ) : CouponApi {
 
     @GetMapping
@@ -202,5 +202,44 @@ class CouponController(
     ): UserCouponResponse {
         val userCoupon = couponService.issueFirstComeFirstServedCoupon(userId, request.couponCode)
         return UserCouponResponse.from(userCoupon)
+    }
+
+    /**
+     * 선착순 쿠폰 발급 요청 API
+     * 카프카를 통해 비동기적으로 처리
+     */
+    @PostMapping("/publish")
+    fun publishCoupon(@RequestBody request: CouponRequest.CouponPublishRequestDto): ResponseEntity<CouponRequest.CouponPublishResponseDto> {
+        val requestId = couponApplicationService.requestFirstComeFirstServedCoupon(
+            request.userId,
+            request.couponCode
+        )
+        
+        return ResponseEntity.accepted().body(
+            CouponRequest.CouponPublishResponseDto(
+                requestId = requestId,
+                message = "쿠폰 발급 요청이 접수되었습니다. 잠시 후 결과를 확인해주세요."
+            )
+        )
+    }
+    
+    /**
+     * 사용자의 쿠폰 목록 조회 API
+     */
+    @GetMapping("/users/{userId}/coupons")
+    fun getUserCouponsByUserId(@PathVariable userId: Long): ResponseEntity<List<CouponRequest.UserCouponDto>> {
+        val userCoupons = couponApplicationService.getUserCoupons(userId)
+        
+        val userCouponDtos = userCoupons.map { userCoupon ->
+            CouponRequest.UserCouponDto(
+                id = userCoupon.id,
+                userId = userCoupon.userId,
+                couponId = userCoupon.couponId,
+                issued = userCoupon.isIssued(),
+                used = userCoupon.isUsed()
+            )
+        }
+        
+        return ResponseEntity.ok(userCouponDtos)
     }
 }

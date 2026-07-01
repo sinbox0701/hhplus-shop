@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Size
 import kr.hhplus.be.server.application.user.UserCriteria
 import kr.hhplus.be.server.domain.user.service.UserCommand
 import kr.hhplus.be.server.domain.user.model.User
+import java.math.BigDecimal
 
 class UserRequest {
     
@@ -84,7 +85,7 @@ class UserRequest {
         @field:NotNull(message = "입금액은 필수입니다")
         @field:DecimalMin(value = "1", message = "최소 입금액은 1원입니다")
         @field:DecimalMax(value = "10000000", message = "최대 입금액은 1000만원입니다")
-        val amount: Double
+        val amount: BigDecimal
     ) {
         fun toCriteria(userId: Long): UserCriteria.ChargeAccountCriteria {
             return UserCriteria.ChargeAccountCriteria(
@@ -97,12 +98,12 @@ class UserRequest {
     data class ChargeAccountWithOptimisticLockRequest(
         @field:Positive(message = "금액은 양수여야 합니다.")
         @field:Schema(description = "충전 금액", example = "10000")
-        val amount: Double
+        val amount: BigDecimal
     )
-    
+
     data class WithdrawAccountWithOptimisticLockRequest(
         @field:Positive(message = "금액은 양수여야 합니다.")
         @field:Schema(description = "출금 금액", example = "5000")
-        val amount: Double
+        val amount: BigDecimal
     )
 }

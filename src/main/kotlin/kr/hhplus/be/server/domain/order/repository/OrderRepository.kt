@@ -2,6 +2,7 @@ package kr.hhplus.be.server.domain.order.repository
 
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 interface OrderRepository {
@@ -14,6 +15,6 @@ interface OrderRepository {
     fun findByCreatedAtBetween(startDate: LocalDateTime, endDate: LocalDateTime): List<Order>
     fun update(order: Order): Order
     fun updateStatus(id: Long, status: OrderStatus): Order
-    fun updateTotalPrice(id: Long, totalPrice: Double): Order
+    fun updateTotalPrice(id: Long, totalPrice: BigDecimal): Order
     fun delete(id: Long)
 }

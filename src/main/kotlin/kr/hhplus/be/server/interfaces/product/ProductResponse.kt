@@ -3,6 +3,7 @@ package kr.hhplus.be.server.interfaces.product
 import kr.hhplus.be.server.application.product.ProductResult
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 class ProductResponse {
@@ -11,7 +12,7 @@ class ProductResponse {
         val productId: Long,
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val options: List<OptionResponse>,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
@@ -21,7 +22,7 @@ class ProductResponse {
         val productId: Long,
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
     )
@@ -29,7 +30,7 @@ class ProductResponse {
     data class OptionResponse(
         val optionId: Long,
         val name: String,
-        val additionalPrice: Double,
+        val additionalPrice: BigDecimal,
         val availableQuantity: Int
     )
     
@@ -37,7 +38,7 @@ class ProductResponse {
         val productId: Long,
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val options: List<OptionResponse>,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
@@ -47,7 +48,7 @@ class ProductResponse {
         val productId: Long,
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val totalSoldQuantity: Int,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
@@ -63,7 +64,7 @@ class ProductResponse {
         val productId: Long,
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val options: List<OptionResponse>,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
@@ -74,7 +75,7 @@ class ProductResponse {
         val productId: Long,
         val name: String,
         val availableQuantity: Int,
-        val additionalPrice: Double,
+        val additionalPrice: BigDecimal,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
     ) {

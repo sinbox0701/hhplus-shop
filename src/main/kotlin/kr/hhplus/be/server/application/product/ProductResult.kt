@@ -2,6 +2,7 @@ package kr.hhplus.be.server.application.product
 
 import kr.hhplus.be.server.domain.product.model.Product
 import kr.hhplus.be.server.domain.product.model.ProductOption
+import java.math.BigDecimal
 
 class ProductResult {
     data class ProductWithOptions(
@@ -13,7 +14,7 @@ class ProductResult {
         val id: Long?,
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val createdAt: String,
         val updatedAt: String
     ) {

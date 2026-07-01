@@ -3,6 +3,7 @@ package kr.hhplus.be.server.domain.product.exception
 import kr.hhplus.be.server.domain.common.exception.BusinessException
 import kr.hhplus.be.server.domain.common.exception.ErrorCode
 import org.springframework.http.HttpStatus
+import java.math.BigDecimal
 
 /**
  * 상품 관련 에러 코드
@@ -41,7 +42,7 @@ class ProductOptionNotFoundException(
  * 유효하지 않은 상품 가격일 때 발생하는 예외
  */
 class InvalidProductPriceException(
-    price: Double
+    price: BigDecimal
 ) : BusinessException(ProductErrorCode.INVALID_PRODUCT_PRICE, "유효하지 않은 상품 가격입니다: $price")
 
 /**

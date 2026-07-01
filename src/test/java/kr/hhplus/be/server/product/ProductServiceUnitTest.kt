@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import java.math.BigDecimal
 
 @ExtendWith(MockKExtension::class)
 class ProductServiceUnitTest {
@@ -25,11 +26,11 @@ class ProductServiceUnitTest {
     companion object {
         private const val TEST_NAME = "테스트 상품"
         private const val TEST_DESCRIPTION = "테스트 상품 설명"
-        private const val TEST_PRICE = 10000.0
-        
+        private val TEST_PRICE = BigDecimal("10000")
+
         private const val UPDATED_NAME = "업데이트된 상품"
         private const val UPDATED_DESCRIPTION = "업데이트된 상품 설명"
-        private const val UPDATED_PRICE = 20000.0
+        private val UPDATED_PRICE = BigDecimal("20000")
     }
 
     @BeforeEach
@@ -56,7 +57,7 @@ class ProductServiceUnitTest {
         // then
         assertEquals(TEST_NAME, createdProduct.name)
         assertEquals(TEST_DESCRIPTION, createdProduct.description)
-        assertEquals(TEST_PRICE, createdProduct.price)
+        assertEquals(0, TEST_PRICE.compareTo(createdProduct.price))
         
         verify(exactly = 1) { productRepository.save(any()) }
     }
@@ -80,7 +81,7 @@ class ProductServiceUnitTest {
         // then
         assertEquals(TEST_NAME, foundProduct.name)
         assertEquals(TEST_DESCRIPTION, foundProduct.description)
-        assertEquals(TEST_PRICE, foundProduct.price)
+        assertEquals(0, TEST_PRICE.compareTo(foundProduct.price))
         
         verify(exactly = 1) { productRepository.findById(1L) }
     }
@@ -113,7 +114,7 @@ class ProductServiceUnitTest {
         val product2 = mockk<Product> {
             every { name } returns "상품2"
             every { description } returns "설명2"
-            every { price } returns 20000.0
+            every { price } returns BigDecimal("20000")
         }
         val products = listOf(product1, product2)
         
@@ -162,7 +163,7 @@ class ProductServiceUnitTest {
         // then
         assertEquals(UPDATED_NAME, result.name)
         assertEquals(UPDATED_DESCRIPTION, result.description)
-        assertEquals(UPDATED_PRICE, result.price)
+        assertEquals(0, UPDATED_PRICE.compareTo(result.price))
         
         verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 1) { productRepository.save(any()) }
@@ -223,7 +224,7 @@ class ProductServiceUnitTest {
         // then
         assertEquals(UPDATED_NAME, result.name)
         assertEquals(TEST_DESCRIPTION, result.description)
-        assertEquals(TEST_PRICE, result.price)
+        assertEquals(0, TEST_PRICE.compareTo(result.price))
         
         verify(exactly = 1) { productRepository.findById(1L) }
         verify(exactly = 1) { productRepository.save(any()) }

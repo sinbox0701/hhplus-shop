@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kr.hhplus.be.server.domain.user.service.AccountCommand
 import org.junit.jupiter.api.extension.ExtendWith
+import java.math.BigDecimal
 
 @ExtendWith(MockKExtension::class)
 class AccountServiceUnitTest {
@@ -23,9 +24,9 @@ class AccountServiceUnitTest {
     companion object {
         private const val TEST_ID = 1L
         private const val TEST_USER_ID = 2L
-        private const val TEST_INITIAL_AMOUNT = 5000.0
-        private const val CHARGE_AMOUNT = 3000.0
-        private const val WITHDRAW_AMOUNT = 2000.0
+        private val TEST_INITIAL_AMOUNT = BigDecimal("5000")
+        private val CHARGE_AMOUNT = BigDecimal("3000")
+        private val WITHDRAW_AMOUNT = BigDecimal("2000")
     }
 
     @BeforeEach
@@ -51,8 +52,8 @@ class AccountServiceUnitTest {
         
         // then
         assertEquals(TEST_USER_ID, createdAccount.userId)
-        assertEquals(TEST_INITIAL_AMOUNT, createdAccount.amount)
-        
+        assertEquals(0, TEST_INITIAL_AMOUNT.compareTo(createdAccount.amount))
+
         verify(exactly = 1) { accountRepository.save(any()) }
     }
     
@@ -75,8 +76,8 @@ class AccountServiceUnitTest {
         // then
         assertEquals(TEST_ID, foundAccount.id)
         assertEquals(TEST_USER_ID, foundAccount.userId)
-        assertEquals(TEST_INITIAL_AMOUNT, foundAccount.amount)
-        
+        assertEquals(0, TEST_INITIAL_AMOUNT.compareTo(foundAccount.amount))
+
         verify(exactly = 1) { accountRepository.findByUserId(TEST_USER_ID) }
     }
     
@@ -116,16 +117,16 @@ class AccountServiceUnitTest {
         assertNotNull(foundAccount)
         assertEquals(TEST_ID, foundAccount.id)
         assertEquals(TEST_USER_ID, foundAccount.userId)
-        assertEquals(TEST_INITIAL_AMOUNT, foundAccount.amount)
-        
+        assertEquals(0, TEST_INITIAL_AMOUNT.compareTo(foundAccount.amount))
+
         verify(exactly = 1) { accountRepository.findById(TEST_ID) }
     }
-    
+
     @Test
     @DisplayName("유효한 금액으로 계좌 충전 성공")
     fun chargeAccountWithValidAmountSuccess() {
         // given
-        val updatedAmount = TEST_INITIAL_AMOUNT + CHARGE_AMOUNT
+        val updatedAmount = TEST_INITIAL_AMOUNT.add(CHARGE_AMOUNT)
         
         val updatedAccount = mockk<Account> {
             every { id } returns TEST_ID
@@ -143,10 +144,10 @@ class AccountServiceUnitTest {
         
         // when
         val result = accountService.charge(AccountCommand.UpdateAccountCommand(TEST_ID, CHARGE_AMOUNT))
-        
+
         // then
-        assertEquals(updatedAmount, result.amount)
-        
+        assertEquals(0, updatedAmount.compareTo(result.amount))
+
         verify(exactly = 1) { accountRepository.findById(TEST_ID) }
         verify(exactly = 1) { account.charge(CHARGE_AMOUNT) }
         verify(exactly = 1) { accountRepository.update(any(), any()) }
@@ -173,7 +174,7 @@ class AccountServiceUnitTest {
     @DisplayName("유효한 금액으로 계좌 출금 성공")
     fun withdrawAccountWithValidAmountSuccess() {
         // given
-        val updatedAmount = TEST_INITIAL_AMOUNT - WITHDRAW_AMOUNT
+        val updatedAmount = TEST_INITIAL_AMOUNT.subtract(WITHDRAW_AMOUNT)
   
         val updatedAccount = mockk<Account> {
             every { id } returns TEST_ID
@@ -194,10 +195,10 @@ class AccountServiceUnitTest {
         
         // when
         val result = accountService.withdraw(AccountCommand.UpdateAccountCommand(TEST_ID, WITHDRAW_AMOUNT))
-        
+
         // then
-        assertEquals(updatedAmount, result.amount)
-        
+        assertEquals(0, updatedAmount.compareTo(result.amount))
+
         verify(exactly = 1) { accountRepository.findById(TEST_ID) }
         verify { account.withdraw(WITHDRAW_AMOUNT) }
         verify(exactly = 1) { accountRepository.update(any(), any()) }

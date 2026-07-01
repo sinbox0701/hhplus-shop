@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.interfaces.order
 
 import kr.hhplus.be.server.domain.order.model.OrderStatus
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 class OrderResponse{
@@ -8,7 +9,7 @@ class OrderResponse{
         val id: Long,
         val userId: Long,
         val userCouponId: Long?,
-        val totalPrice: Double,
+        val totalPrice: BigDecimal,
         val status: OrderStatus,
         val orderDate: LocalDateTime,
         val createdAt: LocalDateTime,
@@ -22,7 +23,7 @@ class OrderResponse{
         val productOptionId: Long,
         val userCouponId: Long?,
         val quantity: Int,
-        val price: Double,
+        val price: BigDecimal,
         val createdAt: LocalDateTime,
         val updatedAt: LocalDateTime
     )

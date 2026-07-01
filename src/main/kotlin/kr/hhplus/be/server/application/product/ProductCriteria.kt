@@ -2,6 +2,7 @@ package kr.hhplus.be.server.application.product
 
 import kr.hhplus.be.server.domain.product.service.ProductCommand
 import kr.hhplus.be.server.domain.product.service.ProductOptionCommand
+import java.math.BigDecimal
 
 class ProductCriteria {
     /**
@@ -9,14 +10,14 @@ class ProductCriteria {
      */
     data class CreateProductOptionCriteria(
         val name: String,
-        val price: Double,
+        val price: BigDecimal,
         val availableQuantity: Int
     )
-    
+
     data class CreateProductCriteria(
         val name: String,
         val description: String,
-        val price: Double,
+        val price: BigDecimal,
         val options: List<CreateProductOptionCriteria>
     ) {
         fun toProductCommand(): ProductCommand.CreateProductCommand {
@@ -46,14 +47,14 @@ class ProductCriteria {
         val id: Long,
         val name: String?,
         val availableQuantity: Int?,
-        val additionalPrice: Double?
+        val additionalPrice: BigDecimal?
     )
 
     data class UpdateProductCriteria(
         val id: Long,
         val name: String? = null,
         val description: String? = null,
-        val price: Double? = null,
+        val price: BigDecimal? = null,
         val optionsToUpdate: List<UpdateProductOptionCriteria>? = null,
         val optionsToAdd: List<CreateProductOptionCriteria>? = null,
         val optionsToRemove: List<Long>? = null

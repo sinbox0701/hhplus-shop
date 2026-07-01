@@ -93,3 +93,22 @@ fun findByCodeWithPessimisticLock(@Param("code") code: String): CouponEntity?
 - Redis LPUSH / BRPOP 큐로 선착순 로직 구현
 
 각 대안은 시스템 아키텍처, 장애 허용 수준, 운영 복잡도 등을 고려하여 선택할 수 있다.
+
+---
+
+## 5. 권위 계층(authoritative layer) 정리
+
+여러 락 전략을 무분별하게 중첩하면(예: Redisson 분산 락 + 비관적 락 + `@Version`을
+한 메서드에 동시에) 어느 계층이 정합성을 책임지는지 모호해지고, 특정 계층을 제거해도
+테스트가 통과해 "가짜 안전감"을 준다. 따라서 각 흐름마다 **권위 계층을 하나로 확정**한다.
+
+| 흐름 | 권위 계층 | 최종 방어선 | 비고 |
+| --- | --- | --- | --- |
+| 사용자별 쿠폰 발급 (`CouponFacade.create`) | Redisson 분산 락 (`coupon:user:{userId}`) | `user_coupon` (userId, couponId) 유니크 제약 | 다중 인스턴스 직렬화가 목적이므로 단일 노드 DB 락을 중첩하지 않음 |
+| 선착순 한정 수량 차감 (`CouponService.issueFirstComeFirstServedCoupon`) | DB 비관적 락 (`PESSIMISTIC_WRITE`) | 쿠폰 재고 row 잠금 | 공유 재고 row를 다투므로 DB 락이 권위. Redisson 중첩하지 않음 |
+| 상품 옵션 재고 차감/복원 | DB 비관적 락 (`PESSIMISTIC_WRITE`) | 재고 row 잠금 | |
+| 계좌 잔액 충전/차감 | 낙관적 락 (`@Version`) | 충돌 시 재시도 | 경쟁 강도가 낮고 재시도가 용이 |
+
+원칙: **"인스턴스 간 사용자 단위 직렬화 = Redisson", "단일 공유 row 정합성 = DB 락",
+"낮은 경쟁 + 재시도 허용 = 낙관적 락"** 으로 역할을 분리한다. 코드 상 권위 계층은
+`CouponFacade`의 KDoc에 명시되어 있으며, 이 문서와 일치시킨다.

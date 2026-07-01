@@ -5,16 +5,17 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 class OrderItemUnitTest {
-    
+
     companion object {
         private const val ORDER_ID = 1L
         private const val PRODUCT_ID = 2L
         private const val PRODUCT_OPTION_ID = 3L
         private const val USER_COUPON_ID = 5L
-        private const val PRODUCT_PRICE = 10000.0
+        private val PRODUCT_PRICE = BigDecimal("10000")
         private const val BASE_QUANTITY = 2
     }
     
@@ -39,7 +40,7 @@ class OrderItemUnitTest {
         assertEquals(PRODUCT_ID, orderItem.productId)
         assertEquals(PRODUCT_OPTION_ID, orderItem.productOptionId)
         assertEquals(quantity, orderItem.quantity)
-        assertEquals(PRODUCT_PRICE, orderItem.price)
+        assertEquals(0, PRODUCT_PRICE.compareTo(orderItem.price))
         assertNull(orderItem.userCouponId)
         assertNotNull(orderItem.createdAt)
         assertNotNull(orderItem.updatedAt)
@@ -52,7 +53,7 @@ class OrderItemUnitTest {
         val quantity = BASE_QUANTITY
         val discountRate = 10.0 // 10% 할인
         val basePrice = PRODUCT_PRICE
-        val expectedPrice = basePrice * (1 - discountRate / 100)
+        val expectedPrice = basePrice.multiply(BigDecimal.valueOf(1 - discountRate / 100))
         
         // when
         val orderItem = OrderItem.create(
@@ -69,7 +70,7 @@ class OrderItemUnitTest {
         assertEquals(PRODUCT_ID, orderItem.productId)
         assertEquals(PRODUCT_OPTION_ID, orderItem.productOptionId)
         assertEquals(quantity, orderItem.quantity)
-        assertEquals(expectedPrice, orderItem.price)
+        assertEquals(0, expectedPrice.compareTo(orderItem.price))
         assertEquals(USER_COUPON_ID, orderItem.userCouponId)
     }
     
@@ -119,7 +120,7 @@ class OrderItemUnitTest {
     @DisplayName("주문 상품 가격이 최소 가격보다 작으면 예외가 발생한다")
     fun createOrderItemWithPriceLessThanMinFails() {
         // given
-        val lowPrice = OrderItem.MIN_PRICE - 10 // 최소 가격보다 낮음
+        val lowPrice = OrderItem.MIN_PRICE.subtract(BigDecimal("10")) // 최소 가격보다 낮음
         
         // when & then
         val exception = assertThrows<IllegalArgumentException> {
@@ -174,14 +175,14 @@ class OrderItemUnitTest {
             quantity = quantity,
             price = PRODUCT_PRICE
         )
-        val newProductPrice = 15000.0
-        
+        val newProductPrice = BigDecimal("15000")
+
         // when
         val updatedOrderItem = orderItem.update(null, newProductPrice)
-        
+
         // then
         assertEquals(quantity, updatedOrderItem.quantity) // 수량은 변경 없음
-        assertEquals(newProductPrice * quantity, updatedOrderItem.price)
+        assertEquals(0, newProductPrice.multiply(BigDecimal(quantity)).compareTo(updatedOrderItem.price))
         assertTrue(updatedOrderItem.updatedAt.isAfter(orderItem.createdAt))
     }
     
@@ -190,8 +191,8 @@ class OrderItemUnitTest {
     fun updateOrderItemPriceWithDiscountSuccess() {
         // given
         val quantity = BASE_QUANTITY
-        val initialPrice = PRODUCT_PRICE * quantity
-        
+        val initialPrice = PRODUCT_PRICE.multiply(BigDecimal(quantity))
+
         val orderItem = OrderItem.create(
             orderId = ORDER_ID,
             productId = PRODUCT_ID,
@@ -201,13 +202,13 @@ class OrderItemUnitTest {
             price = initialPrice
         )
         val discountRate = 20.0 // 20% 할인
-        
+
         // when
         val updatedOrderItem = orderItem.updatePrice(discountRate)
-        
+
         // then
-        val expectedPrice = initialPrice * (1 - discountRate / 100)
-        assertEquals(expectedPrice, updatedOrderItem.price)
+        val expectedPrice = initialPrice.multiply(BigDecimal.valueOf(1 - discountRate / 100))
+        assertEquals(0, expectedPrice.compareTo(updatedOrderItem.price))
         assertTrue(updatedOrderItem.updatedAt.isAfter(orderItem.createdAt))
     }
     
@@ -215,7 +216,7 @@ class OrderItemUnitTest {
     @DisplayName("너무 큰 할인율로 가격이 최소 가격 미만이 되면 예외가 발생한다")
     fun updateOrderItemPriceWithTooHighDiscountRateFails() {
         // given
-        val lowInitialPrice = 150.0  // 낮은 가격
+        val lowInitialPrice = BigDecimal("150")  // 낮은 가격
         val orderItem = OrderItem.create(
             orderId = ORDER_ID,
             productId = PRODUCT_ID,

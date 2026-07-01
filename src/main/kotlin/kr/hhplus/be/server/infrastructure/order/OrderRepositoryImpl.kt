@@ -6,6 +6,7 @@ import kr.hhplus.be.server.domain.order.repository.OrderRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
@@ -63,7 +64,7 @@ class OrderRepositoryImpl(
     }
     
     @Transactional
-    override fun updateTotalPrice(id: Long, totalPrice: Double): Order {
+    override fun updateTotalPrice(id: Long, totalPrice: BigDecimal): Order {
         // 먼저 엔티티 존재 여부 확인
         val orderEntity = jpaOrderRepository.findByIdOrNull(id)
             ?: throw IllegalArgumentException("주문을 찾을 수 없습니다: $id")

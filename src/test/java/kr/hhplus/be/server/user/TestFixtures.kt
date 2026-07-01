@@ -4,13 +4,14 @@ import io.mockk.every
 import io.mockk.mockk
 import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 object TestFixtures {
     // 상수 정의
     const val USER_ID = 1L
     const val ACCOUNT_ID = 1L
-    const val DEFAULT_BALANCE = 10000.0
+    val DEFAULT_BALANCE: BigDecimal = BigDecimal("10000")
     
     // 사용자 Fixture
     fun createUser(
@@ -38,7 +39,7 @@ object TestFixtures {
     fun createAccount(
         id: Long = ACCOUNT_ID,
         userId: Long = USER_ID,
-        amount: Double = DEFAULT_BALANCE
+        amount: BigDecimal = DEFAULT_BALANCE
     ): Account {
         val now = LocalDateTime.now()
         val account = mockk<Account>()

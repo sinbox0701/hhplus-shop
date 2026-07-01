@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.extension.ExtendWith
+import java.math.BigDecimal
 
 
 @ExtendWith(MockKExtension::class)
@@ -25,14 +26,14 @@ class ProductOptionServiceUnitTest {
         private const val PRODUCT_ID = 1L
         private const val PRODUCT_NAME = "테스트 상품"
         private const val PRODUCT_DESCRIPTION = "테스트 상품 설명"
-        private const val PRODUCT_PRICE = 10000.0
-        
+        private val PRODUCT_PRICE = BigDecimal("10000")
+
         private const val OPTION_NAME = "옵션명"
         private const val AVAILABLE_QUANTITY = 100
-        private const val ADDITIONAL_PRICE = 1000.0
-        
+        private val ADDITIONAL_PRICE = BigDecimal("1000")
+
         private const val NEW_OPTION_NAME = "새 옵션명"
-        private const val NEW_ADDITIONAL_PRICE = 2000.0
+        private val NEW_ADDITIONAL_PRICE = BigDecimal("2000")
         
         private const val QUANTITY_CHANGE = 50
     }
@@ -69,7 +70,7 @@ class ProductOptionServiceUnitTest {
         // then
         assertEquals(OPTION_NAME, createdOption.name)
         assertEquals(AVAILABLE_QUANTITY, createdOption.availableQuantity)
-        assertEquals(ADDITIONAL_PRICE, createdOption.additionalPrice)
+        assertEquals(0, ADDITIONAL_PRICE.compareTo(createdOption.additionalPrice))
         
         verify(exactly = 1) { productOptionRepository.save(any()) }
     }
@@ -102,21 +103,21 @@ class ProductOptionServiceUnitTest {
         val option1 = mockk<ProductOption> {
             every { name } returns "옵션1"
             every { availableQuantity } returns 100
-            every { additionalPrice } returns 1000.0
+            every { additionalPrice } returns BigDecimal("1000")
             every { productId } returns PRODUCT_ID
         }
         val option2 = mockk<ProductOption> {
             every { name } returns "옵션2"
             every { availableQuantity } returns 200
-            every { additionalPrice } returns 2000.0
+            every { additionalPrice } returns BigDecimal("2000")
             every { productId } returns PRODUCT_ID
         }
-        
+
         every { productOptionRepository.save(any()) } returnsMany listOf(option1, option2)
-        
+
         val commands = listOf(
-            ProductOptionCommand.CreateProductOptionCommand(PRODUCT_ID, "옵션1", 100, 1000.0),
-            ProductOptionCommand.CreateProductOptionCommand(PRODUCT_ID, "옵션2", 200, 2000.0)
+            ProductOptionCommand.CreateProductOptionCommand(PRODUCT_ID, "옵션1", 100, BigDecimal("1000")),
+            ProductOptionCommand.CreateProductOptionCommand(PRODUCT_ID, "옵션2", 200, BigDecimal("2000"))
         )
         
         // when
@@ -247,7 +248,7 @@ class ProductOptionServiceUnitTest {
         
         // then
         assertEquals(NEW_OPTION_NAME, result.name)
-        assertEquals(NEW_ADDITIONAL_PRICE, result.additionalPrice)
+        assertEquals(0, NEW_ADDITIONAL_PRICE.compareTo(result.additionalPrice))
         
         verify(exactly = 1) { productOptionRepository.findById(2L) }
         verify(exactly = 1) { productOptionRepository.update(any()) }
