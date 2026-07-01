@@ -3,6 +3,7 @@ package kr.hhplus.be.server.domain.user.exception
 import kr.hhplus.be.server.domain.common.exception.BusinessException
 import kr.hhplus.be.server.domain.common.exception.ErrorCode
 import org.springframework.http.HttpStatus
+import java.math.BigDecimal
 
 /**
  * 사용자 관련 에러 코드
@@ -72,16 +73,16 @@ class InvalidCredentialsException(
  */
 class InsufficientBalanceException(
     accountId: Long,
-    currentBalance: Double,
-    requiredAmount: Double
-) : BusinessException(UserErrorCode.INSUFFICIENT_BALANCE, 
+    currentBalance: BigDecimal,
+    requiredAmount: BigDecimal
+) : BusinessException(UserErrorCode.INSUFFICIENT_BALANCE,
     "잔액이 부족합니다. 계좌 ID: $accountId, 현재 잔액: $currentBalance, 필요 금액: $requiredAmount")
 
 /**
  * 유효하지 않은 금액일 때 발생하는 예외
  */
 class InvalidAmountException(
-    amount: Double
+    amount: BigDecimal
 ) : BusinessException(UserErrorCode.INVALID_AMOUNT, "유효하지 않은 금액입니다: $amount")
 
 /**
@@ -98,9 +99,9 @@ class UserAccountMismatchException(
  */
 class WithdrawalLimitExceededException(
     userId: Long,
-    amount: Double,
-    dailyLimit: Double
-) : BusinessException(UserErrorCode.WITHDRAWAL_LIMIT_EXCEEDED, 
+    amount: BigDecimal,
+    dailyLimit: BigDecimal
+) : BusinessException(UserErrorCode.WITHDRAWAL_LIMIT_EXCEEDED,
     "출금 한도를 초과했습니다. 사용자 ID: $userId, 요청 금액: $amount, 일일 한도: $dailyLimit")
 
 /**

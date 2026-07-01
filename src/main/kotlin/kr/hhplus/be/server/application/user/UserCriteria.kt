@@ -4,6 +4,7 @@ import kr.hhplus.be.server.domain.user.model.Account
 import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.UserCommand
 import kr.hhplus.be.server.domain.user.service.AccountCommand
+import java.math.BigDecimal
 
 class UserCriteria {
     data class CreateUserCriteria(
@@ -31,7 +32,7 @@ class UserCriteria {
 
     data class ChargeAccountCriteria(
         val userId: Long,
-        val amount: Double
+        val amount: BigDecimal
     ) {
         fun toChargeAccountCommand(accountId: Long): AccountCommand.UpdateAccountCommand {
             return AccountCommand.UpdateAccountCommand(id = accountId, amount = amount)

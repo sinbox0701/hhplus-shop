@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.infrastructure.user
 
 import kr.hhplus.be.server.domain.user.model.Account
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import jakarta.persistence.*
 
@@ -14,9 +15,9 @@ class AccountEntity(
     @Column(nullable = false)
     val userId: Long,
     
-    @Column(nullable = false)
-    val amount: Double,
-    
+    @Column(nullable = false, precision = 19, scale = 2)
+    val amount: BigDecimal,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime,
     

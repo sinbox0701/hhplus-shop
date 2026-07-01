@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.infrastructure.order
 
 import kr.hhplus.be.server.domain.order.model.OrderItem
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import jakarta.persistence.*
 
@@ -26,9 +27,9 @@ class OrderItemEntity(
     @Column(nullable = false)
     val quantity: Int,
     
-    @Column(nullable = false)
-    val price: Double,
-    
+    @Column(nullable = false, precision = 19, scale = 2)
+    val price: BigDecimal,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime,
     
@@ -41,7 +42,7 @@ class OrderItemEntity(
         val constructor = orderItemClass.getDeclaredConstructor(
             Long::class.java, Long::class.java, Long::class.java,
             Long::class.java, Long::class.java, Int::class.java,
-            Double::class.java, LocalDateTime::class.java, LocalDateTime::class.java
+            BigDecimal::class.java, LocalDateTime::class.java, LocalDateTime::class.java
         )
         constructor.isAccessible = true
         
@@ -83,7 +84,7 @@ class OrderItemEntity(
                 productOptionId = productOptionIdField.get(orderItem) as Long,
                 userCouponId = userCouponIdField.get(orderItem) as? Long,
                 quantity = quantityField.get(orderItem) as Int,
-                price = priceField.get(orderItem) as Double,
+                price = priceField.get(orderItem) as BigDecimal,
                 createdAt = createdAtField.get(orderItem) as LocalDateTime,
                 updatedAt = updatedAtField.get(orderItem) as LocalDateTime
             )

@@ -2,12 +2,13 @@ package kr.hhplus.be.server.domain.user.repository
 
 import kr.hhplus.be.server.domain.user.model.Account
 import org.springframework.dao.OptimisticLockingFailureException
+import java.math.BigDecimal
 
 interface AccountRepository {
     fun save(account: Account): Account
     fun findByUserId(userId: Long): Account?
     fun findById(id: Long): Account?
-    fun update(id: Long, amount: Double): Account
+    fun update(id: Long, amount: BigDecimal): Account
     fun delete(id: Long)
     
     /**

@@ -5,6 +5,7 @@ import kr.hhplus.be.server.domain.user.repository.AccountRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
@@ -26,7 +27,7 @@ class AccountRepositoryImpl(
         return jpaAccountRepository.findByIdOrNull(id)?.toAccount()
     }
     
-    override fun update(id: Long, amount: Double): Account {
+    override fun update(id: Long, amount: BigDecimal): Account {
         val accountEntity = jpaAccountRepository.findByIdOrNull(id)
             ?: throw IllegalArgumentException("계좌를 찾을 수 없습니다: $id")
         

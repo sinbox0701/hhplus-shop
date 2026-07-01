@@ -2,6 +2,7 @@ package kr.hhplus.be.server.infrastructure.order
 
 import kr.hhplus.be.server.domain.order.model.Order
 import kr.hhplus.be.server.domain.order.model.OrderStatus
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import jakarta.persistence.*
 
@@ -23,9 +24,9 @@ class OrderEntity(
     @Column(nullable = true)
     val userCouponId: Long?,
     
-    @Column(nullable = false)
-    val totalPrice: Double,
-    
+    @Column(nullable = false, precision = 19, scale = 2)
+    val totalPrice: BigDecimal,
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val status: OrderStatus,
@@ -44,7 +45,7 @@ class OrderEntity(
         val orderClass = Order::class.java
         val constructor = orderClass.getDeclaredConstructor(
             Long::class.java, Long::class.java, Long::class.java,
-            Double::class.java, OrderStatus::class.java, LocalDateTime::class.java,
+            BigDecimal::class.java, OrderStatus::class.java, LocalDateTime::class.java,
             LocalDateTime::class.java, LocalDateTime::class.java
         )
         constructor.isAccessible = true
@@ -82,7 +83,7 @@ class OrderEntity(
                 id = idField.get(order) as? Long,
                 userId = userIdField.get(order) as Long,
                 userCouponId = userCouponIdField.get(order) as? Long,
-                totalPrice = totalPriceField.get(order) as Double,
+                totalPrice = totalPriceField.get(order) as BigDecimal,
                 status = statusField.get(order) as OrderStatus,
                 orderDate = orderDateField.get(order) as LocalDateTime,
                 createdAt = createdAtField.get(order) as LocalDateTime,

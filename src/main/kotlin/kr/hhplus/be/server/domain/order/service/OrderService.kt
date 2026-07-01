@@ -87,7 +87,7 @@ class OrderService(
     
     fun updateOrderTotalPrice(command: OrderCommand.UpdateOrderTotalPriceCommand): Order {
         val order = getOrder(command.id)
-        if (command.totalPrice <= 0) {
+        if (command.totalPrice <= java.math.BigDecimal.ZERO) {
             throw IllegalArgumentException("총 가격은 0보다 커야 합니다.")
         }
         val updatedOrder = order.updateTotalPrice(command.totalPrice, timeProvider)

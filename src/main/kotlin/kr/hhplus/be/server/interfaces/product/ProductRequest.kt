@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import java.math.BigDecimal
 
 class ProductRequest {
     data class CreateRequest(
@@ -19,8 +20,8 @@ class ProductRequest {
         val description: String,
         
         @field:DecimalMin(value = "0.0", message = "가격은 0 이상이어야 합니다.")
-        val price: Double,
-        
+        val price: BigDecimal,
+
         @field:Valid
         val options: List<CreateProductOptionRequest>
     )
@@ -35,9 +36,9 @@ class ProductRequest {
         val description: String,
         
         @field:DecimalMin(value = "0.0", message = "가격은 0 이상이어야 합니다.")
-        val price: Double
+        val price: BigDecimal
     )
-    
+
     data class UpdateProductRequest(
         val id: Long,
         
@@ -48,9 +49,9 @@ class ProductRequest {
         val description: String?,
         
         @field:DecimalMin(value = "0.0", message = "가격은 0 이상이어야 합니다.")
-        val price: Double?
+        val price: BigDecimal?
     )
-    
+
     data class CreateProductOptionRequest(
         @field:NotBlank(message = "옵션명은 필수입니다.")
         @field:Size(min = 1, max = 50, message = "옵션명은 1~50자 사이여야 합니다.")
@@ -60,9 +61,9 @@ class ProductRequest {
         val availableQuantity: Int,
         
         @field:DecimalMin(value = "0.0", message = "추가 가격은 0 이상이어야 합니다.")
-        val additionalPrice: Double
+        val additionalPrice: BigDecimal
     )
-    
+
     data class UpdateProductOptionRequest(
         val optionId: Long?,
         
@@ -73,9 +74,9 @@ class ProductRequest {
         val availableQuantity: Int?,
         
         @field:DecimalMin(value = "0.0", message = "추가 가격은 0 이상이어야 합니다.")
-        val additionalPrice: Double?
+        val additionalPrice: BigDecimal?
     )
-    
+
     data class UpdateProductOptionQuantityRequest(
         @field:Min(value = 1, message = "수량은 1 이상이어야 합니다.")
         val quantity: Int
@@ -89,8 +90,8 @@ class ProductRequest {
         val description: String?,
         
         @field:DecimalMin(value = "0.0", message = "가격은 0 이상이어야 합니다.")
-        val price: Double?,
-        
+        val price: BigDecimal?,
+
         val options: List<UpdateProductOptionRequest>?,
         
         val newOptions: List<CreateProductOptionRequest>?,

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
@@ -34,5 +35,5 @@ interface JpaOrderRepository : JpaRepository<OrderEntity, Long> {
     
     @Modifying
     @Query("UPDATE OrderEntity o SET o.totalPrice = :totalPrice, o.updatedAt = CURRENT_TIMESTAMP WHERE o.id = :id")
-    fun updateTotalPrice(@Param("id") id: Long, @Param("totalPrice") totalPrice: Double): Int
+    fun updateTotalPrice(@Param("id") id: Long, @Param("totalPrice") totalPrice: BigDecimal): Int
 } 

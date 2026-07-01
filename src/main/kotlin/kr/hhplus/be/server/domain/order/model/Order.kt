@@ -1,6 +1,7 @@
 package kr.hhplus.be.server.domain.order.model
 
 import kr.hhplus.be.server.domain.common.TimeProvider
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 enum class OrderStatus {
@@ -13,14 +14,14 @@ data class Order private constructor(
     val id: Long? = null, // 데이터베이스가 자동 생성하므로 null 허용
     val userId: Long,
     val userCouponId: Long?,
-    val totalPrice: Double,
+    val totalPrice: BigDecimal,
     val status: OrderStatus,
     val orderDate: LocalDateTime,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ){
     companion object {
-        fun create(userId: Long, userCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: Double, timeProvider: TimeProvider): Order {
+        fun create(userId: Long, userCouponId: Long?, status: OrderStatus = OrderStatus.PENDING, totalPrice: BigDecimal, timeProvider: TimeProvider): Order {
             val now = timeProvider.now()
             return Order(userId=userId, userCouponId=userCouponId, totalPrice=totalPrice, status=status, orderDate=now, createdAt=now, updatedAt=now)
         }
@@ -42,7 +43,7 @@ data class Order private constructor(
         )
     }
 
-    fun updateTotalPrice(totalPrice: Double, timeProvider: TimeProvider): Order {
+    fun updateTotalPrice(totalPrice: BigDecimal, timeProvider: TimeProvider): Order {
         return Order(
             id = this.id,
             userId = this.userId,

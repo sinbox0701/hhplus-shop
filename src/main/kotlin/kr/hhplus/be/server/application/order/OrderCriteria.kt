@@ -10,6 +10,7 @@ import kr.hhplus.be.server.domain.user.model.User
 import kr.hhplus.be.server.domain.user.service.UserCommand
 import kr.hhplus.be.server.domain.coupon.model.UserCoupon
 import kr.hhplus.be.server.domain.user.service.AccountCommand
+import java.math.BigDecimal
 class OrderCriteria{
     /**
     * 주문 상품 생성 요청 데이터 클래스
@@ -35,11 +36,11 @@ class OrderCriteria{
             return OrderCommand.CreateOrderCommand(
                 userId,
                 userCouponId,
-                totalPrice = 0.0
+                totalPrice = BigDecimal.ZERO
             )
         }
 
-        fun toOrderTotalPriceUpdateCommand(orderId: Long, totalPrice: Double): OrderCommand.UpdateOrderTotalPriceCommand {
+        fun toOrderTotalPriceUpdateCommand(orderId: Long, totalPrice: BigDecimal): OrderCommand.UpdateOrderTotalPriceCommand {
             return OrderCommand.UpdateOrderTotalPriceCommand(orderId, totalPrice)
         }
     }
@@ -48,11 +49,11 @@ class OrderCriteria{
         val orderId: Long,
         val userId: Long
     ){
-        fun toOrderPaymentCommand(totalPrice: Double): OrderCommand.UpdateOrderTotalPriceCommand {
+        fun toOrderPaymentCommand(totalPrice: BigDecimal): OrderCommand.UpdateOrderTotalPriceCommand {
             return OrderCommand.UpdateOrderTotalPriceCommand(orderId, totalPrice)
         }
 
-        fun toUpdateAccountCommand(totalPrice: Double): AccountCommand.UpdateAccountCommand {
+        fun toUpdateAccountCommand(totalPrice: BigDecimal): AccountCommand.UpdateAccountCommand {
             return AccountCommand.UpdateAccountCommand(userId, totalPrice)
         }
     }

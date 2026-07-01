@@ -1,5 +1,6 @@
 package kr.hhplus.be.server.domain.product.model
 
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class ProductOption private constructor(
@@ -7,7 +8,7 @@ data class ProductOption private constructor(
     val productId: Long,
     val name: String,
     val availableQuantity: Int,
-    val additionalPrice: Double,
+    val additionalPrice: BigDecimal,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 ) {
@@ -18,7 +19,7 @@ data class ProductOption private constructor(
         private const val MIN_AVAILABLE_QUANTITY = 0
         private const val MAX_AVAILABLE_QUANTITY = 1000
 
-        fun create(productId: Long, name: String, availableQuantity: Int, additionalPrice: Double): ProductOption {
+        fun create(productId: Long, name: String, availableQuantity: Int, additionalPrice: BigDecimal): ProductOption {
             require(name.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH) {
                 "Name must be between $MIN_NAME_LENGTH and $MAX_NAME_LENGTH characters"
             }
@@ -29,7 +30,7 @@ data class ProductOption private constructor(
         }
     }
 
-    fun update(name: String? = null, additionalPrice: Double? = null): ProductOption {
+    fun update(name: String? = null, additionalPrice: BigDecimal? = null): ProductOption {
         // 변경할 필드가 없으면 현재 객체 그대로 반환
         if (name == null && additionalPrice == null) {
             return this
